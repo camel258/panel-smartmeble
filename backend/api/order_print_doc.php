@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../../config/config.php';
+require_once __DIR__ . '/../lib/access.php';
 
 $me = auth_user();
 if(!$me) json_err('unauthorized',401);
@@ -11,6 +12,7 @@ $pdo = db();
 $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
 $id = (int)($_GET['id'] ?? 0);
+if($id>0) acc_require_order($pdo, $me, $id); // zewnętrzny technolog – tylko swoje zamówienia
 $type = trim((string)($_GET['type'] ?? ''));
 $amountRaw = str_replace([' ', ','], ['', '.'], (string)($_GET['amount'] ?? '0'));
 $amount = (float)$amountRaw;

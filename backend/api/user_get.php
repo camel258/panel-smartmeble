@@ -2,6 +2,7 @@
 require_once __DIR__.'/../../config/config.php';
 header('Content-Type: application/json; charset=utf-8');
 $u=auth_user(); if(!$u) json_err('unauthorized',401);
+if(!in_array((int)($u['role_id'] ?? ($u['role'] ?? 0)),[1,999],true)) json_err('forbidden',403);
 $id=(int)($_GET['id']??0); if($id<=0) json_err('invalid_id',422);
 $pdo=db(); $st=$pdo->prepare("SELECT id,full_name,email,role_id,is_active FROM users WHERE id=?");
 $st->execute([$id]);

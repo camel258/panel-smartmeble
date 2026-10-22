@@ -1,9 +1,11 @@
 <?php
 require_once __DIR__ . '/../../config/config.php';
+require_once __DIR__ . '/../lib/access.php';
 require_once __DIR__ . '/../lib/mail.php';
 header('Content-Type: application/json; charset=utf-8');
 
 $me = auth_user(); if(!$me) json_err('unauthorized',401);
+acc_require_admin($me);
 $pdo = db(); $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
 function ns_req(): array { $raw=file_get_contents('php://input'); $j=json_decode($raw,true); return is_array($j)?$j:$_POST; }

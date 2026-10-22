@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../../config/config.php';
+require_once __DIR__ . '/../lib/access.php';
 header('Content-Type: application/json; charset=utf-8');
 $me = auth_user(); if(!$me) json_err('unauthorized',401);
 $pdo = db();
@@ -7,6 +8,10 @@ $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 $q = trim((string)($_GET['q'] ?? ''));
 if($q==='') json_ok(['ok'=>true,'items'=>[]]);
 $needle = '%' . $q . '%';
+// zewnętrzny technolog – tylko jego zamówienia
+$scopeParams = [];
+$scope = '';
+if(acc_is_external_technologist($pdo, $me)){ $scope = 'AND o.scheduler_id=?'; $scopeParams[] = acc_uid($me); }
 try{
   $sql = "SELECT o.id,
     CONCAT(TRIM(COALESCE(o.client_first_name,'')),' ',TRIM(COALESCE(o.client_last_name,''))) AS client_name,
@@ -27,7 +32,7 @@ try{
     COALESCE(s.name,'—') AS status_name
     FROM orders o
     LEFT JOIN order_statuses s ON s.id=o.status_id
-    WHERE COALESCE(o.is_deleted,0)=0 AND (
+    WHERE COALESCE(o.is_deleted,0)=0 {$scope} AND (
       CAST(o.id AS CHAR) LIKE ?
       OR CONCAT(TRIM(COALESCE(o.client_first_name,'')),' ',TRIM(COALESCE(o.client_last_name,''))) LIKE ?
       OR COALESCE(o.client_phone,'') LIKE ?
@@ -43,7 +48,7 @@ try{
     ORDER BY o.id DESC
     LIMIT 30";
   $st = $pdo->prepare($sql);
-  $st->execute([$needle,$needle,$needle,$needle,$needle,$needle,$needle,$needle,$needle,$needle,$needle]);
+  $st->execute(array_merge($scopeParams, [$needle,$needle,$needle,$needle,$needle,$needle,$needle,$needle,$needle,$needle,$needle]));
   json_ok(['ok'=>true,'items'=>$st->fetchAll(PDO::FETCH_ASSOC)]);
 }catch(Throwable $e){
   json_err('search_error',500,['details'=>$e->getMessage()]);

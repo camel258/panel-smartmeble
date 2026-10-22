@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../../config/config.php';
+require_once __DIR__ . '/../lib/access.php';
 require_once __DIR__ . '/../lib/order_audit.php';
 header('Content-Type: application/json; charset=utf-8');
 function req_json_or_post(){ $body=json_decode(file_get_contents('php://input'), true); return is_array($body)?$body:$_POST; }
@@ -57,6 +58,7 @@ try{
   $q->execute([$id]);
   $row=$q->fetch(PDO::FETCH_ASSOC);
   if(!$row) json_err('not_found',404);
+  acc_require_field($pdo,$me,'finance_payments','edit'); acc_require_order($pdo,$me,(int)$row['order_id']);
   $pdo->prepare("DELETE FROM order_payments WHERE id=?")->execute([$id]);
   order_audit_log($pdo, (int)$row['order_id'], 'payment_delete', 'Usunięto wpłatę', [
     'payment' => ['date'=>$row['pay_date'] ?? null, 'amount'=>$row['amount'] ?? null, 'description'=>$row['description'] ?? ''],

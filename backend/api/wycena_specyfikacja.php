@@ -28,5 +28,6 @@ try{
 }catch(Throwable $e){
   http_response_code(500);
   header('Content-Type: application/json');
-  echo json_encode(['ok'=>false,'error'=>'server_error','details'=>$e->getMessage()]);
+  error_log('panel API wycena_specyfikacja: '.$e->getMessage());
+  echo json_encode(['ok'=>false,'error'=>'server_error']);
 }

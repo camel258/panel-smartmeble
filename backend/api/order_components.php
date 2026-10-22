@@ -1,8 +1,10 @@
 <?php
 require_once __DIR__ . '/../../config/config.php';
+require_once __DIR__ . '/../lib/access.php';
 
 $me = auth_user();
 if(!$me) json_err('unauthorized', 401);
+acc_require_admin($me); // stary endpoint (panel używa order_finance.php) – tylko administrator
 
 $pdo = db();
 $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
@@ -19,6 +21,7 @@ $pdo->exec("CREATE TABLE IF NOT EXISTS order_components (
 
 if($_SERVER['REQUEST_METHOD']==='GET'){
   $id = (int)($_GET['id'] ?? $_GET['order_id'] ?? 0);
+  if($id>0) acc_require_order($pdo, $me, $id); // zewnętrzny technolog – tylko swoje zamówienia
   if($id<=0) json_err('bad_request', 400);
   $st = $pdo->prepare("SELECT id, description, amount, DATE_FORMAT(created_at,'%Y-%m-%d %H:%i:%s') created_at FROM order_components WHERE order_id=? ORDER BY id DESC");
   $st->execute([$id]);
@@ -30,6 +33,7 @@ $body = json_decode(file_get_contents('php://input'), true);
 if(!is_array($body)) $body = $_POST;
 
 $orderId = (int)($body['id'] ?? $body['order_id'] ?? 0);
+if($orderId>0) acc_require_order($pdo, $me, $orderId); // zewnętrzny technolog – tylko swoje zamówienia
 $desc = trim((string)($body['description'] ?? ''));
 $amount = $body['amount'] ?? null;
 

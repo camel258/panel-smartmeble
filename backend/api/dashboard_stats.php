@@ -141,6 +141,8 @@ try{
             }
         }
     }
+    // kafelki, których rola nie widzi, nie wychodzą z serwera (wcześniej ukrywała je tylko przeglądarka)
+    foreach($stats as $k=>$v){ if(array_key_exists($k,$caps) && !$caps[$k]) $stats[$k] = is_array($v) ? [] : 0; }
     json_ok(['stats'=>$stats,'caps'=>$caps,'orders_month'=>$stats['orders_month'],'orders_week'=>$stats['orders_week'],'sales_month'=>$stats['sales_month'],'avg_order_value'=>$stats['avg_order_value'],'payments_month'=>$stats['payments_month'],'payments_week'=>$stats['payments_week'],'installs_week'=>$stats['installs_week'],'month_label'=>$stats['month_label'],'week_label'=>$stats['week_label'],'sales_last_6_months'=>$stats['sales_6m'],'payments_last_6_months'=>$stats['payments_6m'],'status_counts'=>$stats['statuses_current']]);
 }catch(Throwable $e){
     json_err('server_error',500,['details'=>$e->getMessage()]);

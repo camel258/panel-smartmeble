@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../../config/config.php';
+require_once __DIR__ . '/../lib/access.php';
 require_once __DIR__ . '/../lib/order_audit.php';
 header('Content-Type: application/json; charset=utf-8');
 function req_json_or_post(){ $body=json_decode(file_get_contents('php://input'), true); return is_array($body)?$body:$_POST; }
@@ -53,4 +54,5 @@ $uid=(int)($me['id'] ?? $me['uid'] ?? 0);
 $pdo=db(); $pdo->setAttribute(PDO::ATTR_ERRMODE,PDO::ERRMODE_EXCEPTION); $body=req_json_or_post();
 $orderId=(int)($body['order_id'] ?? $body['id'] ?? 0); $payDate=trim((string)($body['paid_at'] ?? $body['pay_date'] ?? $body['date'] ?? '')); $amount=$body['amount'] ?? null; $desc=trim((string)($body['description'] ?? 'Wpłata'));
 if($orderId<=0 || $payDate==='' || !is_numeric($amount)) json_err('bad_request',400);
+acc_require_field($pdo,$me,'finance_payments','edit'); acc_require_order($pdo,$me,$orderId);
 try{ ensure_order_payments_schema($pdo); $pdo->prepare("INSERT INTO order_payments(order_id,pay_date,amount,description) VALUES(?,?,?,?)")->execute([$orderId,$payDate,dec_or_zero($amount),$desc]); json_ok(['ok'=>true]); }catch(Throwable $e){ json_err('save_failed',500,['details'=>$e->getMessage()]); }

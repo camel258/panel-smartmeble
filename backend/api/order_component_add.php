@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../../config/config.php';
+require_once __DIR__ . '/../lib/access.php';
 require_once __DIR__ . '/../lib/order_audit.php';
 header('Content-Type: application/json; charset=utf-8');
 function req_json_or_post(){ $body=json_decode(file_get_contents('php://input'), true); return is_array($body)?$body:$_POST; }
@@ -32,6 +33,7 @@ $uid=(int)($me['id'] ?? $me['uid'] ?? 0);
 if($uid>0 && !can_edit_field($uid,'finance_components')) json_err('forbidden',403,['details'=>'finance_components_edit_required']);
 $pdo=db(); $pdo->setAttribute(PDO::ATTR_ERRMODE,PDO::ERRMODE_EXCEPTION); $body=req_json_or_post();
 $orderId=(int)($body['order_id'] ?? $body['id'] ?? 0); $desc=trim((string)($body['description'] ?? '')); $amount=$body['amount'] ?? null;
+if($orderId>0) acc_require_order($pdo, $me, $orderId); // zewnętrzny technolog – tylko swoje zamówienia
 if($orderId<=0 || $desc==='' || !is_numeric($amount)) json_err('bad_request',400);
 $amountNorm=(float)$amount;
 if(abs($amountNorm) < 0.000001) json_err('bad_request',400,['details'=>'Kwota nie może być zerowa']);

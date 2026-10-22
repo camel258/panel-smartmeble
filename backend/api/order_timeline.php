@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../../config/config.php';
+require_once __DIR__ . '/../lib/access.php';
 header('Content-Type: application/json; charset=utf-8');
 
 $me = auth_user();
@@ -9,6 +10,7 @@ $pdo = db();
 $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
 $id = (int)($_GET['id'] ?? 0);
+if($id>0) acc_require_order($pdo, $me, $id); // zewnętrzny technolog – tylko swoje zamówienia
 if($id <= 0) json_err('bad_request',400);
 
 function table_exists(PDO $pdo, string $name): bool {

@@ -1,10 +1,14 @@
 <?php
 require_once __DIR__ . '/../../config/config.php';
 require_once __DIR__ . '/../lib/order_audit.php';
+require_once __DIR__ . '/../lib/access.php';
 header('Content-Type: application/json; charset=utf-8');
 $me = auth_user(); if(!$me) json_err('unauthorized',401);
 $pdo = db();
 $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+// zewnętrzny technolog – tylko jego zamówienia; bez uprawnień do finansów – bez kwot w historii zmian
+$techScope = acc_is_external_technologist($pdo, $me) ? ' AND o.scheduler_id=' . acc_uid($me) : '';
+$canFinance = acc_can($pdo, $me, 'finance_summary', 'view');
 
 function table_exists_news(PDO $pdo, string $table): bool {
   $st = $pdo->prepare("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = ?");
@@ -39,7 +43,7 @@ try{
       COALESCE(s.name,'—') AS status_name
       FROM orders o
       LEFT JOIN order_statuses s ON s.id=o.status_id
-      WHERE COALESCE(o.is_deleted,0)=0
+      WHERE COALESCE(o.is_deleted,0)=0{$techScope}
       ORDER BY o.created_at DESC, o.id DESC
       LIMIT 12");
     $recentOrders = $st->fetchAll(PDO::FETCH_ASSOC);
@@ -59,7 +63,7 @@ try{
       LEFT JOIN order_statuses s ON s.id=o.status_id
       LEFT JOIN order_assignees oa ON oa.order_id=o.id
       WHERE COALESCE(o.is_deleted,0)=0
-        AND COALESCE(o.is_finished,0)=0
+        AND COALESCE(o.is_finished,0)=0{$techScope}
       GROUP BY o.id
       HAVING assignees_count = 0
          OR ((install_date IS NULL OR install_date='') AND (install_date_new IS NULL OR install_date_new=''))
@@ -125,13 +129,25 @@ try{
       DATE_FORMAT(l.created_at,'%Y-%m-%d %H:%i') AS created_at
       FROM order_audit_log l
       LEFT JOIN orders o ON o.id=l.order_id
-      WHERE COALESCE(o.is_deleted,0)=0
+      WHERE COALESCE(o.is_deleted,0)=0{$techScope}
       ORDER BY l.created_at DESC, l.id DESC
       LIMIT 20");
     $recentChanges = $st->fetchAll(PDO::FETCH_ASSOC);
     foreach($recentChanges as &$rc){
       $rc['client_name'] = trim((string)($rc['client_name'] ?? ''));
+      if(!$canFinance){
+        $pl = json_decode((string)($rc['payload_json'] ?? ''), true);
+        if(is_array($pl)){
+          unset($pl['component'], $pl['payment'], $pl['amount'], $pl['pay_date']);
+          if(preg_match('/^(payment|component)/', (string)($rc['action_code'] ?? ''))) unset($pl['description']);
+          if(!empty($pl['changes']) && is_array($pl['changes'])){
+            $pl['changes'] = array_values(array_filter($pl['changes'], fn($ch)=>!in_array((string)($ch['field'] ?? ''), ['total_amount','deposit_amount'], true)));
+          }
+          $rc['payload_json'] = json_encode($pl);
+        }
+      }
       $rc['detail'] = news_change_summary($rc);
+      unset($rc['payload_json']); // surowe dane zmian nie są potrzebne w przeglądarce
     }
     unset($rc);
   }catch(Throwable $e){}

@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../../config/config.php';
+require_once __DIR__ . '/../lib/access.php';
 header('Content-Type: application/json; charset=utf-8');
 $me = auth_user(); if(!$me) json_err('unauthorized',401);
 $pdo = db(); $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
@@ -51,6 +52,7 @@ try{
     $note = trim((string)($in['note'] ?? ''));
     $defaults = oc_defaults();
     if($orderId<=0 || !isset($defaults[$code])) json_err('bad_request',422);
+    acc_require_order($pdo, $me, $orderId);
     $meName = trim((string)($me['full_name'] ?? $me['email'] ?? ('Użytkownik #'.$uid)));
     $st = $pdo->prepare("INSERT INTO order_checklists(order_id,item_code,item_label,is_done,note,done_by,done_by_name,done_at) VALUES(?,?,?,?,?,?,?,CASE WHEN ?=1 THEN NOW() ELSE NULL END) ON DUPLICATE KEY UPDATE item_label=VALUES(item_label), is_done=VALUES(is_done), note=VALUES(note), done_by=VALUES(done_by), done_by_name=VALUES(done_by_name), done_at=CASE WHEN VALUES(is_done)=1 THEN NOW() ELSE NULL END");
     $st->execute([$orderId,$code,$defaults[$code],$isDone,$note,$uid,$meName,$isDone]);
@@ -58,6 +60,7 @@ try{
   }
   $orderId = (int)($_GET['order_id'] ?? $_GET['id'] ?? 0);
   if($orderId<=0) json_err('bad_request',422);
+  acc_require_order($pdo, $me, $orderId);
   $defaults = oc_defaults();
   $st = $pdo->prepare("SELECT item_code,item_label,is_done,note,done_by_name,DATE_FORMAT(done_at,'%Y-%m-%d %H:%i') AS done_at FROM order_checklists WHERE order_id=?");
   $st->execute([$orderId]);

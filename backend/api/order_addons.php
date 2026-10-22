@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../../config/config.php';
+require_once __DIR__ . '/../lib/access.php';
 
 $me = auth_user();
 if(!$me) json_err('unauthorized',401);
@@ -21,6 +22,7 @@ function body_json(){
 try{
   if($method==='GET'){
     $orderId = (int)($_GET['id'] ?? 0);
+    if($orderId>0) acc_require_order($pdo, $me, $orderId); // zewnętrzny technolog – tylko swoje zamówienia
     if($orderId<=0) json_err('bad_id',400);
     $st=$pdo->prepare("SELECT id, description, amount, created_at FROM order_addons WHERE order_id=? ORDER BY id ASC");
     $st->execute([$orderId]);
@@ -41,6 +43,7 @@ try{
     }
 
     $orderId = (int)($data['order_id'] ?? 0);
+    if($orderId>0) acc_require_order($pdo, $me, $orderId); // zewnętrzny technolog – tylko swoje zamówienia
     $amount = (float)($data['amount'] ?? 0);
     $desc = trim((string)($data['description'] ?? ''));
 

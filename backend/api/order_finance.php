@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../../config/config.php';
+require_once __DIR__ . '/../lib/access.php';
 header('Content-Type: application/json; charset=utf-8');
 
 function sm_uid(array $me): int {
@@ -50,6 +51,7 @@ $me=auth_user(); if(!$me) json_err('unauthorized',401);
 $pdo=db(); $pdo->setAttribute(PDO::ATTR_ERRMODE,PDO::ERRMODE_EXCEPTION);
 $PROJECT_ROOT=dirname(__DIR__,2); $ERROR_LOG=$PROJECT_ROOT.'/uploads/error_log.txt';
 $id=(int)($_GET['id'] ?? $_GET['order_id'] ?? 0); if($id<=0) json_err('bad_request',400);
+if($id>0) acc_require_order($pdo, $me, $id); // zewnętrzny technolog – tylko swoje zamówienia
 $uid = (int)($me['id'] ?? $me['uid'] ?? 0);
 $isExternalTechnologist=sm_is_external_technologist($pdo,$me); $isWorkerRole=sm_is_worker_role($pdo,$me);
 $canSummary = $uid>0 ? (bool)can_view_field($uid,'finance_summary') : true;

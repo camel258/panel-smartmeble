@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../../config/config.php';
+require_once __DIR__ . '/../lib/access.php';
 header('Content-Type: application/json; charset=utf-8');
 
 $me = auth_user();
@@ -26,6 +27,7 @@ if(!planned_table_exists($pdo)){
 try{
   if($method === 'GET'){
     $orderId = (int)($_GET['id'] ?? 0);
+    if($orderId>0) acc_require_order($pdo, $me, $orderId); // zewnętrzny technolog – tylko swoje zamówienia
     if($orderId <= 0) json_err('bad_request',400);
     $st = $pdo->prepare("SELECT id, order_id, amount, DATE_FORMAT(planned_date,'%Y-%m-%d') AS planned_date, description, created_at, updated_at FROM order_planned_payments WHERE order_id=? ORDER BY planned_date ASC, id ASC");
     $st->execute([$orderId]);
@@ -39,6 +41,7 @@ try{
 
   if($action === 'add'){
     $orderId = (int)($body['order_id'] ?? 0);
+    if($orderId>0) acc_require_order($pdo, $me, $orderId); // zewnętrzny technolog – tylko swoje zamówienia
     $amount = (float)str_replace(',', '.', (string)($body['amount'] ?? 0));
     $date = trim((string)($body['planned_date'] ?? ''));
     $desc = trim((string)($body['description'] ?? ''));

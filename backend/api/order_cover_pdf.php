@@ -1,9 +1,11 @@
 <?php
 require_once __DIR__ . '/../../config/config.php';
+require_once __DIR__ . '/../lib/access.php';
 $me = auth_user();
 if(!$me){ http_response_code(401); exit('unauthorized'); }
 $pdo = db();
 $id = (int)($_GET['id'] ?? 0);
+if($id>0) acc_require_order($pdo, $me, $id); // zewnętrzny technolog – tylko swoje zamówienia
 if($id<=0){ http_response_code(400); exit('bad_request'); }
 $st = $pdo->prepare("SELECT client_first_name,client_last_name,item_description,client_phone,client_email FROM orders WHERE id=? LIMIT 1");
 $st->execute([$id]);

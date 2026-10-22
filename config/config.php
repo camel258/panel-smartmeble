@@ -47,7 +47,14 @@ function db(){
 
 // JSON helpers
 function json_ok($data=[], $code=200){ http_response_code($code); header('Content-Type: application/json; charset=utf-8'); echo json_encode($data); exit; }
-function json_err($msg='error',$code=400,$extra=[]){ http_response_code($code); header('Content-Type: application/json; charset=utf-8'); echo json_encode(array_merge(['error'=>$msg],$extra)); exit; }
+// Błędy serwera (5xx): szczegóły (np. treść wyjątku SQL) tylko do logu PHP, użytkownik dostaje ogólny komunikat.
+function json_err($msg='error',$code=400,$extra=[]){
+  if($code>=500 && isset($extra['details'])){
+    error_log('panel API '.($_SERVER['SCRIPT_NAME'] ?? '').' ['.$msg.']: '.(is_scalar($extra['details']) ? $extra['details'] : json_encode($extra['details'])));
+    $extra['details'] = 'Błąd serwera – spróbuj ponownie. Jeśli się powtarza, zgłoś administratorowi.';
+  }
+  http_response_code($code); header('Content-Type: application/json; charset=utf-8'); echo json_encode(array_merge(['error'=>$msg],$extra)); exit;
+}
 
 // CORS (same origin recommended in production)
 header('Access-Control-Allow-Origin: ' . envv('BASE_URL','*'));

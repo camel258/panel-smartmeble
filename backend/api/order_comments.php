@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../../config/config.php';
+require_once __DIR__ . '/../lib/access.php';
 require_once __DIR__ . '/../lib/order_audit.php';
 header('Content-Type: application/json; charset=utf-8');
 
@@ -72,6 +73,7 @@ try{
 
   if($_SERVER['REQUEST_METHOD']==='GET'){
     $orderId=(int)($_GET['id'] ?? $_GET['order_id'] ?? 0);
+    if($orderId>0) acc_require_order($pdo, $me, $orderId); // zewnętrzny technolog – tylko swoje zamówienia
     if($orderId<=0) json_err('bad_request',400);
 
     $authorJoin='';
@@ -124,6 +126,7 @@ try{
   }
 
   $orderId=(int)($body['id'] ?? $body['order_id'] ?? 0);
+  if($orderId>0) acc_require_order($pdo, $me, $orderId); // zewnętrzny technolog – tylko swoje zamówienia
   $text=trim((string)($body['text'] ?? ($body['content'] ?? '')));
   if($orderId<=0 || $text==='') json_err('bad_request',400);
 

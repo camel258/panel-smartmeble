@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../../config/config.php';
+require_once __DIR__ . '/../lib/access.php';
 require_once __DIR__ . '/../lib/contract_signers.php';
 require_once __DIR__ . '/../lib/order_audit.php';
 header('Content-Type: application/json; charset=utf-8');
@@ -33,6 +34,24 @@ try{
   $assSt = $pdo->prepare("SELECT oa.user_id, COALESCE(NULLIF(TRIM(u.full_name),''), NULLIF(TRIM(u.email),''), CONCAT('Użytkownik #', oa.user_id)) AS name FROM order_assignees oa LEFT JOIN users u ON u.id=oa.user_id WHERE oa.order_id=? ORDER BY oa.user_id ASC");
   $assSt->execute([$id]);
   $beforeAssignees = $assSt->fetchAll(PDO::FETCH_ASSOC);
+  acc_require_order($pdo, $me, $id);
+  // Pola, których użytkownik nie może edytować, zostają bez zmian. Formularz wysyła je puste
+  // (np. kwota dla roli bez finansów), co wcześniej zerowało wartość zamówienia.
+  $lockedCols = [
+    'client_first_name'=>['client_first_name'], 'client_last_name'=>['client_last_name'], 'item_description'=>['item_description'],
+    'client_phone'=>['client_phone'], 'client_email'=>['client_email'],
+    'install_address'=>['client_address','install_street','install_no','install_postcode','install_zip','install_city'],
+    'contract_date'=>['contract_date','contract_signer_id'], 'install_date'=>['install_date'], 'install_date_new'=>['install_date_new'],
+    'measure_due_date'=>['measure_due_date','measure_done'], 'notes'=>['client_notes'],
+    'status_id'=>['status_id'], 'scheduler_id'=>['scheduler_id'], 'finance_summary'=>['total_amount'],
+  ];
+  foreach($lockedCols as $code=>$cols){
+    if(acc_can($pdo, $me, $code, 'edit')) continue;
+    foreach($cols as $c){ if(array_key_exists($c, $before)) $body[$c] = $before[$c]; elseif(array_key_exists($c, $body)) unset($body[$c]); }
+  }
+  if(!acc_can($pdo, $me, 'mounters', 'edit')){
+    $body['mounters'] = implode(',', array_map(fn($r)=>(string)(int)$r['user_id'], $beforeAssignees));
+  }
 
   $scheduler = int_or_null($body['scheduler_id'] ?? null);
   $clientAddress = null_if_empty($body['client_address'] ?? null);

@@ -1,9 +1,11 @@
 <?php
 require_once __DIR__ . '/../../config/config.php';
+require_once __DIR__ . '/../lib/access.php';
 header('Content-Type: application/json; charset=utf-8');
 $me = auth_user(); if(!$me) json_err('unauthorized',401);
 $pdo = db(); $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 $id=(int)($_GET['id']??0); if($id<=0) json_err('bad_request',400);
+if($id>0) acc_require_order($pdo, $me, $id); // zewnętrzny technolog – tylko swoje zamówienia
 try{
   $exists=$pdo->query("SHOW TABLES LIKE 'work_schedule_entries'")->fetchColumn();
   if(!$exists){ json_ok(['items'=>[]]); }
