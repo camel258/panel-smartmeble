@@ -1,6 +1,9 @@
 <?php
 // config/config.php - production loader
 
+// Strefa czasowa PHP jak na home.pl (date('Y-m-d H:i:s') zapisywane do bazy).
+date_default_timezone_set('Europe/Warsaw');
+
 function env_load() {
   static $loaded = false, $vars = [];
   if ($loaded) return $vars;
@@ -28,6 +31,10 @@ function db(){
       PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
       PDO::ATTR_EMULATE_PREPARES => false,
     ]);
+    // Jak na home.pl: czas polski w NOW()/CURRENT_TIMESTAMP i łagodny tryb SQL (VPS: MySQL 8.4 ścisły, strefa UTC).
+    // Przesunięcie liczone z PHP przy połączeniu – działa bez tabel stref w MySQL i uwzględnia zmianę czasu.
+    $off = (new DateTime('now', new DateTimeZone(envv('APP_TZ', 'Europe/Warsaw'))))->format('P');
+    $pdo->exec("SET time_zone = '" . $off . "', sql_mode = '" . preg_replace('/[^A-Z_,]/', '', (string)envv('DB_SQL_MODE', 'NO_UNSIGNED_SUBTRACTION')) . "'");
   } catch (Throwable $e) {
     http_response_code(500);
     header('Content-Type: application/json; charset=utf-8');
