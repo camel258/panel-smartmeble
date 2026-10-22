@@ -84,3 +84,5 @@ label{display:block;margin:0 0 6px;color:var(--muted);font-size:12px}
   .topbar-sub{font-size:11px;letter-spacing:.18em}
 }
 
+/* Menu boczne pokazujemy dopiero po zbudowaniu przez menu.js (bez mignięcia starego menu z HTML) */
+.sidebar nav:not(.menu-ready), #sideNav:not(.menu-ready) { visibility: hidden; }

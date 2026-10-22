@@ -46,17 +46,41 @@ function renderUnifiedMenu(role){
   return nav;
 }
 
+// Menu bez migania (2026-10-22): rysujemy je od razu z ostatnio znanych uprawnień (sessionStorage),
+// a odpowiedź serwera tylko je odświeża. Do tego czasu CSS ukrywa menu (theme_v17.css: nav:not(.menu-ready)),
+// więc stare menu wpisane na stałe w HTML stron nigdy się nie pokazuje.
+const MENU_CACHE_KEY = 'sm_menu_caps_v1';
+function menuCacheRead(){ try{ return JSON.parse(sessionStorage.getItem(MENU_CACHE_KEY) || 'null'); }catch(e){ return null; } }
+function menuCacheWrite(v){ try{ sessionStorage.setItem(MENU_CACHE_KEY, JSON.stringify(v)); }catch(e){} }
+function menuReady(nav){ if(nav) nav.classList.add('menu-ready'); }
+
 async function applyMenu(){
+  const cached = menuCacheRead();
+  if(cached){ drawMenu(cached.role, cached.caps || {}); }
+
   let role = 0;
   let caps = {};
+  let ok = false;
   try{
     const r = await apiGet('session_check.php');
     caps = (r && r.caps) ? r.caps : {};
     role = Number(r?.user?.role_id ?? r?.user?.role ?? 0);
+    ok = !!(r && r.user);
   }catch(e){}
 
+  if(ok){
+    const fresh = {role, caps};
+    if(!cached || JSON.stringify(cached) !== JSON.stringify(fresh)) drawMenu(role, caps);
+    menuCacheWrite(fresh);
+  } else if(!cached){
+    drawMenu(role, caps);
+  }
+}
+
+function drawMenu(role, caps){
   const nav = renderUnifiedMenu(role);
   if(!nav) return;
+  menuReady(nav);
 
   if(role===3){
     const current = (location.pathname.split('/').pop() || 'aktualnosci.html').toLowerCase();
@@ -99,4 +123,6 @@ async function applyMenu(){
   });
 }
 
-document.addEventListener('DOMContentLoaded', applyMenu);
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', applyMenu); else applyMenu();
+// wylogowanie / zmiana użytkownika – nie pokazuj menu poprzedniego konta
+document.addEventListener('click', e => { if (e.target.closest('[data-logout], .logout, #logoutBtn, #logoutBtnTopbar, a[href*="logout"]')) { try{ sessionStorage.removeItem(MENU_CACHE_KEY); }catch(_){} } }, true);
