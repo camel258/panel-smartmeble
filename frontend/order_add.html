@@ -1,0 +1,201 @@
+<!doctype html><html lang="pl"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Dodaj zamówienie – Smart Meble</title>
+<link rel="icon" href="assets/img/favicon.ico">
+<link rel="stylesheet" href="assets/css/theme_v17.css"/></head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand"><img src="assets/img/logo_smartmeble.png" style="height:28px"/><div>PANEL</div></div>
+    <nav>
+      <a class="active" href="orders.html">Zamówienia aktualne</a>
+      <a href="orders_finished.html">Zamówienia zakończone</a>
+      <a href="orders_deleted.html" id="navDeleted" style="display:none">Zamówienia usunięte</a>
+      <a href="rozliczenia.html" id="navRozl" style="display:none">Rozliczenia</a><a href="schedule.html">Grafik</a><a href="users.html">Użytkownicy</a>
+      <a href="statuses.html">Statusy</a><a href="notifications.html">Powiadomienia</a>
+      <a href="settings.html">Ustawienia</a>
+      <a href="schedule.html">Grafik</a>
+    </nav>
+  </aside>
+  <div class="content">
+    <div class="topbar">
+      <div><b>Nowe zamówienie</b></div>
+      <div style="display:flex;gap:10px">
+        <button class="btn" id="backBtn">Anuluj</button>
+        <button class="btn" id="saveBtn">Zapisz</button>
+        <button class="btn" id="logoutBtn">Wyloguj</button>
+      </div>
+    </div>
+    <main class="main">
+      <div id="err" class="err" style="margin-bottom:10px"></div>
+
+      <div class="grid" style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+        <div class="card">
+          <h3>Dane klienta</h3>
+          <div class="row">
+            <div><label>Imię*</label><input class="input" id="f_first"></div>
+            <div><label>Nazwisko*</label><input class="input" id="f_last"></div>
+            <div style="grid-column:1/-1"><label>Przedmiot zamówienia*</label><input class="input" id="f_items"></div>
+            <div><label>Telefon</label><input class="input" id="f_phone"></div>
+            <div><label>E-mail</label><input class="input" id="f_email"></div>
+
+            <div style="grid-column:1/-1"><label>Adres montażu – ulica</label><input class="input" id="f_street"></div>
+            <div><label>Nr</label><input class="input" id="f_no"></div>
+            <div><label>Kod pocztowy</label><input class="input" id="f_postcode"></div>
+            <div style="grid-column:1/-1"><label>Miasto</label><input class="input" id="f_city"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Daty, status, osoby</h3>
+          <div class="row">
+            <div><label>Data umowy</label><input class="input" id="f_contract" type="date"></div>
+            <div><label>Data montażu</label><input class="input" id="f_install" type="date"></div>
+            <div><label>Nowa data montażu</label><input class="input" id="f_install_new" type="date"></div>
+            <div><label>Data pomiaru do</label><input class="input" id="f_measure_to" type="date"></div>
+
+            <div style="grid-column:1/-1"><label>Status</label><select class="input" id="f_status"></select></div>
+            <div style="grid-column:1/-1"><label>Osoba rozpisująca</label><select class="input" id="f_scheduler"></select></div>
+            <div style="grid-column:1/-1"><label>Monterzy (Ctrl/⌘ aby wybrać wielu)</label><select class="input" id="f_mounters" multiple size="6"></select></div>
+          </div>
+        </div>
+
+
+        <div class="card" id="employeeFinanceCard" style="display:none;grid-column:1/-1">
+          <h3>Finanse przy dodawaniu</h3>
+          <div class="row">
+            <div><label>Wartość zamówienia</label><input class="input" id="f_emp_total" type="number" step="0.01"></div>
+            <div><label>Zaliczka (pierwsza wpłata)</label><input class="input" id="f_emp_deposit" type="number" step="0.01"></div>
+          </div>
+          <div style="color:var(--muted);font-size:12px;margin-top:6px">Po zapisaniu zamówienia wartości i wpłaty nie będą już widoczne dla tej grupy.</div>
+        </div>
+
+        <div class="card" id="financeCard" style="display:none;grid-column:1/-1">
+          <h3>Finanse</h3>
+          <div class="row">
+            <div><label>Wartość zamówienia (zamówienie główne)</label><input class="input" id="f_total" type="number" step="0.01"></div>
+          </div>
+          <div style="color:var(--muted);font-size:12px;margin-top:6px">Wpłaty i domówienia dodasz po utworzeniu zamówienia (na karcie szczegółów).</div>
+        </div>
+
+        <div class="card" style="grid-column:1/-1">
+          <h3>Załączniki</h3>
+          <div style="color:var(--muted);font-size:13px">
+            Załączniki dodasz po zapisaniu zamówienia, bezpośrednio na karcie szczegółów.
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+<script src="config.js"></script><script src="assets/js/menu.js"></script><script src="assets/js/helpers_ext.js"></script>
+<script>
+logoutBtn.onclick = ()=>{ localStorage.removeItem('token'); location.href='login.html'; };
+backBtn.onclick = ()=>history.back();
+
+let CAPS={can_view_finance:false};
+
+async function loadCaps(){
+  try{
+    const r=await apiGet('session_check.php');
+    CAPS.can_view_finance = !!(r.caps && r.caps.can_view_finance);
+    financeCard.style.display = CAPS.can_view_finance ? '' : 'none';
+    employeeFinanceCard.style.display = CAPS.can_view_finance ? 'none' : '';
+  }catch(e){}
+}
+
+async function loadStatuses(){
+  f_status.innerHTML = '';
+  try{ const r=await apiGet('statuses.php'); (r.items||[]).forEach(s=>{ const o=document.createElement('option'); o.value=s.id; o.textContent=s.name; f_status.appendChild(o); }); }catch(e){}
+}
+async function loadUsers(){
+  f_scheduler.innerHTML = '<option value="">—</option>';
+  f_mounters.innerHTML = '';
+  try{
+    const r=await apiGet('users.php');
+    (r.items||[]).forEach(u=>{
+      const t=u.full_name||u.email||('ID '+u.id);
+      const o=document.createElement('option'); o.value=u.id; o.textContent=t; f_scheduler.appendChild(o);
+      const m=document.createElement('option'); m.value=u.id; m.textContent=t; f_mounters.appendChild(m);
+    });
+  }catch(e){}
+}
+
+saveBtn.onclick = async ()=>{
+  err.textContent='';
+  if(!f_first.value.trim()||!f_last.value.trim()||!f_items.value.trim()){ err.textContent='Uzupełnij: imię, nazwisko i przedmiot.'; return; }
+
+  const fd = new FormData();
+  fd.append('client_first_name', f_first.value.trim());
+  fd.append('client_last_name',  f_last.value.trim());
+  fd.append('item_description',  f_items.value.trim());
+  fd.append('client_phone',      f_phone.value.trim());
+  fd.append('client_email',      f_email.value.trim());
+
+  fd.append('install_street',    f_street.value.trim());
+  fd.append('install_no',        f_no.value.trim());
+  fd.append('install_postcode',  f_postcode.value.trim());
+  fd.append('install_city',      f_city.value.trim());
+
+  fd.append('contract_date',     f_contract.value||'');
+  fd.append('install_date',      f_install.value||'');
+  fd.append('install_date_new',  f_install_new.value||'');
+  fd.append('measure_due_date',  f_measure_to.value||'');
+  fd.append('status_id',         f_status.value||'');
+  fd.append('scheduler_id',      f_scheduler.value||'');
+
+  const mounters = [...f_mounters.selectedOptions].map(o=>o.value).join(',');
+  fd.append('mounters', mounters);
+
+  if(CAPS.can_view_finance){
+    fd.append('total_amount', f_total.value||'0');
+  }else{
+    fd.append('total_amount', f_emp_total.value||'0');
+    fd.append('deposit_amount', f_emp_deposit.value||'0');
+  }
+
+  try{
+    const r = await fetch(API_BASE+'order_add.php', {method:'POST', headers:authHeaders(false), body:fd});
+    const j = await r.json();
+    if(!r.ok || !j.ok) throw new Error(JSON.stringify(j));
+    if(_quoteLinkId){
+      try{
+        await fetch(API_BASE+'wycena_api.php?action=link_order', {method:'POST', headers:{'Content-Type':'application/json', ...authHeaders(), 'X-Wycena-Token': sessionStorage.getItem('wycena_token')||''}, body: JSON.stringify({quote_id:_quoteLinkId, order_id:j.order_id})});
+      }catch(e){}
+    }
+    location.href = 'order_details.html?id='+j.order_id;
+  }catch(e){
+    err.textContent = 'Błąd zapisu.';
+  }
+};
+
+document.addEventListener('DOMContentLoaded', async ()=>{
+  await loadCaps();
+  await loadStatuses();
+  await loadUsers();
+  applyQuotePrefill();
+});
+
+let _quotePrefillTotal = null;
+let _quoteLinkId = null;
+function applyQuotePrefill(){
+  const fromQuote = new URLSearchParams(location.search).get('fromQuote');
+  if(!fromQuote) return;
+  try{
+    const p = JSON.parse(sessionStorage.getItem('quotePrefill')||'null');
+    if(p){
+      f_first.value = p.first||''; f_last.value = p.last||''; f_items.value = p.items||'';
+      f_phone.value = p.phone||''; f_email.value = p.email||'';
+      f_street.value = p.street||''; f_no.value = p.no||''; f_postcode.value = p.postcode||''; f_city.value = p.city||'';
+      _quotePrefillTotal = p.total ?? null;
+      _quoteLinkId = p.quoteId ?? null;
+      if(p.wycenaToken) sessionStorage.setItem('wycena_token', p.wycenaToken);
+      if(_quotePrefillTotal != null){
+        if(CAPS.can_view_finance) f_total.value = _quotePrefillTotal; else f_emp_total.value = _quotePrefillTotal;
+      }
+    }
+  }catch(e){}
+  sessionStorage.removeItem('quotePrefill');
+}
+</script>
+</body></html>

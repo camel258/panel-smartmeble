@@ -1,0 +1,192 @@
+<!doctype html><html lang="pl"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Użytkownicy – Smart Meble</title>
+<link rel="icon" href="assets/img/favicon.ico">
+<link rel="stylesheet" href="assets/css/theme_v17.css"/></head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand"><img src="assets/img/logo_smartmeble.png" style="height:28px"/></div>
+    
+    <nav>
+      <a  href="orders.html">Zamówienia aktualne</a>
+      <a  href="orders_finished.html">Zamówienia zakończone</a>
+      <a data-super-only  href="orders_deleted.html">Zamówienia usunięte</a>
+      <a data-finance-only  href="payments.html">Rozliczenia</a>
+      <a  href="schedule.html">Grafik</a>
+      <a data-admin-only class="active" href="users.html">Użytkownicy</a>
+      <a data-admin-only  href="statuses.html">Statusy</a><a data-admin-only href="notifications.html">Powiadomienia</a>
+      <a data-admin-only  href="settings.html">Ustawienia</a>
+    </nav>
+    
+  </aside>
+  <div class="content">
+    <div id="appTopbar" data-title="Użytkownicy" data-subtitle="Panel zamówień"></div>
+    <main class="main">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <input id="search" class="input" placeholder="Szukaj użytkownika...">
+          <button class="btn" id="addBtn">Dodaj użytkownika</button>
+        </div>
+        <table class="table">
+          <thead><tr><th>ID</th><th>Imię i nazwisko</th><th>Email</th><th>Rola</th><th>Aktywny</th><th>Akcje</th></tr></thead>
+          <tbody id="userTable"></tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Modal edycji -->
+<div id="modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);place-items:center">
+  <div class="card" style="min-width:320px;width:min(420px,90vw)">
+    <h3 id="modalTitle">Użytkownik</h3>
+    <div class="row">
+      <div><label>Imię i nazwisko</label><input class="input" id="m_name"></div>
+      <div><label>Email</label><input class="input" id="m_email"></div>
+      <div><label>Hasło (zmiana opcjonalna)</label><input class="input" type="password" id="m_pass"></div>
+      <div><label>Rola</label><select class="input" id="m_role"></select></div>
+      <div><label>Aktywny</label><select class="input" id="m_active">
+        <option value="1">Tak</option>
+        <option value="0">Nie</option>
+      </select></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:10px">
+      <button class="btn" id="saveBtn">Zapisz</button>
+      <button class="btn" style="background:#555;color:#fff" id="cancelBtn">Anuluj</button>
+    </div>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="assets/js/helpers_ext.js"></script>
+<script src="assets/js/menu.js"></script>
+<script src="assets/js/topbar.js"></script>
+<script src="assets/js/roles_loader.js"></script>
+
+<script>
+/* Users CRUD – naprawa modala + brak globali typu m_role */
+function logout(){ localStorage.removeItem('token'); location.href='login.html'; }
+
+const modal = document.getElementById('modal');
+const userTable = document.getElementById('userTable');
+const addBtn = document.getElementById('addBtn');
+const searchEl = document.getElementById('search');
+const cancelBtn = document.getElementById('cancelBtn');
+const saveBtn = document.getElementById('saveBtn');
+
+const m_name = document.getElementById('m_name');
+const m_email = document.getElementById('m_email');
+const m_pass = document.getElementById('m_pass');
+const m_role = document.getElementById('m_role');
+const m_active = document.getElementById('m_active');
+
+let editingId = null;
+
+cancelBtn.onclick = ()=>{ modal.style.display='none'; };
+
+async function apiPostAny(paths, data){
+  let lastErr=null;
+  for(const p of paths){
+    try { return await apiPost(p, data); }
+    catch(e){ lastErr=e; }
+  }
+  throw lastErr || new Error('request_failed');
+}
+
+function escapeHtml(s){
+  return String(s??'').replace(/[&<>"']/g, m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[m]));
+}
+
+async function openModal(title, u){
+  document.getElementById('modalTitle').textContent = title;
+  editingId = u ? Number(u.id) : null;
+  m_name.value = u?.full_name || '';
+  m_email.value = u?.email || '';
+  m_pass.value = '';
+  m_active.value = (u?.is_active ?? 1);
+  // role select from DB
+  await loadRolesIntoSelect(m_role, (u?.role_id ?? 2));
+  modal.style.display = 'grid';
+}
+
+addBtn.onclick = ()=>openModal('Nowy użytkownik', null);
+
+async function loadUsers(){
+  try{
+    const q = searchEl.value.trim();
+    const res = await apiGet('users.php' + (q ? ('?q='+encodeURIComponent(q)) : ''));
+    userTable.innerHTML = '';
+    (res.items||[]).forEach(u=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${escapeHtml(u.id)}</td>
+        <td>${escapeHtml(u.full_name)}</td>
+        <td>${escapeHtml(u.email)}</td>
+        <td>${escapeHtml(u.role_name || u.role_id || '')}</td>
+        <td>${Number(u.is_active)===1 ? 'Tak' : 'Nie'}</td>
+        <td>
+          <button class="btn" data-act="edit" data-id="${u.id}">Edytuj</button>
+          <button class="btn" style="background:#555;color:#fff" data-act="del" data-id="${u.id}">Usuń</button>
+        </td>`;
+      userTable.appendChild(tr);
+    });
+  }catch(e){
+    console.error('users load fail', e);
+    userTable.innerHTML = `<tr><td colspan="6" style="color:#ef4444">Nie udało się wczytać użytkowników.</td></tr>`;
+  }
+}
+
+userTable.addEventListener('click', async (ev)=>{
+  const btn = ev.target.closest('button[data-act]');
+  if(!btn) return;
+  const id = Number(btn.dataset.id);
+  const act = btn.dataset.act;
+  if(act==='edit'){
+    try{
+      const r = await apiGet('users.php?id='+id);
+      const u = (r.item || (r.items||[]).find(x=>Number(x.id)===id));
+      await openModal('Edytuj użytkownika', u);
+    }catch(e){ alert('Nie udało się wczytać użytkownika.'); }
+  }
+  if(act==='del'){
+    if(!confirm('Na pewno usunąć użytkownika?')) return;
+    try{
+      await apiPostAny(['users_delete.php','users_remove.php'], {id});
+      loadUsers();
+    }catch(e){ alert('Błąd usuwania użytkownika.'); }
+  }
+});
+
+saveBtn.onclick = async ()=>{
+  const data = {
+    full_name: m_name.value.trim(),
+    email: m_email.value.trim(),
+    password: m_pass.value.trim(),
+    role_id: Number(m_role.value || 0),
+    is_active: Number(m_active.value || 0)
+  };
+  try{
+    if(editingId){
+      data.id = editingId;
+      await apiPostAny(['users_edit.php','users_update.php'], data);
+    }else{
+      await apiPostAny(['users_add.php','users_create.php'], data);
+    }
+    modal.style.display='none';
+    loadUsers();
+  }catch(e){
+    console.error('save user fail', e);
+    alert('Błąd zapisu użytkownika.');
+  }
+};
+
+searchEl.oninput = ()=>loadUsers();
+
+document.addEventListener('DOMContentLoaded', async ()=>{
+  if(typeof applyMenu === 'function') await applyMenu();
+  loadUsers();
+});
+</script>
+
+</body></html>

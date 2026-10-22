@@ -1,0 +1,100 @@
+<!doctype html><html lang="pl"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Smart Meble – Zamówienia usunięte</title>
+<link rel="icon" href="assets/img/favicon.ico">
+<link rel="stylesheet" href="assets/css/theme_v17.css"/></head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand"><img src="assets/img/logo_smartmeble.png" style="height:28px"/><div>PANEL</div></div>
+    <nav>
+      <a href="orders.html">Zamówienia aktualne</a>
+      <a href="orders_finished.html">Zamówienia zakończone</a>
+      <a data-super-only class="active" href="orders_deleted.html">Zamówienia usunięte</a>
+      <a data-finance-only href="payments.html">Rozliczenia</a>
+      <a href="schedule.html">Grafik</a>
+      <a data-admin-only href="users.html">Użytkownicy</a>
+      <a data-admin-only href="statuses.html">Statusy</a><a data-admin-only href="notifications.html">Powiadomienia</a>
+      <a data-admin-only href="settings.html">Ustawienia</a>
+    </nav>
+  </aside>
+  <div class="content">
+    <div id="appTopbar" data-title="Zamówienia usunięte" data-subtitle="Panel zamówień"></div>
+    <main class="main">
+      <div id="err" class="err" style="margin-bottom:10px"></div>
+      <div class="card">
+        <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
+          <input id="q" class="input" placeholder="Szukaj… (klient / przedmiot / powód)">
+          <button class="btn" id="go">Szukaj</button>
+        </div>
+        <div id="bulkBar" class="card" style="display:none;margin-bottom:12px;padding:12px;background:#f8fafc;border:1px solid var(--line)">
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <b id="bulkCount">Zaznaczono: 0</b>
+            <button class="btn" id="bulkRestoreBtn">Przywróć</button>
+            <button class="btn" id="bulkPurgeBtn" style="background:#555;color:#fff">Usuń permanentnie</button>
+            <button class="btn" id="bulkClearBtn">Wyczyść zaznaczenie</button>
+          </div>
+        </div>
+        <div style="overflow:auto">
+          <table class="table">
+            <thead><tr><th style="width:36px"><input type="checkbox" id="checkAll"></th><th>Klient</th><th>Przedmiot</th><th>Nowa data</th><th>Powód usunięcia</th><th>Usunięto</th><th>Akcje</th></tr></thead>
+            <tbody id="tb"></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+<script src="config.js"></script><script src="assets/js/helpers_ext.js"></script><script src="assets/js/menu.js"></script><script src="assets/js/topbar.js"></script>
+<script>
+function logout(){ localStorage.removeItem('token'); location.href='login.html'; }
+function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+const selectedIds = new Set();
+function updateBulkBar(){ const n=selectedIds.size; bulkBar.style.display=n>0?'':'none'; bulkCount.textContent='Zaznaczono: '+n; document.querySelectorAll('.order-check').forEach(ch=>{ ch.checked=selectedIds.has(Number(ch.value)); }); const all=document.querySelectorAll('.order-check').length; const checked=document.querySelectorAll('.order-check:checked').length; checkAll.checked=all>0&&checked===all; checkAll.indeterminate=checked>0&&checked<all; }
+async function bulkAction(payload,msg){ if(!selectedIds.size) return; try{ await apiPost('orders_bulk.php', Object.assign({}, payload, { ids:[...selectedIds] })); selectedIds.clear(); err.textContent=msg||'Operacja wykonana ✅'; await load(); }catch(e){ console.error(e); err.textContent='Nie udało się wykonać operacji zbiorczej.'; } }
+async function load(){
+  try{
+    err.textContent='';
+    const q = document.getElementById('q').value.trim();
+    const qs = new URLSearchParams(); if(q) qs.set('q',q);
+    const r = await apiGet('orders_deleted.php'+(qs.toString()?('?'+qs.toString()):''));
+    tb.innerHTML='';
+    (r.items||[]).forEach(o=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML = `
+        <td><input type="checkbox" class="order-check" value="${o.id}"></td>
+        <td>${esc((o.client_first_name||'')+' '+(o.client_last_name||''))}</td>
+        <td>${esc(o.item_description||'')}</td>
+        <td>${esc(o.install_date_new||'')}</td>
+        <td>${esc(o.deleted_reason||'')}</td>
+        <td>${esc(o.deleted_at||'')}</td>
+        <td style="display:flex;gap:8px">
+          <button class="btn" data-act="restore" data-id="${o.id}">Przywróć</button>
+          <button class="btn" data-act="purge" data-id="${o.id}" style="background:#555;color:#fff">Usuń permanentnie</button>
+        </td>`;
+      tr.querySelector('.order-check').addEventListener('change', (e)=>{ const id=Number(e.target.value); if(e.target.checked) selectedIds.add(id); else selectedIds.delete(id); updateBulkBar(); });
+      tr.querySelector('[data-act="restore"]').onclick = async ()=>{
+        if(!confirm('Przywrócić to zamówienie do aktywnych?')) return;
+        await apiPost('order_restore.php',{id:o.id});
+        load();
+      };
+      tr.querySelector('[data-act="purge"]').onclick = async ()=>{
+        if(!confirm('Na pewno usunąć PERMANENTNIE?')) return;
+        await apiPost('order_delete_permanent.php',{order_id:o.id});
+        load();
+      };
+      tb.appendChild(tr);
+    });
+    updateBulkBar();
+  }catch(e){
+    err.textContent='Brak dostępu (tylko Super Admin) lub błąd serwera.';
+  }
+}
+checkAll.onchange = ()=>{ document.querySelectorAll('.order-check').forEach(ch=>{ const id=Number(ch.value); if(checkAll.checked){ selectedIds.add(id); ch.checked=true; } else { selectedIds.delete(id); ch.checked=false; } }); updateBulkBar(); };
+bulkRestoreBtn.onclick = async ()=>{ if(!confirm('Przywrócić zaznaczone zamówienia?')) return; await bulkAction({action:'restore'}, 'Przywrócono zaznaczone zamówienia ✅'); };
+bulkPurgeBtn.onclick = async ()=>{ if(!confirm('Na pewno permanentnie usunąć zaznaczone zamówienia?')) return; await bulkAction({action:'purge'}, 'Permanentnie usunięto zaznaczone zamówienia ✅'); };
+bulkClearBtn.onclick = ()=>{ selectedIds.clear(); updateBulkBar(); };
+go.onclick = load;
+document.addEventListener('DOMContentLoaded', load);
+</script>
+</body></html>

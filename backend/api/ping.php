@@ -1,0 +1,1 @@
+<?php header('Content-Type: application/json; charset=utf-8'); $auth=$_SERVER['HTTP_AUTHORIZATION'] ?? ($_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? null); echo json_encode(['pong'=>true,'token'=>$auth,'time'=>time()]);

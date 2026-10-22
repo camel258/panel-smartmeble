@@ -1,0 +1,146 @@
+<!doctype html><html lang="pl"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Rozliczenia – Smart Meble</title>
+<link rel="icon" href="assets/img/favicon.ico">
+<link rel="stylesheet" href="assets/css/theme_v17.css"/>
+<style>
+.selection-sticky{position:sticky;top:10px;z-index:30;background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px;box-shadow:0 8px 20px rgba(15,23,42,.12);margin-bottom:12px}
+.month-sum-row td{color:#b91c1c;font-weight:700;border-top:2px solid rgba(185,28,28,.18);background:rgba(185,28,28,.04)}
+@media (max-width:768px){.selection-sticky{top:6px}}
+</style></head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand"><img src="assets/img/logo_smartmeble.png" style="height:28px"/><div>PANEL</div></div>
+    <nav>
+      <a href="orders.html">Zamówienia aktualne</a>
+      <a href="orders_finished.html">Zamówienia zakończone</a>
+      <a data-super-only href="orders_deleted.html">Zamówienia usunięte</a>
+      <a class="active" data-finance-only href="payments.html">Rozliczenia</a>
+      <a href="schedule.html">Grafik</a>
+      <a data-admin-only href="users.html">Użytkownicy</a>
+      <a data-admin-only href="statuses.html">Statusy</a><a data-admin-only href="notifications.html">Powiadomienia</a>
+      <a data-admin-only href="settings.html">Ustawienia</a>
+    </nav>
+  </aside>
+  <div class="content">
+    <div id="appTopbar" data-title="Rozliczenia" data-subtitle="Panel zamówień"></div>
+    <main class="main">
+      <div id="err" class="err" style="margin-bottom:10px"></div>
+      <div class="card">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin-bottom:12px">
+          <div><label>Od</label><input class="input" id="from" type="date"></div>
+          <div><label>Do</label><input class="input" id="to" type="date"></div>
+          <button class="btn" id="loadBtn" type="button">Pokaż</button><button class="btn" id="exportBtn" type="button">Eksport XLS</button>
+        </div>
+
+        <div id="selectedSumBar" class="selection-sticky" style="display:none">
+          <b id="selectedSumWrap"></b>
+        </div>
+        <div style="overflow:auto">
+          <table class="table">
+            <thead><tr>
+              <th style="width:36px"><input type="checkbox" id="checkAll"></th><th>Data</th><th>Klient</th><th>Przedmiot zamówienia</th><th>Kwota wpłaty</th><th>Opis wpłaty</th>
+            </tr></thead>
+            <tbody id="tb"></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="assets/js/helpers_ext.js"></script>
+<script src="assets/js/menu.js"></script>
+<script src="assets/js/topbar.js"></script>
+<script>
+function logout(){ localStorage.removeItem('token'); location.href='login.html'; }
+function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function monthKey(d){ return (d||'').slice(0,7); }
+function monthName(k){
+  const y = k.slice(0,4), m = parseInt(k.slice(5,7),10);
+  return monthNamePL(m) + ' ' + y;
+}
+
+const selectedPaymentIds = new Set();
+const paymentsById = new Map();
+
+function groupByMonth(rows){
+  const map = new Map();
+  rows.forEach(r=>{
+    const key = monthKey(r.paid_at||'') || 'brak';
+    if(!map.has(key)) map.set(key, []);
+    map.get(key).push(r);
+  });
+  return Array.from(map.entries()).sort((a,b)=>b[0].localeCompare(a[0]));
+}
+
+function updateSelectedPaymentsSum(){
+  let sum = 0;
+  selectedPaymentIds.forEach(id=>{ const row = paymentsById.get(String(id)); if(row) sum += Number(row.amount||0); });
+  const bar = document.getElementById('selectedSumBar');
+  selectedSumWrap.textContent = selectedPaymentIds.size ? ('Suma zaznaczonych wpłat: ' + fmtMoney(sum)) : '';
+  if(bar) bar.style.display = selectedPaymentIds.size ? '' : 'none';
+  const all = document.querySelectorAll('.payment-check').length;
+  const checked = document.querySelectorAll('.payment-check:checked').length;
+  if(checkAll){ checkAll.checked = all>0 && checked===all; checkAll.indeterminate = checked>0 && checked<all; }
+}
+
+async function load(){
+  try{
+    err.textContent='';
+    const qs = new URLSearchParams();
+    if(from.value) qs.set('from', from.value);
+    if(to.value) qs.set('to', to.value);
+    const r = await apiGet('payments_list.php'+(qs.toString()?('?'+qs.toString()):''));
+    if(r.from && !from.value) from.value=r.from;
+    if(r.to && !to.value) to.value=r.to;
+
+    const items = r.items||[];
+    tb.innerHTML='';
+    paymentsById.clear();
+    items.forEach(it=>paymentsById.set(String(it.id), it));
+
+    const groups = groupByMonth(items);
+    groups.forEach(([ym, monthItems])=>{
+      const monthLabel = ym && ym !== 'brak' ? monthName(ym) : 'Brak daty';
+      const monthHead = document.createElement('tr');
+      monthHead.innerHTML = `<td colspan="6" style="background:rgba(0,0,0,.08);font-weight:700">${esc(monthLabel)}</td>`;
+      tb.appendChild(monthHead);
+
+      let monthSum = 0;
+      monthItems.sort((a,b)=>String(a.paid_at||'').localeCompare(String(b.paid_at||'')));
+
+    monthItems.forEach(it=>{
+        monthSum += Number(it.amount||0);
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td><input type="checkbox" class="payment-check" value="${esc(String(it.id))}"></td><td>${esc(it.paid_at||'')}</td><td>${esc(it.client||'')}</td><td title="${esc(it.item_description||'')}">${esc(it.item_description||'')}</td><td>${fmtMoney(it.amount)}</td><td>${esc(it.label||'')}</td>`;
+        tb.appendChild(tr);
+      });
+
+      const sumTr = document.createElement('tr');
+      sumTr.className = 'month-sum-row';
+      sumTr.innerHTML = `<td colspan="4" style="text-align:right">Suma miesiąca:</td><td>${fmtMoney(monthSum)}</td><td></td>`;
+      tb.appendChild(sumTr);
+    });
+
+    document.querySelectorAll('.payment-check').forEach(ch=>{
+      ch.checked = selectedPaymentIds.has(String(ch.value));
+      ch.addEventListener('change', ()=>{ if(ch.checked) selectedPaymentIds.add(String(ch.value)); else selectedPaymentIds.delete(String(ch.value)); updateSelectedPaymentsSum(); });
+    });
+    updateSelectedPaymentsSum();
+  }catch(e){
+    err.textContent='Błąd połączenia z serwerem (rozliczenia).';
+  }
+}
+
+checkAll.addEventListener('change', ()=>{
+  document.querySelectorAll('.payment-check').forEach(ch=>{ const key=String(ch.value); ch.checked = checkAll.checked; if(checkAll.checked) selectedPaymentIds.add(key); else selectedPaymentIds.delete(key); });
+  updateSelectedPaymentsSum();
+});
+exportBtn.onclick = ()=>{ const qs = new URLSearchParams(); if(from.value) qs.set('from', from.value); if(to.value) qs.set('to', to.value); location.href = API_BASE + 'payments_export.php' + (qs.toString()?('?'+qs.toString()):''); };
+loadBtn.onclick = load;
+document.addEventListener('DOMContentLoaded', load);
+</script>
+</body></html>

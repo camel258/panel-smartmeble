@@ -1,0 +1,4 @@
+Options -Indexes
+<FilesMatch "\.(php|phtml|php7|php8)$">
+Deny from all
+</FilesMatch>

@@ -1,0 +1,124 @@
+<!doctype html><html lang="pl"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Rozliczenia – Smart Meble</title>
+<link rel="icon" href="assets/img/favicon.ico">
+<link rel="stylesheet" href="assets/css/theme_v17.css"/></head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand"><img src="assets/img/logo_smartmeble.png" style="height:28px"/><div>PANEL</div></div>
+    <nav id="navLinks">
+      <a href="orders.html">Zamówienia aktualne</a>
+      <a href="orders_finished.html">Zamówienia zakończone</a>
+      <a href="orders_deleted.html" id="navDeleted" style="display:none">Zamówienia usunięte</a>
+      <a href="settlements.html" class="active" id="navSettle" style="display:none">Rozliczenia</a>
+      <a href="users.html">Użytkownicy</a>
+      <a href="statuses.html">Statusy</a><a href="notifications.html">Powiadomienia</a>
+      <a href="settings.html">Ustawienia</a>
+      <a href="schedule.html">Grafik</a>
+    </nav>
+  </aside>
+  <div class="content">
+    <div id="appTopbar" data-title="Rozliczenia" data-subtitle="Panel zamówień"></div>
+    <main class="main">
+      <div class="card">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin-bottom:12px">
+          <div><label>Od</label><input class="input" type="date" id="from"></div>
+          <div><label>Do</label><input class="input" type="date" id="to"></div>
+          <button class="btn" id="loadBtn">Pokaż</button>
+          <div id="info" style="margin-left:auto;color:var(--muted)"></div>
+        </div>
+        <div id="err" class="err" style="margin-bottom:10px"></div>
+        <div id="wrap" style="overflow:auto"></div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="assets/js/helpers_ext.js"></script>
+<script>
+function logout(){ localStorage.removeItem('token'); location.href='login.html'; }
+
+function monthStart(d){ return new Date(d.getFullYear(), d.getMonth(), 1); }
+function fmt(d){ return d.toISOString().slice(0,10); }
+
+async function initNav(){
+  try{
+    const me = await apiGet('session_user.php');
+    const u = me.user || {};
+    // superadmin role_id 999
+    if(Number(u.role_id||u.role||0)===999) document.getElementById('navDeleted').style.display='';
+    // finance for admin/superadmin – backend will also enforce
+    document.getElementById('navSettle').style.display='';
+  }catch(e){}
+}
+
+function render(items){
+  const wrap = document.getElementById('wrap');
+  if(!items.length){ wrap.innerHTML='<div style="color:var(--muted)">Brak wpłat w tym zakresie.</div>'; return; }
+
+  // group by YYYY-MM
+  const groups = {};
+  items.forEach(r=>{
+    const key = (r.pay_date||'').slice(0,7);
+    (groups[key]=groups[key]||[]).push(r);
+  });
+
+  const keys = Object.keys(groups).sort();
+  wrap.innerHTML='';
+  keys.forEach(k=>{
+    const rows = groups[k];
+    let sum = 0;
+    const section = document.createElement('section');
+    section.innerHTML = `<h3 style="margin:14px 6px">${k}</h3>
+      <table class="table"><thead><tr>
+        <th>DATA</th><th>KLIENT</th><th>PRZEDMIOT ZAMÓWIENIA</th><th>KWOTA WPŁATY</th><th>OPIS WPŁATY</th>
+      </tr></thead><tbody></tbody></table>
+      <div style="text-align:right;margin-top:8px;font-weight:700;color:#dc2626">Suma: <span class="sum"></span></div>`;
+    const tb = section.querySelector('tbody');
+    rows.forEach(r=>{
+      sum += Number(r.amount||0);
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${r.pay_date||''}</td>
+        <td>${esc(r.client||'')}</td>
+        <td title="${esc(r.item_description||'')}">${esc(r.item_description||'')}</td>
+        <td>${fmtMoney(r.amount)}</td>
+        <td>${esc(r.note||'')}</td>`;
+      tb.appendChild(tr);
+    });
+    section.querySelector('.sum').textContent = fmtMoney(sum);
+    wrap.appendChild(section);
+  });
+}
+
+async function load(){
+  document.getElementById('err').textContent='';
+  try{
+    const from = document.getElementById('from').value;
+    const to   = document.getElementById('to').value;
+    const qs = new URLSearchParams();
+    if(from) qs.set('from',from);
+    if(to) qs.set('to',to);
+    const res = await apiGet('payments_list.php' + (qs.toString()?('?'+qs.toString()):''));
+    render(res.items||[]);
+  }catch(e){
+    document.getElementById('err').textContent='Błąd połączenia z serwerem (rozliczenia).';
+  }
+}
+
+document.getElementById('loadBtn').onclick = load;
+
+document.addEventListener('DOMContentLoaded', ()=>{
+  initNav();
+  // default: previous month + current month
+  const now = new Date();
+  const prev = new Date(now.getFullYear(), now.getMonth()-1, 1);
+  const start = monthStart(prev);
+  const end = new Date(now.getFullYear(), now.getMonth()+1, 0);
+  document.getElementById('from').value = fmt(start);
+  document.getElementById('to').value = fmt(end);
+  load();
+});
+</script>
+</body></html>

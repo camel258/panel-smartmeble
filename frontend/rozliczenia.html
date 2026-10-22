@@ -1,0 +1,149 @@
+<!doctype html><html lang="pl"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Rozliczenia – Smart Meble</title>
+<link rel="icon" href="assets/img/favicon.ico">
+<link rel="stylesheet" href="assets/css/theme_v17.css"/>
+<style>
+.selection-sticky{position:sticky;top:10px;z-index:30;background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px;box-shadow:0 8px 20px rgba(15,23,42,.12);margin-bottom:12px}
+.month-sum-row td{color:#b91c1c;font-weight:700;border-top:2px solid rgba(185,28,28,.18);background:rgba(185,28,28,.04)}
+@media (max-width:768px){.selection-sticky{top:6px}}
+</style></head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand"><img src="assets/img/logo_smartmeble.png" style="height:28px"/><div>PANEL</div></div>
+    <nav>
+      <a href="orders.html">Zamówienia aktualne</a>
+      <a href="orders_finished.html">Zamówienia zakończone</a>
+      <a href="orders_deleted.html" id="navDeleted" style="display:none">Zamówienia usunięte</a>
+      <a class="active" href="rozliczenia.html" id="navRozl" style="display:none">Rozliczenia</a>
+      <a href="schedule.html">Grafik</a>
+      <a href="users.html">Użytkownicy</a>
+      <a href="statuses.html">Statusy</a><a href="notifications.html">Powiadomienia</a>
+      <a href="settings.html">Ustawienia</a>
+    </nav>
+  </aside>
+  <div class="content">
+    <div id="appTopbar" data-title="Rozliczenia" data-subtitle="Panel zamówień"></div>
+    <main class="main">
+      <div id="err" class="err" style="margin-bottom:10px"></div>
+      <div class="card">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin-bottom:12px">
+          <div><label>Od</label><input class="input" type="date" id="from"></div>
+          <div><label>Do</label><input class="input" type="date" id="to"></div>
+          <button class="btn" id="go">Pokaż</button><button class="btn" id="exportBtn" type="button">Eksport XLS</button>
+        </div>
+        <div id="selectedSumBar" class="selection-sticky" style="display:none">
+          <b id="selectedSumWrap"></b>
+        </div>
+        <div style="overflow:auto">
+          <table class="table">
+            <thead><tr>
+              <th style="width:36px"><input type="checkbox" id="checkAll"></th><th>Data</th><th>Klient</th><th>Przedmiot zamówienia</th><th>Kwota wpłaty</th><th>Opis wpłaty</th>
+            </tr></thead>
+            <tbody id="tb"></tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="assets/js/helpers_ext.js"></script>
+<script>
+function logout(){ localStorage.removeItem('token'); location.href='login.html'; }
+function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function monthKey(d){ return (d||'').slice(0,7); }
+function monthName(k){
+  const y = k.slice(0,4), m = parseInt(k.slice(5,7),10);
+  return monthNamePL(m) + ' ' + y;
+}
+
+async function initNav(){
+  try{
+    const me = await apiGet('session_check.php');
+    const role = Number(me?.user?.role||0);
+    if(role===999) document.getElementById('navDeleted').style.display='';
+    if(role===1 || role===999) document.getElementById('navRozl').style.display='';
+    else { location.href='orders.html'; }
+  }catch(e){ location.href='login.html'; }
+}
+
+const selectedPaymentIds = new Set();
+const paymentsById = new Map();
+
+function updateSelectedPaymentsSum(){
+  let sum = 0;
+  selectedPaymentIds.forEach(id=>{ const row = paymentsById.get(String(id)); if(row) sum += Number(row.amount||0); });
+  const bar = document.getElementById('selectedSumBar');
+  selectedSumWrap.textContent = selectedPaymentIds.size ? ('Suma zaznaczonych wpłat: ' + fmtMoney(sum)) : '';
+  if(bar) bar.style.display = selectedPaymentIds.size ? '' : 'none';
+  const all = document.querySelectorAll('.payment-check').length;
+  const checked = document.querySelectorAll('.payment-check:checked').length;
+  if(checkAll){ checkAll.checked = all>0 && checked===all; checkAll.indeterminate = checked>0 && checked<all; }
+}
+
+function groupByMonth(rows){
+  const map = new Map();
+  rows.forEach(r=>{
+    const key = monthKey(r.paid_at||'') || 'brak';
+    if(!map.has(key)) map.set(key, []);
+    map.get(key).push(r);
+  });
+  return Array.from(map.entries()).sort((a,b)=>b[0].localeCompare(a[0]));
+}
+
+async function load(){
+  err.textContent='';
+  const qs = new URLSearchParams();
+  if(from.value) qs.set('from', from.value);
+  if(to.value) qs.set('to', to.value);
+  const res = await apiGet('payments_list.php' + (qs.toString()?('?'+qs.toString()):''));
+  if(res.from && !from.value) from.value = res.from;
+  if(res.to && !to.value) to.value = res.to;
+
+  const items = res.items||[];
+  tb.innerHTML='';
+  paymentsById.clear();
+  items.forEach(it=>paymentsById.set(String(it.id), it));
+
+  const groups = groupByMonth(items);
+  groups.forEach(([ym, monthItems])=>{
+    const monthLabel = ym && ym !== 'brak' ? monthName(ym) : 'Brak daty';
+    const monthHead = document.createElement('tr');
+    monthHead.innerHTML = `<td colspan="6" style="background:rgba(0,0,0,.08);font-weight:700">${esc(monthLabel)}</td>`;
+    tb.appendChild(monthHead);
+
+    let monthSum = 0;
+    monthItems.sort((a,b)=>String(a.paid_at||'').localeCompare(String(b.paid_at||'')));
+
+    monthItems.forEach(it=>{
+      monthSum += Number(it.amount||0);
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td><input type="checkbox" class="payment-check" value="${esc(String(it.id))}"></td><td>${esc(it.paid_at||'')}</td><td>${esc(it.client||'')}</td><td title="${esc(it.item_description||'')}">${esc(it.item_description||'')}</td><td>${fmtMoney(it.amount)}</td><td>${esc(it.label||'')}</td>`;
+      tb.appendChild(tr);
+    });
+
+    const sumTr = document.createElement('tr');
+    sumTr.className = 'month-sum-row';
+    sumTr.innerHTML = `<td colspan="4" style="text-align:right">Suma miesiąca:</td><td>${fmtMoney(monthSum)}</td><td></td>`;
+    tb.appendChild(sumTr);
+  });
+
+  document.querySelectorAll('.payment-check').forEach(ch=>{
+    ch.checked = selectedPaymentIds.has(String(ch.value));
+    ch.addEventListener('change', ()=>{ if(ch.checked) selectedPaymentIds.add(String(ch.value)); else selectedPaymentIds.delete(String(ch.value)); updateSelectedPaymentsSum(); });
+  });
+  updateSelectedPaymentsSum();
+}
+
+checkAll.addEventListener('change', ()=>{
+  document.querySelectorAll('.payment-check').forEach(ch=>{ const key = String(ch.value); ch.checked = checkAll.checked; if(checkAll.checked) selectedPaymentIds.add(key); else selectedPaymentIds.delete(key); });
+  updateSelectedPaymentsSum();
+});
+document.getElementById('exportBtn').onclick = ()=>{ const qs = new URLSearchParams(); if(from.value) qs.set('from', from.value); if(to.value) qs.set('to', to.value); location.href = API_BASE + 'payments_export.php' + (qs.toString()?('?'+qs.toString()):''); };
+document.getElementById('go').onclick = load;
+document.addEventListener('DOMContentLoaded', async ()=>{ await initNav(); await load(); });
+</script>
+</body></html>

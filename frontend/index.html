@@ -1,0 +1,6 @@
+<!doctype html><html lang="pl"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Smart Meble – Panel</title><link rel="icon" href="assets/img/favicon.ico"><link rel="stylesheet" href="assets/css/app.css"/></head>
+<body><div class="splash" id="splash"><div style="display:flex;flex-direction:column;align-items:center;gap:12px"><div class="loader"></div><div>Ładowanie danych…</div><div id="err" class="err"></div></div></div>
+<script src="config.js"></script><script src="assets/js/helpers.js"></script>
+<script>(async function(){try{await debugLog('Boot → session_check');const sess=await apiGet('session_check.php');await debugLog('session_check OK',sess);window.location.href='aktualnosci.html';}catch(e){await debugLog('session_check FAIL',{error:String(e)});window.location.href='login.html';}})();</script>
+</body></html>

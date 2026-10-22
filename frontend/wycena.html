@@ -1,0 +1,147 @@
+<!doctype html><html lang="pl"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Wycena – Smart Meble</title>
+<link rel="icon" href="assets/img/favicon.ico">
+<link rel="stylesheet" href="assets/css/theme_v17.css"/>
+<style>
+.wtable{width:100%;border-collapse:collapse;font-size:13px}
+.wtable th,.wtable td{padding:8px 10px;border-bottom:1px solid var(--border);text-align:left;vertical-align:top}
+.wtable tr{cursor:pointer}
+.wtable tr:hover td{background:rgba(255,255,255,.04)}
+.gate-overlay{position:fixed;inset:0;background:rgba(11,15,20,.92);display:flex;align-items:center;justify-content:center;z-index:2000}
+.gate-box{background:#181818;border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:28px 30px;max-width:360px;width:100%}
+.gate-box h2{margin:0 0 6px;font-size:18px}
+.gate-box p{color:var(--muted);font-size:13px;margin:0 0 16px}
+.gate-err{color:#f87171;font-size:13px;margin-top:8px;min-height:16px}
+.money{font-weight:700}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand"><img src="assets/img/logo_smartmeble.png" style="height:28px"/></div>
+    <nav></nav>
+  </aside>
+  <div class="content">
+    <div class="topbar">
+      <div><b>Wycena</b></div>
+      <div style="display:flex;gap:10px">
+        <button class="btn" id="addBtn">+ Dodaj wycenę</button>
+        <button class="btn" id="materialsBtn" style="background:#555;color:#fff">Baza materiałów</button>
+        <button class="btn" id="logoutBtn">Wyloguj</button>
+      </div>
+    </div>
+    <main class="main">
+      <div class="card">
+        <table class="wtable">
+          <thead><tr>
+            <th>Data wyceny</th><th>Klient</th><th>Źródło zapytania</th><th>Przedmiot wyceny</th><th>Łączna wartość</th><th>Przygotował</th>
+          </tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+        <div id="empty" style="display:none;color:var(--muted);padding:14px">Brak wycen. Kliknij „Dodaj wycenę”, aby utworzyć pierwszą.</div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div class="gate-overlay" id="gate">
+  <div class="gate-box">
+    <h2>Moduł Wycena</h2>
+    <p>Wpisz hasło dostępu do modułu.</p>
+    <input class="input" id="gatePass" type="password" placeholder="Hasło">
+    <div style="margin-top:12px"><button class="btn" id="gateBtn" style="width:100%">Odblokuj</button></div>
+    <div class="gate-err" id="gateErr"></div>
+  </div>
+</div>
+
+<script src="config.js"></script><script src="assets/js/menu.js"></script>
+<script>
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c])); }
+function fmtMoney(v){ const n=Number(v||0); return new Intl.NumberFormat('pl-PL',{style:'currency',currency:'PLN'}).format(n); }
+
+function wycenaHeaders(){ return {'Content-Type':'application/json', ...authHeaders(), 'X-Wycena-Token': sessionStorage.getItem('wycena_token')||''}; }
+async function wApiGet(path){
+  const r = await fetch(API_BASE+path, {headers: wycenaHeaders()});
+  const t = await r.text();
+  if(!r.ok) throw new Error(t);
+  return JSON.parse(t);
+}
+async function wApiPost(path, body){
+  const r = await fetch(API_BASE+path, {method:'POST', headers: wycenaHeaders(), body: JSON.stringify(body||{})});
+  const t = await r.text();
+  if(!r.ok) throw new Error(t);
+  return JSON.parse(t);
+}
+
+async function checkRole(){
+  try{
+    const r = await apiGet('session_check.php');
+    const role = Number(r?.user?.role_id ?? r?.user?.role ?? 0);
+    if(role !== 999){ location.href = 'orders.html'; return false; }
+    return true;
+  }catch(e){ location.href='login.html'; return false; }
+}
+
+function showGate(){ document.getElementById('gate').style.display='flex'; }
+function hideGate(){ document.getElementById('gate').style.display='none'; }
+
+document.getElementById('gateBtn').onclick = async ()=>{
+  const pass = document.getElementById('gatePass').value;
+  const errEl = document.getElementById('gateErr');
+  errEl.textContent='';
+  try{
+    const r = await apiPost('wycena_auth.php', {password: pass});
+    sessionStorage.setItem('wycena_token', r.token);
+    hideGate();
+    loadList();
+  }catch(e){
+    errEl.textContent = 'Nieprawidłowe hasło.';
+  }
+};
+document.getElementById('gatePass').addEventListener('keydown', e=>{ if(e.key==='Enter') document.getElementById('gateBtn').click(); });
+
+async function loadList(){
+  try{
+    const r = await wApiGet('wycena_api.php?action=list');
+    const items = r.items || [];
+    const tbody = document.getElementById('rows');
+    tbody.innerHTML = '';
+    document.getElementById('empty').style.display = items.length ? 'none' : '';
+    items.forEach(it=>{
+      const tr = document.createElement('tr');
+      const clientName = ((it.client_first_name||'')+' '+(it.client_last_name||'')).trim() || '—';
+      tr.innerHTML = '<td>'+esc(it.quote_date||'—')+'</td>'
+        + '<td>'+esc(clientName)+'</td>'
+        + '<td>'+esc(it.source||'—')+'</td>'
+        + '<td>'+esc(it.furniture_names||'—')+'</td>'
+        + '<td class="money">'+fmtMoney(it.total_value)+'</td>'
+        + '<td>'+esc(it.created_by_name||'—')+'</td>';
+      tr.onclick = ()=>location.href='wycena_details.html?id='+it.id;
+      tbody.appendChild(tr);
+    });
+  }catch(e){
+    if(String(e.message||'').includes('wycena_locked')){ showGate(); return; }
+    document.getElementById('rows').innerHTML = '<tr><td colspan="6">Błąd wczytywania listy.</td></tr>';
+  }
+}
+
+document.getElementById('addBtn').onclick = async ()=>{
+  try{
+    const r = await wApiPost('wycena_api.php', {action:'create'});
+    location.href = 'wycena_details.html?id='+r.id;
+  }catch(e){
+    if(String(e.message||'').includes('wycena_locked')){ showGate(); return; }
+    alert('Błąd tworzenia wyceny.');
+  }
+};
+document.getElementById('materialsBtn').onclick = ()=>location.href='wycena_materials.html';
+document.getElementById('logoutBtn').onclick = ()=>{ localStorage.removeItem('token'); location.href='login.html'; };
+
+document.addEventListener('DOMContentLoaded', async ()=>{
+  const ok = await checkRole();
+  if(!ok) return;
+  if(sessionStorage.getItem('wycena_token')){ loadList(); } else { showGate(); }
+});
+</script>
+</body></html>

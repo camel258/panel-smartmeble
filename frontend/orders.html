@@ -1,0 +1,510 @@
+<!doctype html><html lang="pl"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Smart Meble – Zamówienia</title>
+<link rel="icon" href="assets/img/favicon.ico"><link rel="stylesheet" href="assets/css/theme_v17.css"/>
+<style id="orders-columns-consistent">
+/* Spójne kolumny we wszystkich miesiącach, ale nadal responsywne */
+.ordersWrap{overflow:auto}
+.ordersTable{
+  width:100%;
+  table-layout:fixed;
+  border-collapse:collapse;
+}
+.ordersTable th,
+.ordersTable td{
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  padding:5px 8px;
+  font-size:12px;
+}
+.ordersTable .cell-ellipsis{
+  display:block;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.ordersTable .cell-no-ellipsis{
+  display:block;
+  overflow:visible;
+  text-overflow:clip;
+  white-space:nowrap;
+}
+
+
+/* mobile cards */
+.mobile-months{display:none}
+.mobile-month-section{margin:10px 0 18px}
+.selection-sticky{position:sticky;top:10px;z-index:30;box-shadow:0 8px 20px rgba(15,23,42,.12)}
+.measure-ok{color:#22c55e !important;font-weight:800}
+.measure-warn{color:#f59e0b !important;font-weight:800}
+.measure-overdue{color:#dc2626 !important;font-weight:800}
+.measure-done{color:#b8d51e !important;font-weight:800}
+@media (max-width:768px){.selection-sticky{top:6px}}
+.mobile-month-title{font-size:18px;font-weight:700;margin:0 0 10px 0}
+.mobile-order-card{background:#232323;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:10px 12px;margin-bottom:8px}
+.mobile-order-top{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.mobile-order-name{font-weight:700;font-size:14px;line-height:1.2}
+.mobile-order-scope{font-size:13px;color:#e5e7eb;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mobile-order-dates{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+.mobile-order-date{font-size:12px;color:#cbd5e1}
+.mobile-order-label{display:block;font-size:11px;color:var(--muted)}
+@media (max-width:768px){
+  .ordersWrap{display:none !important}
+  .mobile-months{display:block}
+}
+
+.wm-cell{display:flex;gap:6px;align-items:center;justify-content:center}
+.wm-dot{width:13px;height:13px;border-radius:999px;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;color:#111}
+.wm-dot.ok{background:#22c55e}
+.wm-dot.no{background:#dc2626;color:#fff}
+
+.stage-mini-icon{
+  border-radius:999px;
+  flex:none;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+}
+.stage-progress{
+  display:inline-flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:2px;
+  max-width:84px;
+  cursor:pointer;
+  padding:1px;
+  border-radius:8px;
+}
+.stage-progress:hover{ background:rgba(255,255,255,.06); }
+.stage-popover{
+  position:fixed;
+  z-index:1000;
+  background:#1c1c1c;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:12px;
+  padding:10px;
+  box-shadow:0 12px 30px rgba(0,0,0,.4);
+  display:grid;
+  grid-template-columns:repeat(2,minmax(150px,1fr));
+  gap:6px;
+  max-width:380px;
+}
+.stage-popover-item{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size:12px;
+  color:#9ca3af;
+  padding:4px 6px;
+  border-radius:8px;
+}
+.stage-popover-item.done{ color:#f3f7d8; background:rgba(183,214,28,.12); }
+tr.row-urgent-fix, tr.row-urgent-fix td{ background:rgba(220,38,38,.13) !important; }
+tr.row-urgent-fix:hover td{ background:rgba(220,38,38,.20) !important; }
+tr.row-fix-ready, tr.row-fix-ready td{ background:rgba(34,197,94,.15) !important; }
+tr.row-fix-ready:hover td{ background:rgba(34,197,94,.22) !important; }
+.mobile-order-card.row-urgent-fix{ background:rgba(220,38,38,.15) !important; border-color:rgba(220,38,38,.35) !important; }
+.mobile-order-card.row-fix-ready{ background:rgba(34,197,94,.18) !important; border-color:rgba(34,197,94,.4) !important; }
+
+</style>
+
+
+</head>
+<body><div class="app"><aside class="sidebar"><div class="brand"><img src="assets/img/logo_smartmeble.png" style="height:28px"/><div>PANEL</div></div><nav><a class="active" href="orders.html">Zamówienia aktualne</a><a href="orders_finished.html">Zamówienia zakończone</a><a data-super-only href="orders_deleted.html">Zamówienia usunięte</a><a data-finance-only href="payments.html">Rozliczenia</a><a data-admin-only href="import_orders.html">Import zamówień</a><a href="schedule.html">Grafik</a><a data-admin-only href="users.html">Użytkownicy</a><a data-admin-only href="statuses.html">Statusy</a><a data-admin-only href="notifications.html">Powiadomienia</a><a data-admin-only href="settings.html">Ustawienia</a></nav></aside>
+<div class="content"><div id="appTopbar" data-title="Zamówienia aktualne" data-subtitle="Panel zamówień"></div>
+<main class="main"><div id="err" class="err" style="margin-bottom:10px"></div><div class="card">
+<div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;align-items:center"><input id="q" class="input" placeholder="Szukaj: klient, przedmiot…"><select id="statusFilter" class="input"><option value="">Wszystkie statusy</option></select><input id="year" class="input" style="width:110px" placeholder="Rok"><input id="month" class="input" style="width:110px" placeholder="Miesiąc"><input id="from" class="input" type="date"><input id="to" class="input" type="date"><button class="btn" id="go">Szukaj</button><button class="btn" id="exportBtn">Eksport XLS</button><button class="btn" id="addOrderBtn" style="margin-left:auto">+ Dodaj zamówienie</button></div>
+
+<div id="bulkBar" class="card selection-sticky" style="display:none;margin-bottom:12px;padding:12px;background:#fff;border:1px solid var(--line)">
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+    <b id="bulkCount">Zaznaczono: 0</b>
+    <span id="bulkSums" style="display:none;color:#475569;font-weight:700"></span>
+    <button class="btn" id="bulkStatusBtn">Zmień status</button>
+    <button class="btn" id="bulkAssignBtn">Przypisz monterów</button>
+    <button class="btn" id="bulkSignerBtn">Osoba podpisująca umowę</button>
+    <button class="btn" id="bulkFinishBtn">Zakończ</button>
+    <button class="btn" id="bulkMeasureDoneBtn">Oznacz po pomiarach</button>
+    <button class="btn" id="bulkDeleteBtn">Przenieś do usuniętych</button>
+    <button class="btn" id="bulkClearBtn">Wyczyść zaznaczenie</button>
+  </div>
+</div>
+
+<div id="wrap"></div></div></main></div></div>
+<script src="config.js"></script><script src="assets/js/helpers_ext.js"></script><script src="assets/js/menu.js"></script><script src="assets/js/topbar.js"></script>
+<script>
+
+addOrderBtn.onclick=()=>location.href='order_add.html';
+function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function pill(name,color){ const c=color||'#166534'; return '<span style="display:inline-block;padding:6px 10px;border-radius:999px;color:#fff;background:'+c+'">'+esc(name||'—')+'</span>'; }
+function measureDaysLeft(v){
+  if(!v) return null;
+  const d=new Date(v+'T00:00:00');
+  if(isNaN(d)) return null;
+  const now=new Date(); now.setHours(0,0,0,0);
+  return Math.floor((d-now)/86400000);
+}
+function measureClass(v, done){
+  if(done) return 'measure-done';
+  const left = measureDaysLeft(v);
+  if(left===null) return '';
+  if(left <= 7) return 'measure-overdue';
+  if(left <= 13) return 'measure-warn';
+  return 'measure-ok';
+}
+function isMeasureOverdue(v){ const left = measureDaysLeft(v); return left!==null && left <= 7; }
+function measureText(v, done){ return done ? 'Po pomiarach' : (v || ''); }
+function measureCell(v, done){ return '<span class="cell-no-ellipsis '+measureClass(v, done)+'">'+esc(measureText(v, done))+'</span>'; }
+const STAGE_ICONS = {
+  umowa:   {color:'#2563eb', svg:'<path d="M6 2.5h7l4.5 4.5v14.5H6z" fill="none" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/><path d="M13 2.5v4.5h4.5" fill="none" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/><line x1="8.5" y1="12.5" x2="15.5" y2="12.5" stroke="#fff" stroke-width="1.4"/><line x1="8.5" y1="16" x2="15.5" y2="16" stroke="#fff" stroke-width="1.4"/>'},
+  pomiar:  {color:'#f97316', svg:'<rect x="2.5" y="9.5" width="19" height="5" rx="1" fill="none" stroke="#fff" stroke-width="1.6"/><line x1="6.5" y1="9.5" x2="6.5" y2="12" stroke="#fff" stroke-width="1.4"/><line x1="10.5" y1="9.5" x2="10.5" y2="13" stroke="#fff" stroke-width="1.4"/><line x1="14.5" y1="9.5" x2="14.5" y2="12" stroke="#fff" stroke-width="1.4"/><line x1="18.5" y1="9.5" x2="18.5" y2="13" stroke="#fff" stroke-width="1.4"/>'},
+  rozpiska:{color:'#16a34a', svg:'<path d="M4 20l0.8-3.6L15.5 5.7l2.8 2.8L7.6 19.2z" fill="none" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/><line x1="13.8" y1="7.4" x2="16.6" y2="10.2" stroke="#fff" stroke-width="1.4"/>'},
+  okucia:  {color:'#92663d', svg:'<text x="12" y="16.5" font-size="12" font-weight="800" fill="#fff" text-anchor="middle" font-family="Arial,Helvetica,sans-serif">O</text>'},
+  plyty_zamowione:{color:'#92663d', svg:'<text x="12" y="16.5" font-size="12" font-weight="800" fill="#fff" text-anchor="middle" font-family="Arial,Helvetica,sans-serif">P</text>'},
+  plyty_ciete:{color:'#f97316', svg:'<path d="M3 15.5h13.5l4-2.5-4-2.5H3z" fill="none" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/><path d="M4.5 15.5l1.8 3M8 15.5l1.8 3M11.5 15.5l1.8 3" stroke="#fff" stroke-width="1.3"/>'},
+  plyty_oklejone:{color:'#7c3aed', svg:'<rect x="4" y="4.5" width="16" height="15" rx="1.2" fill="none" stroke="#fff" stroke-width="1.6"/><line x1="4" y1="9.5" x2="20" y2="9.5" stroke="#fff" stroke-width="1.1" opacity="0.85"/><line x1="4" y1="14.5" x2="20" y2="14.5" stroke="#fff" stroke-width="1.1" opacity="0.85"/>'},
+  fronty:  {color:'#38bdf8', svg:'<text x="12" y="16.5" font-size="12" font-weight="800" fill="#fff" text-anchor="middle" font-family="Arial,Helvetica,sans-serif">F</text>'},
+  zamontowane_warsztat:{color:'#16a34a', svg:'<text x="12" y="15.5" font-size="7.6" font-weight="800" fill="#fff" text-anchor="middle" font-family="Arial,Helvetica,sans-serif">OK</text>'},
+  gotowe_montaz:{color:'#16a34a', svg:'<text x="12" y="15.5" font-size="7.6" font-weight="800" fill="#fff" text-anchor="middle" font-family="Arial,Helvetica,sans-serif">GM</text>'},
+  gotowe_transport:{color:'#16a34a', svg:'<rect x="2.5" y="9.5" width="13" height="7" rx="1.2" fill="none" stroke="#fff" stroke-width="1.6"/><path d="M15.5 11.5h3.2l2.3 2.8v2.2h-5.5z" fill="none" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/><circle cx="6.5" cy="17.3" r="1.5" fill="#fff"/><circle cx="17" cy="17.3" r="1.5" fill="#fff"/>'},
+  w_trakcie_montazu:{color:'#6366f1', svg:'<path d="M13.2 3.6l3.6 3.6-2.3 2.3-3.6-3.6z" fill="none" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/><path d="M11.8 7.4L4.5 14.7" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/><path d="M4.3 14.9l-1.6 3.8 3.8-1.6z" fill="#fff"/>'},
+};
+const STAGE_DEFS = [
+  ['umowa','Podpisana umowa'],
+  ['pomiar','Pomiar'],
+  ['rozpiska','Rozpiska'],
+  ['okucia','Zamówione okucia'],
+  ['plyty_zamowione','Zamówione płyty'],
+  ['plyty_ciete','Pocięte płyty'],
+  ['plyty_oklejone','Oklejone płyty'],
+  ['fronty','Zamówione fronty'],
+  ['zamontowane_warsztat','Zamontowane na warsztacie'],
+  ['gotowe_montaz','Gotowe do montażu'],
+  ['gotowe_transport','Gotowe do transportu'],
+  ['w_trakcie_montazu','W trakcie montażu'],
+];
+function stageIconHtml(code, done, size){
+  const def = STAGE_ICONS[code] || {color:'#4b5563',svg:''};
+  const bg = done ? def.color : '#4b5563';
+  const inner = Math.round(size*0.64);
+  return '<span class="stage-mini-icon" style="width:'+size+'px;height:'+size+'px;background:'+bg+'"><svg viewBox="0 0 24 24" width="'+inner+'" height="'+inner+'">'+def.svg+'</svg></span>';
+}
+function stagesBadge(r){
+  const doneCodes = new Set(String(r.checklist_codes||'').split(',').filter(Boolean));
+  const icons = STAGE_DEFS.map(([code])=>stageIconHtml(code, doneCodes.has(code), 12)).join('');
+  return '<span class="stage-progress" data-codes="'+esc(r.checklist_codes||'')+'" data-order="'+r.id+'">'+icons+'</span>';
+}
+let _stagePopoverEl = null;
+let _stagePopoverHideTimer = null;
+function closeStagePopover(){ if(_stagePopoverEl){ _stagePopoverEl.remove(); _stagePopoverEl=null; } }
+function openStagePopover(target){
+  closeStagePopover();
+  const doneCodes = new Set(String(target.dataset.codes||'').split(',').filter(Boolean));
+  const pop = document.createElement('div');
+  pop.className = 'stage-popover';
+  pop.innerHTML = STAGE_DEFS.map(([code,label])=>{
+    const done = doneCodes.has(code);
+    return '<div class="stage-popover-item'+(done?' done':'')+'">'+stageIconHtml(code, done, 18)+'<span>'+esc(label)+'</span></div>';
+  }).join('');
+  pop.onmouseenter = ()=>{ if(_stagePopoverHideTimer) clearTimeout(_stagePopoverHideTimer); };
+  pop.onmouseleave = ()=>closeStagePopover();
+  document.body.appendChild(pop);
+  const rect = target.getBoundingClientRect();
+  const popRect = pop.getBoundingClientRect();
+  let top = rect.bottom + 6;
+  let left = rect.left;
+  if(left + popRect.width > window.innerWidth - 10) left = window.innerWidth - popRect.width - 10;
+  if(top + popRect.height > window.innerHeight - 10) top = rect.top - popRect.height - 6;
+  pop.style.top = top + 'px';
+  pop.style.left = left + 'px';
+  _stagePopoverEl = pop;
+  _stagePopoverEl.dataset.for = target.dataset.order;
+}
+document.addEventListener('mouseover', (ev)=>{
+  const badge = ev.target.closest('.stage-progress');
+  if(badge){
+    if(_stagePopoverHideTimer){ clearTimeout(_stagePopoverHideTimer); _stagePopoverHideTimer=null; }
+    if(_stagePopoverEl && _stagePopoverEl.dataset.for === String(badge.dataset.order)) return;
+    openStagePopover(badge);
+  }
+});
+document.addEventListener('mouseout', (ev)=>{
+  const badge = ev.target.closest('.stage-progress');
+  if(badge && !ev.relatedTarget?.closest?.('.stage-popover')){
+    _stagePopoverHideTimer = setTimeout(closeStagePopover, 150);
+  }
+});
+document.addEventListener('click', (ev)=>{
+  const badge = ev.target.closest('.stage-progress');
+  if(badge){
+    ev.stopPropagation();
+    if(_stagePopoverEl && _stagePopoverEl.dataset.for === String(badge.dataset.order)){ closeStagePopover(); return; }
+    openStagePopover(badge);
+    return;
+  }
+  if(_stagePopoverEl && !ev.target.closest('.stage-popover')) closeStagePopover();
+});
+function wmCell(r){
+  const w = Number(r.has_workshop_schedule || 0) === 1;
+  const m = Number(r.has_install_schedule || 0) === 1;
+  return '<span class="wm-cell" title="Warsztat: '+(w?'tak':'nie')+' | Montaż: '+(m?'tak':'nie')+'">'
+    + '<span class="wm-dot '+(w?'ok':'no')+'">W</span>'
+    + '<span class="wm-dot '+(m?'ok':'no')+'">M</span>'
+    + '</span>';
+}
+
+const selectedIds = new Set();
+let canManageBulk = false;
+let statusesCache = [];
+let usersCache = [];
+let canFinanceVisible = false;
+const currentRowsById = new Map();
+
+function updateBulkBar(){
+  const n = selectedIds.size;
+  bulkBar.style.display = (canManageBulk && n>0) ? '' : 'none';
+  bulkCount.textContent = 'Zaznaczono: ' + n;
+  document.querySelectorAll('.order-check').forEach(ch=>{ ch.checked = selectedIds.has(Number(ch.value)); });
+  const all = document.querySelectorAll('.order-check').length;
+  const checked = document.querySelectorAll('.order-check:checked').length;
+  document.querySelectorAll('.check-all-month').forEach(ch=>{
+    const group = ch.dataset.group || '';
+    const items = Array.from(document.querySelectorAll('.order-check[data-group="'+group+'"]'));
+    const total = items.length;
+    const checkedInGroup = items.filter(i=>i.checked).length;
+    ch.checked = total>0 && checkedInGroup===total;
+    ch.indeterminate = checkedInGroup>0 && checkedInGroup<total;
+  });
+  const sumsEl = document.getElementById('bulkSums');
+  if(!sumsEl) return;
+  if(!canFinanceVisible || n<=0){ sumsEl.style.display='none'; sumsEl.textContent=''; return; }
+  let total=0, paid=0, remaining=0;
+  selectedIds.forEach(id=>{
+    const row = currentRowsById.get(Number(id));
+    if(!row) return;
+    total += Number(row.total_with_addons ?? row.total_amount ?? 0);
+    paid += Number(row.paid_sum ?? 0);
+    remaining += Number(row.remaining ?? 0);
+  });
+  const txt = 'Suma zaznaczonych → Wartość: ' + fmtMoney(total) + ' | Wpłacono: ' + fmtMoney(paid) + ' | Pozostało: ' + fmtMoney(remaining);
+  if(sumsEl){ sumsEl.style.display=''; sumsEl.textContent = txt; }
+}
+
+async function loadStatuses(){
+  statusFilter.innerHTML='<option value="">Wszystkie statusy</option>';
+  try{
+    const r=await apiGet('statuses.php');
+    statusesCache = r.items || [];
+    statusesCache.forEach(s=>{ const o=document.createElement('option'); o.value=s.id; o.textContent=s.name; statusFilter.appendChild(o);});
+  }catch(e){}
+}
+
+async function loadUsers(){
+  usersCache = [];
+  const tries = ['users_list.php','users.php'];
+  for(const endpoint of tries){
+    try{
+      const r = await apiGet(endpoint);
+      const items = r.items || r.users || [];
+      if(Array.isArray(items) && items.length){
+        usersCache = items.map(u=>({id:Number(u.id), name:[u.first_name,u.last_name].filter(Boolean).join(' ').trim() || u.name || u.login || ('Użytkownik '+u.id)}));
+        break;
+      }
+    }catch(e){}
+  }
+}
+
+function buildQs(){ const qs=new URLSearchParams(); if(q.value.trim()) qs.set('q',q.value.trim()); if(statusFilter.value) qs.set('status',statusFilter.value); if(year.value.trim()) qs.set('year',year.value.trim()); if(month.value.trim()) qs.set('month',month.value.trim()); if(from.value) qs.set('from',from.value); if(to.value) qs.set('to',to.value); return qs; }
+
+async function detectCaps(){
+  try{
+    const r = await apiGet('session_check.php');
+    const caps = r.caps || {};
+    canManageBulk = !!(caps.is_admin || caps.is_superadmin);
+  }catch(e){ canManageBulk = false; }
+}
+
+
+function shortText(s, n=26){ s=String(s||''); return s.length>n ? s.slice(0,n-1)+'…' : s; }
+function truncateNotes(s, n=20){ s=String(s||''); return s.length>n ? s.slice(0,n)+'...' : s; }
+function renderOrdersMobile(groups, canFinance){
+  wrap.innerHTML = '<div class="mobile-months"></div>';
+  const root = wrap.querySelector('.mobile-months');
+  groups.forEach(g=>{
+    const sec = document.createElement('section');
+    sec.className = 'mobile-month-section';
+    sec.innerHTML = '<div class="mobile-month-title">'+esc(g.title)+'</div>';
+    (g.items||[]).forEach(r=>{
+      const card = document.createElement('div');
+      card.className = 'mobile-order-card'+(Number(r.status_id)===10 ? ' row-urgent-fix' : Number(r.status_id)===11 ? ' row-fix-ready' : '');
+      card.style.cursor = 'pointer';
+      card.onclick = (ev)=>{ if(ev.target.closest('.stage-progress,.stage-popover')) return; location.href='order_details.html?id='+r.id; };
+      const full=((r.client_first_name||'')+' '+(r.client_last_name||'')).trim();
+      card.innerHTML =
+        '<div class="mobile-order-top">'+pill(r.status_name||'',r.status_color||'')+'</div>'
+        + '<div class="mobile-order-name">'+esc(shortText(full, 18))+'</div>'
+        + '<div class="mobile-order-scope" title="'+esc(r.item_description||'')+'">'+esc(shortText(r.item_description||'', 28))+'</div>'
+        + (r.contract_signer_initials ? '<div class="mobile-order-scope" title="'+esc(r.contract_signer_name||'')+'" style="color:var(--muted)">Podpisał: '+esc(r.contract_signer_initials)+'</div>' : '')
+        + (r.client_notes ? '<div class="mobile-order-scope" title="'+esc(r.client_notes||'')+'" style="color:var(--muted)">Uwagi: '+esc(truncateNotes(r.client_notes||'', 20))+'</div>' : '')
+        + '<div class="mobile-order-dates">'
+          + '<div class="mobile-order-date"><span class="mobile-order-label">Data montażu</span>'+esc(r.install_date||'')+'</div>'
+          + '<div class="mobile-order-date"><span class="mobile-order-label">Nowa data</span>'+esc(r.install_date_new||'')+'</div>'
+          + '<div class="mobile-order-date"><span class="mobile-order-label">Data umowy</span>'+esc(r.contract_date||'')+'</div>'
+          + '<div class="mobile-order-date"><span class="mobile-order-label">Pomiar</span><span class="'+measureClass(r.measure_due_date, r.measure_done)+'">'+esc(measureText(r.measure_due_date, r.measure_done))+'</span></div>'
+          + '<div class="mobile-order-date"><span class="mobile-order-label">W/M</span>'+wmCell(r)+'</div>'
+          + '<div class="mobile-order-date"><span class="mobile-order-label">Etapy</span>'+stagesBadge(r)+'</div>'
+          + (canFinance ? '<div class="mobile-order-date"><span class="mobile-order-label">Pozostało</span>'+esc(fmtMoney(r.remaining ?? 0))+'</div>' : '')
+        + '</div>';
+      sec.appendChild(card);
+    });
+    root.appendChild(sec);
+  });
+}
+function bindCheckboxes(){
+
+  document.querySelectorAll('.order-check').forEach(ch=>{
+    ch.addEventListener('click', e=>e.stopPropagation());
+    ch.addEventListener('change', ()=>{
+      const id = Number(ch.value);
+      if(ch.checked) selectedIds.add(id); else selectedIds.delete(id);
+      updateBulkBar();
+    });
+  });
+  document.querySelectorAll('.check-all-month').forEach(ch=>{
+    ch.addEventListener('change', ()=>{
+      const group = ch.dataset.group || '';
+      document.querySelectorAll('.order-check[data-group="'+group+'"]').forEach(item=>{
+        const id = Number(item.value);
+        if(ch.checked){ selectedIds.add(id); item.checked=true; } else { selectedIds.delete(id); item.checked=false; }
+      });
+      updateBulkBar();
+    });
+  });
+  updateBulkBar();
+}
+
+
+async function load(){
+  try{
+    err.textContent='';
+    const res=await apiGet('orders.php?'+buildQs().toString());
+    const canFinance=!!res.can_view_finance;
+    canFinanceVisible = canFinance;
+    currentRowsById.clear();
+    (res.items||[]).forEach(r=>currentRowsById.set(Number(r.id), r));
+    const groups=groupOrders(res.items||[]);
+    wrap.innerHTML='';
+
+    if(window.innerWidth <= 768){
+      renderOrdersMobile(groups, canFinance);
+      return;
+    }
+
+    groups.forEach(g=>{
+      const sec=document.createElement('section');
+      const groupKey = String(g.title || '').replace(/[^a-zA-Z0-9_-]+/g,'_');
+      const heads=(canManageBulk?'<th style="width:36px"><input type="checkbox" class="check-all-month" data-group="'+groupKey+'"></th>':'') + (canFinance?'<th>Status</th><th>Klient</th><th>Przedmiot</th><th>Uwagi</th><th>Data umowy</th><th>Data montażu</th><th>Nowa data</th><th>Pomiar</th><th>W/M</th><th>Etapy</th><th>Wartość</th><th>Podpisał</th><th>Wpłacona</th><th>Pozostało</th><th>Rozpiska</th><th>Monterzy</th>':'<th>Status</th><th>Klient</th><th>Przedmiot</th><th>Uwagi</th><th>Data umowy</th><th>Data montażu</th><th>Nowa data</th><th>Pomiar</th><th>W/M</th><th>Etapy</th><th>Podpisał</th><th>Rozpiska</th><th>Monterzy</th>');
+      const colgroup = canManageBulk
+        ? (canFinance
+            ? '<colgroup><col style="width:32px"><col style="width:9%"><col style="width:11%"><col style="width:15%"><col style="width:130px"><col style="width:100px"><col style="width:100px"><col style="width:100px"><col style="width:7%"><col style="width:5%"><col style="width:8%"><col style="width:7%"><col style="width:80px"><col style="width:7%"><col style="width:7%"><col style="width:8%"><col style="width:9%"></colgroup>'
+            : '<colgroup><col style="width:32px"><col style="width:10%"><col style="width:13%"><col style="width:20%"><col style="width:130px"><col style="width:100px"><col style="width:100px"><col style="width:100px"><col style="width:8%"><col style="width:5%"><col style="width:9%"><col style="width:80px"><col style="width:11%"><col style="width:11%"></colgroup>')
+        : (canFinance
+            ? '<colgroup><col style="width:9%"><col style="width:12%"><col style="width:16%"><col style="width:130px"><col style="width:100px"><col style="width:100px"><col style="width:100px"><col style="width:7%"><col style="width:5%"><col style="width:8%"><col style="width:7%"><col style="width:80px"><col style="width:7%"><col style="width:7%"><col style="width:9%"><col style="width:10%"></colgroup>'
+            : '<colgroup><col style="width:10%"><col style="width:14%"><col style="width:22%"><col style="width:130px"><col style="width:100px"><col style="width:100px"><col style="width:100px"><col style="width:8%"><col style="width:6%"><col style="width:10%"><col style="width:80px"><col style="width:13%"><col style="width:13%"></colgroup>');
+      sec.innerHTML='<h3 style="margin:12px 6px">'+esc(g.title)+'</h3><div class="ordersWrap"><table class="table ordersTable">'+colgroup+'<thead><tr>'+heads+'</tr></thead><tbody></tbody></table></div>';
+      const tb=sec.querySelector('tbody');
+      (g.items||[]).forEach(r=>{
+        const tr=document.createElement('tr');
+        tr.className='tr'+(Number(r.status_id)===10 ? ' row-urgent-fix' : Number(r.status_id)===11 ? ' row-fix-ready' : '');
+        tr.style.cursor='pointer';
+        tr.onclick=(ev)=>{ if(ev.target.closest('input,button,label,select,.stage-progress,.stage-popover')) return; location.href='order_details.html?id='+r.id; };
+        let html='';
+        const clientName=((r.client_first_name||'')+' '+(r.client_last_name||'')).trim();
+        if(canManageBulk){ html+='<td><input type="checkbox" class="order-check" data-group="'+groupKey+'" value="'+r.id+'"></td>'; }
+        html+='<td title="'+esc(r.status_name||'')+'">'+pill(r.status_name||'',r.status_color||'')+'</td><td title="'+esc(clientName)+'"><span class="cell-ellipsis" style="font-weight:700">'+esc(clientName)+'</span></td><td title="'+esc(r.item_description||'')+'"><span class="cell-ellipsis">'+esc(r.item_description||'')+'</span></td><td title="'+esc(r.client_notes||'')+'"><span class="cell-ellipsis">'+esc(truncateNotes(r.client_notes||'',20))+'</span></td><td><span class="cell-no-ellipsis">'+esc(r.contract_date||'')+'</span></td><td><span class="cell-no-ellipsis">'+esc(r.install_date||'')+'</span></td><td><span class="cell-no-ellipsis">'+esc(r.install_date_new||'')+'</span></td><td title="'+esc(measureText(r.measure_due_date||'', r.measure_done))+'">'+measureCell(r.measure_due_date||'', r.measure_done)+'</td><td>'+wmCell(r)+'</td><td>'+stagesBadge(r)+'</td>'; 
+        const signerTd='<td title="'+esc(r.contract_signer_name||'')+'"><span class="cell-no-ellipsis" style="font-weight:700">'+esc(r.contract_signer_initials||'')+'</span></td>';
+        if(!canFinance){ html+=signerTd; }
+        if(canFinance){ html+='<td title="'+esc(fmtMoney(r.total_with_addons ?? r.total_amount))+'"><span class="cell-ellipsis">'+fmtMoney(r.total_with_addons ?? r.total_amount)+'</span></td>'+signerTd+'<td title="'+esc(fmtMoney(r.paid_sum ?? 0))+'"><span class="cell-ellipsis">'+fmtMoney(r.paid_sum ?? 0)+'</span></td><td title="'+esc(fmtMoney(r.remaining ?? 0))+'"><span class="cell-ellipsis">'+fmtMoney(r.remaining ?? 0)+'</span></td>'; }
+        html+='<td title="'+esc(r.scheduler_name||'')+'"><span class="cell-no-ellipsis">'+esc(r.scheduler_name||'')+'</span></td><td title="'+esc((r.mounters||[]).join(', '))+'"><span class="cell-no-ellipsis">'+esc((r.mounters||[]).join(', '))+'</span></td>';
+        tr.innerHTML=html;
+        tb.appendChild(tr);
+      });
+      wrap.appendChild(sec);
+    });
+    bindCheckboxes();
+  }catch(e){
+    err.textContent='Błąd połączenia z serwerem (orders).';
+  }
+}
+
+
+async function bulkAction(payload, successMsg){
+  if(!selectedIds.size) return;
+  try{
+    await apiPost('orders_bulk.php', Object.assign({}, payload, { ids:[...selectedIds] }));
+    selectedIds.clear();
+    err.textContent = successMsg || 'Operacja wykonana ✅';
+    await load();
+  }catch(e){
+    console.error(e);
+    err.textContent = 'Nie udało się wykonać operacji zbiorczej.';
+  }
+}
+
+bulkStatusBtn.onclick = async ()=>{
+  const options = statusesCache.map(s=>`${s.id}: ${s.name}`).join('\n');
+  const picked = prompt('Podaj ID nowego statusu:\n\n' + options);
+  if(!picked) return;
+  const statusId = Number(picked);
+  if(!statusId) return alert('Nieprawidłowe ID statusu.');
+  await bulkAction({action:'set_status', status_id:statusId}, 'Zmieniono status zaznaczonych zamówień ✅');
+};
+
+bulkAssignBtn.onclick = async ()=>{
+  if(!usersCache.length) await loadUsers();
+  const options = usersCache.map(u=>`${u.id}: ${u.name}`).join('\n');
+  const picked = prompt('Podaj ID monterów oddzielone przecinkami:\n\n' + options);
+  if(!picked) return;
+  await bulkAction({action:'assign_mounters', mounters:picked}, 'Przypisano monterów ✅');
+};
+
+let signersCache = [];
+async function loadSigners(){
+  try{ const r = await apiGet('contract_signers.php'); signersCache = r.items || []; }catch(e){ signersCache = []; }
+}
+bulkSignerBtn.onclick = async ()=>{
+  if(!signersCache.length) await loadSigners();
+  if(!signersCache.length) return alert('Brak zdefiniowanych osób podpisujących. Dodaj osobę na karcie zamówienia.');
+  const options = signersCache.map(x=>`${x.id}: ${x.full_name} (${x.initials})`).join('\n');
+  const picked = prompt('Podaj ID osoby podpisującej umowę (0 = wyczyść):\n\n' + options);
+  if(picked === null || picked === '') return;
+  const signerId = Number(picked);
+  if(Number.isNaN(signerId) || signerId < 0 || (signerId > 0 && !signersCache.some(x=>Number(x.id)===signerId))) return alert('Nieprawidłowe ID osoby.');
+  await bulkAction({action:'set_signer', signer_id:signerId}, signerId ? 'Przypisano osobę podpisującą umowę ✅' : 'Wyczyszczono osobę podpisującą ✅');
+};
+
+bulkFinishBtn.onclick = async ()=>{
+  const now = new Date();
+  const year = prompt('Podaj rok zakończenia:', String(now.getFullYear()));
+  if(!year) return;
+  const month = prompt('Podaj miesiąc zakończenia (1-12):', String(now.getMonth()+1));
+  if(!month) return;
+  await bulkAction({action:'finish', year:Number(year), month:Number(month)}, 'Zaznaczone zamówienia przeniesiono do zakończonych ✅');
+};
+
+bulkMeasureDoneBtn.onclick = async ()=>{
+  await bulkAction({action:'measure_done'}, 'Zaznaczone zamówienia oznaczono jako po pomiarach ✅');
+};
+
+bulkDeleteBtn.onclick = async ()=>{
+  if(!confirm('Czy na pewno przenieść zaznaczone zamówienia do usuniętych?')) return;
+  const reason = prompt('Powód usunięcia zbiorczego:', 'Usunięcie zbiorcze') || 'Usunięcie zbiorcze';
+  await bulkAction({action:'delete', reason}, 'Zaznaczone zamówienia przeniesiono do usuniętych ✅');
+};
+
+bulkClearBtn.onclick = ()=>{ selectedIds.clear(); updateBulkBar(); };
+exportBtn.onclick=()=>{ location.href = API_BASE + 'orders_export.php?state=current&' + buildQs().toString(); };
+go.onclick=load;
+window.addEventListener('resize', load);
+document.addEventListener('DOMContentLoaded', async()=>{ await detectCaps(); await loadStatuses(); await loadUsers(); await load(); });
+</script></body></html>

@@ -1,0 +1,1 @@
+<?php require_once __DIR__ . '/../../config/config.php'; header('Content-Type: application/json; charset=utf-8'); $u=auth_user(); if(!$u) json_err('unauthorized',401); json_ok(['user'=>$u]);

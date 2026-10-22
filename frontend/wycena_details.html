@@ -1,0 +1,427 @@
+<!doctype html><html lang="pl"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Wycena – szczegóły</title>
+<link rel="icon" href="assets/img/favicon.ico">
+<link rel="stylesheet" href="assets/css/theme_v17.css"/>
+<style>
+.furn-card{border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:16px 18px;margin-bottom:16px;background:rgba(255,255,255,.02)}
+.furn-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.furn-head input.furn-name{font-size:17px;font-weight:700;flex:1;background:transparent;border:none;border-bottom:1px dashed rgba(255,255,255,.2);color:var(--text);padding:4px 2px}
+.mat-table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:10px}
+.mat-table th,.mat-table td{padding:5px 6px;text-align:left}
+.mat-table th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase}
+.mat-table input,.mat-table select{width:100%;box-sizing:border-box;padding:5px 7px;border-radius:8px;border:1px solid var(--border);background:rgba(255,255,255,.04);color:var(--text);font-size:13px}
+.mat-table input[type=number]{max-width:90px}
+.calc-row{display:flex;flex-wrap:wrap;gap:18px;align-items:center;padding:12px 0;border-top:1px solid rgba(255,255,255,.08);margin-top:6px}
+.calc-item{display:flex;flex-direction:column;gap:3px}
+.calc-item label{font-size:11px;color:var(--muted);text-transform:uppercase}
+.calc-item input{width:110px}
+.calc-final{margin-left:auto;font-size:20px;font-weight:800;color:var(--accent)}
+.spec-list{margin-top:10px}
+.spec-row{display:flex;gap:6px;margin-bottom:6px;align-items:center}
+.spec-row input{flex:1}
+.btn-mini{padding:4px 9px;border-radius:8px;border:none;background:#b91c1c;color:#fff;cursor:pointer;font-size:12px}
+.btn-add-mini{padding:6px 10px;border-radius:8px;border:1px dashed rgba(255,255,255,.25);background:transparent;color:var(--text);cursor:pointer;font-size:12px}
+.summary-total{font-size:26px;font-weight:800;color:var(--accent)}
+.gate-overlay{position:fixed;inset:0;background:rgba(11,15,20,.92);display:flex;align-items:center;justify-content:center;z-index:2000}
+.gate-box{background:#181818;border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:28px 30px;max-width:360px;width:100%}
+.gate-err{color:#f87171;font-size:13px;margin-top:8px;min-height:16px}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand"><img src="assets/img/logo_smartmeble.png" style="height:28px"/></div>
+    <nav></nav>
+  </aside>
+  <div class="content">
+    <div class="topbar">
+      <div><b>Wycena</b> <span id="quoteIdLabel" style="color:var(--muted);font-size:13px"></span></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn" id="backBtn" style="background:#555;color:#fff">← Lista</button>
+        <button class="btn" id="offerBtn" style="background:#2563eb;color:#fff">Podgląd oferty / PDF</button>
+        <button class="btn" id="specDocBtn" style="background:#166534;color:#fff">Generuj specyfikację</button>
+        <button class="btn" id="createOrderBtn">Utwórz zamówienie z tej wyceny</button>
+        <button class="btn" id="deleteQuoteBtn" style="background:#b91c1c;color:#fff">Usuń wycenę</button>
+        <button class="btn" id="logoutBtn">Wyloguj</button>
+      </div>
+    </div>
+    <main class="main">
+      <div id="orderLinkInfo" style="display:none;margin-bottom:12px"></div>
+
+      <div class="card" style="margin-bottom:16px">
+        <h3>Dane klienta</h3>
+        <div class="row">
+          <div><label>Data wyceny</label><input class="input" id="q_date" type="date"></div>
+          <div><label>Źródło zapytania</label><input class="input" id="q_source" list="sourceList" placeholder="np. Telefon, WWW, polecenie..."></div>
+          <datalist id="sourceList"><option value="Telefon"><option value="Formularz WWW"><option value="Polecenie"><option value="Facebook / Instagram"><option value="Showroom"></datalist>
+          <div><label>Imię</label><input class="input" id="q_first"></div>
+          <div><label>Nazwisko</label><input class="input" id="q_last"></div>
+          <div><label>Telefon</label><input class="input" id="q_phone"></div>
+          <div><label>E-mail</label><input class="input" id="q_email"></div>
+          <div style="grid-column:1/-1"><label>Adres – ulica i nr</label><div style="display:flex;gap:8px"><input class="input" id="q_street" style="flex:2"><input class="input" id="q_no" placeholder="nr" style="flex:1"></div></div>
+          <div><label>Kod pocztowy</label><input class="input" id="q_postcode"></div>
+          <div><label>Miasto</label><input class="input" id="q_city"></div>
+        </div>
+      </div>
+
+      <h3 style="margin:6px 6px 12px">Meble / pomieszczenia</h3>
+      <div id="furnitureList"></div>
+      <button class="btn" id="addFurnitureBtn" style="margin-bottom:20px">+ Dodaj mebel / pomieszczenie</button>
+
+      <div class="card" style="display:flex;align-items:center;justify-content:space-between">
+        <div>Łączna wartość wyceny</div>
+        <div class="summary-total" id="summaryTotal">0,00 zł</div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div class="gate-overlay" id="gate" style="display:none">
+  <div class="gate-box">
+    <h2>Moduł Wycena</h2>
+    <p style="color:var(--muted);font-size:13px">Wpisz hasło dostępu do modułu.</p>
+    <input class="input" id="gatePass" type="password" placeholder="Hasło">
+    <div style="margin-top:12px"><button class="btn" id="gateBtn" style="width:100%">Odblokuj</button></div>
+    <div class="gate-err" id="gateErr"></div>
+  </div>
+</div>
+
+<script src="config.js"></script><script src="assets/js/menu.js"></script>
+<script>
+const id = new URLSearchParams(location.search).get('id');
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c])); }
+function fmtMoney(v){ const n=Number(v||0); return new Intl.NumberFormat('pl-PL',{style:'currency',currency:'PLN'}).format(n); }
+function wycenaHeaders(){ return {'Content-Type':'application/json', ...authHeaders(), 'X-Wycena-Token': sessionStorage.getItem('wycena_token')||''}; }
+async function wApiGet(path){ const r=await fetch(API_BASE+path,{headers:wycenaHeaders()}); const t=await r.text(); if(!r.ok) throw new Error(t); return JSON.parse(t); }
+async function wApiPost(path, body){ const r=await fetch(API_BASE+path,{method:'POST',headers:wycenaHeaders(),body:JSON.stringify(body||{})}); const t=await r.text(); if(!r.ok) throw new Error(t); return JSON.parse(t); }
+
+function showGate(){ document.getElementById('gate').style.display='flex'; }
+function hideGate(){ document.getElementById('gate').style.display='none'; }
+document.getElementById('gateBtn').onclick = async ()=>{
+  const pass = document.getElementById('gatePass').value;
+  const errEl = document.getElementById('gateErr');
+  errEl.textContent='';
+  try{
+    const r = await apiPost('wycena_auth.php', {password: pass});
+    sessionStorage.setItem('wycena_token', r.token);
+    hideGate();
+    loadQuote();
+  }catch(e){ errEl.textContent = 'Nieprawidłowe hasło.'; }
+};
+document.getElementById('gatePass').addEventListener('keydown', e=>{ if(e.key==='Enter') document.getElementById('gateBtn').click(); });
+
+async function checkRole(){
+  try{
+    const r = await apiGet('session_check.php');
+    const role = Number(r?.user?.role_id ?? r?.user?.role ?? 0);
+    if(role !== 999){ location.href='orders.html'; return false; }
+    return true;
+  }catch(e){ location.href='login.html'; return false; }
+}
+
+let MATERIALS = [];
+let QUOTE = null;
+
+async function loadMaterialsList(){
+  try{ const r = await wApiGet('wycena_materials.php'); MATERIALS = (r.items||[]).filter(m=>Number(m.is_active)===1); }catch(e){}
+}
+
+async function loadQuote(){
+  try{
+    await loadMaterialsList();
+    const r = await wApiGet('wycena_api.php?action=get&id='+id);
+    QUOTE = r.quote;
+    render();
+  }catch(e){
+    if(String(e.message||'').includes('wycena_locked')){ showGate(); return; }
+    document.getElementById('furnitureList').innerHTML = '<div class="card">Błąd wczytywania wyceny.</div>';
+  }
+}
+
+function render(){
+  document.getElementById('quoteIdLabel').textContent = '#'+QUOTE.id;
+  q_date.value = QUOTE.quote_date || '';
+  q_source.value = QUOTE.source || '';
+  q_first.value = QUOTE.client_first_name || '';
+  q_last.value = QUOTE.client_last_name || '';
+  q_phone.value = QUOTE.client_phone || '';
+  q_email.value = QUOTE.client_email || '';
+  q_street.value = QUOTE.install_street || '';
+  q_no.value = QUOTE.install_no || '';
+  q_postcode.value = QUOTE.install_postcode || '';
+  q_city.value = QUOTE.install_city || '';
+
+  const linkBox = document.getElementById('orderLinkInfo');
+  if(QUOTE.linked_order_id){
+    linkBox.style.display='';
+    linkBox.innerHTML = '<div class="card" style="background:rgba(183,214,28,.08);border-color:rgba(183,214,28,.3)">Ta wycena jest powiązana z zamówieniem #'+QUOTE.linked_order_id+'. <a href="order_details.html?id='+QUOTE.linked_order_id+'" style="color:var(--accent)">Otwórz zamówienie →</a></div>';
+  } else {
+    linkBox.style.display='none';
+  }
+
+  document.getElementById('summaryTotal').textContent = fmtMoney(QUOTE.total_value);
+
+  const wrap = document.getElementById('furnitureList');
+  wrap.innerHTML = '';
+  (QUOTE.furniture||[]).forEach(f=>wrap.appendChild(renderFurnitureCard(f)));
+}
+
+function materialOptionsHtml(selectedId){
+  return '<option value="">— wybierz z bazy —</option>' + MATERIALS.map(m=>'<option value="'+m.id+'"'+(String(m.id)===String(selectedId)?' selected':'')+'>'+esc(m.name)+' ('+(m.unit==='m2'?'m²':m.unit)+', '+Number(m.unit_price).toFixed(2)+' zł)</option>').join('');
+}
+
+function renderFurnitureCard(f){
+  const card = document.createElement('div');
+  card.className = 'furn-card';
+  const mode = (f.pricing_mode === 'fixed') ? 'fixed' : 'materials';
+  const matRows = (f.materials||[]).map(m=>{
+    return '<tr data-mat-id="'+m.id+'">'
+      + '<td style="min-width:220px"><select data-mfield="material_id">'+materialOptionsHtml(m.material_id)+'</select></td>'
+      + '<td style="min-width:150px"><input data-mfield="material_name" value="'+esc(m.material_name)+'" placeholder="lub wpisz nazwę ręcznie"></td>'
+      + '<td>'+esc(m.unit==='m2'?'m²':m.unit)+'</td>'
+      + '<td><input type="number" step="0.01" data-mfield="quantity" value="'+Number(m.quantity)+'"></td>'
+      + '<td><input type="number" step="0.01" data-mfield="unit_price" value="'+Number(m.unit_price)+'"></td>'
+      + '<td style="font-weight:700">'+fmtMoney(m.line_total)+'</td>'
+      + '<td><button class="btn-mini" data-delmat="'+m.id+'">Usuń</button></td>'
+      + '</tr>';
+  }).join('');
+
+  const specRows = (f.specs||[]).map(s=>{
+    return '<div class="spec-row" data-spec-id="'+s.id+'"><input value="'+esc(s.text)+'" data-specfield="text"><button class="btn-mini" data-delspec="'+s.id+'">Usuń</button></div>';
+  }).join('');
+
+  const modeToggleHtml =
+    '<div style="display:flex;gap:18px;flex-wrap:wrap;margin-bottom:14px;font-size:13px">'
+      + '<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="radio" name="pmode_'+f.id+'" value="materials" data-pmode'+(mode==='materials'?' checked':'')+'> Wycena na podstawie materiałów</label>'
+      + '<label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="radio" name="pmode_'+f.id+'" value="fixed" data-pmode'+(mode==='fixed'?' checked':'')+'> Wycena bez listy materiałów / stała cena</label>'
+    + '</div>';
+
+  const materialsSectionHtml =
+    '<table class="mat-table"><thead><tr><th>Materiał z bazy</th><th>lub nazwa własna</th><th>Jedn.</th><th>Ilość</th><th>Cena jedn.</th><th>Wartość</th><th></th></tr></thead>'
+    + '<tbody data-matrows>'+matRows+'</tbody></table>'
+    + '<button class="btn-add-mini" data-addmat="'+f.id+'">+ Dodaj materiał</button>'
+    + '<div class="calc-row">'
+      + '<div class="calc-item"><label>Wartość materiałów</label><div style="font-weight:700">'+fmtMoney(f.materials_total)+'</div></div>'
+      + '<div class="calc-item"><label>Mnożnik</label><input type="number" step="0.01" data-ffield="multiplier" value="'+Number(f.multiplier)+'"></div>'
+      + '<div class="calc-item"><label>Korekta wyceny (rabat, zł)</label><input type="number" step="0.01" data-ffield="discount_amount" value="'+Number(f.discount_amount)+'"></div>'
+      + '<div class="calc-final">'+fmtMoney(f.final_price)+'</div>'
+    + '</div>';
+
+  const fixedSectionHtml =
+    '<div class="calc-row" style="border-top:none;padding-top:0">'
+      + '<div class="calc-item"><label>Cena końcowa (zł)</label><input type="number" step="0.01" data-ffield="fixed_price" value="'+Number(f.fixed_price||0)+'" style="width:150px"></div>'
+      + '<div class="calc-final">'+fmtMoney(f.final_price)+'</div>'
+    + '</div>';
+
+  card.innerHTML =
+    '<div class="furn-head">'
+      + '<input class="furn-name" data-ffield="name" value="'+esc(f.name)+'" placeholder="Nazwa mebla / pomieszczenia (np. Zabudowa kuchenna)">'
+      + '<button class="btn-mini" data-delfurn="'+f.id+'">Usuń mebel</button>'
+    + '</div>'
+    + modeToggleHtml
+    + '<div data-materials-section style="display:'+(mode==='materials'?'':'none')+'">'+materialsSectionHtml+'</div>'
+    + '<div data-fixed-section style="display:'+(mode==='fixed'?'':'none')+'">'+fixedSectionHtml+'</div>'
+    + '<div class="spec-list"><label style="font-size:11px;color:var(--muted);text-transform:uppercase">Specyfikacja</label>'
+      + '<div data-specrows>'+specRows+'</div>'
+      + '<button class="btn-add-mini" data-addspec="'+f.id+'">+ Dodaj punkt specyfikacji</button>'
+      + '<div style="color:var(--muted);font-size:11px;margin-top:4px">Wpisz treść i naciśnij Enter — od razu pojawi się kolejne puste pole.</div>'
+    + '</div>';
+
+  card.querySelectorAll('[data-pmode]').forEach(radio=>{
+    radio.onchange = ()=>{
+      const isMaterials = card.querySelector('[name="pmode_'+f.id+'"][value="materials"]').checked;
+      card.querySelector('[data-materials-section]').style.display = isMaterials ? '' : 'none';
+      card.querySelector('[data-fixed-section]').style.display = isMaterials ? 'none' : '';
+      saveFurnitureRow(f.id, card);
+    };
+  });
+
+  // Materiały: zmiana wyboru z bazy -> uzupełnij nazwę/cenę/jednostkę
+  card.querySelectorAll('[data-mfield="material_id"]').forEach(sel=>{
+    sel.onchange = async ()=>{
+      const tr = sel.closest('tr');
+      const matId = Number(sel.value)||null;
+      if(matId){
+        const m = MATERIALS.find(x=>String(x.id)===String(matId));
+        if(m){
+          tr.querySelector('[data-mfield="material_name"]').value = m.name;
+          tr.querySelector('[data-mfield="unit_price"]').value = m.unit_price;
+        }
+      }
+      await saveMaterialRow(tr);
+    };
+  });
+  card.querySelectorAll('[data-mfield="material_name"],[data-mfield="quantity"],[data-mfield="unit_price"]').forEach(inp=>{
+    inp.onchange = ()=>saveMaterialRow(inp.closest('tr'));
+  });
+  card.querySelectorAll('[data-delmat]').forEach(btn=>{
+    btn.onclick = async ()=>{ if(!confirm('Usunąć materiał z wyceny?')) return; try{ await wApiPost('wycena_api.php',{action:'material_delete', id:Number(btn.dataset.delmat)}); await loadQuote(); }catch(e){ handleGateOrAlert(e); } };
+  });
+  card.querySelector('[data-addmat]').onclick = async ()=>{
+    try{ await wApiPost('wycena_api.php', {action:'material_add', furniture_id:Number(f.id), material_name:'', quantity:1, unit_price:0}); await loadQuote(); }
+    catch(e){ handleGateOrAlert(e); }
+  };
+
+  card.querySelector('[data-ffield="name"]').onchange = ()=>saveFurnitureRow(f.id, card);
+  card.querySelector('[data-ffield="multiplier"]').onchange = ()=>saveFurnitureRow(f.id, card);
+  card.querySelector('[data-ffield="discount_amount"]').onchange = ()=>saveFurnitureRow(f.id, card);
+  const fixedPriceInput = card.querySelector('[data-ffield="fixed_price"]');
+  if(fixedPriceInput) fixedPriceInput.onchange = ()=>saveFurnitureRow(f.id, card);
+  card.querySelector('[data-delfurn]').onclick = async ()=>{
+    if(!confirm('Usunąć ten mebel wraz z materiałami i specyfikacją?')) return;
+    try{ await wApiPost('wycena_api.php', {action:'furniture_delete', id:Number(f.id)}); await loadQuote(); }catch(e){ handleGateOrAlert(e); }
+  };
+
+  card.querySelectorAll('[data-specfield="text"]').forEach(inp=>{
+    inp.onchange = async ()=>{
+      const row = inp.closest('[data-spec-id]');
+      const specId = Number(row.dataset.specId);
+      try{ await wApiPost('wycena_api.php', {action:'spec_update', id:specId, text:inp.value.trim()}); }
+      catch(e){ handleGateOrAlert(e); }
+    };
+  });
+  card.querySelectorAll('[data-delspec]').forEach(btn=>{
+    btn.onclick = async ()=>{
+      try{ await wApiPost('wycena_api.php', {action:'spec_delete', id:Number(btn.dataset.delspec)}); btn.closest('.spec-row').remove(); }
+      catch(e){ handleGateOrAlert(e); }
+    };
+  });
+
+  const specRowsContainer = card.querySelector('[data-specrows]');
+  function addSpecDraftRow(){
+    const row = document.createElement('div');
+    row.className = 'spec-row';
+    row.innerHTML = '<input placeholder="np. Zawiasy Blum..." data-specfield="text">';
+    specRowsContainer.appendChild(row);
+    const input = row.querySelector('input');
+    input.focus();
+    input.addEventListener('keydown', async (ev)=>{
+      if(ev.key !== 'Enter') return;
+      ev.preventDefault();
+      const text = input.value.trim();
+      if(!text) return;
+      input.disabled = true;
+      try{
+        const r = await wApiPost('wycena_api.php', {action:'spec_add', furniture_id:Number(f.id), text});
+        row.dataset.specId = r.id;
+        input.disabled = false;
+        const delBtn = document.createElement('button');
+        delBtn.className = 'btn-mini'; delBtn.textContent = 'Usuń'; delBtn.dataset.delspec = r.id;
+        delBtn.onclick = async ()=>{
+          try{ await wApiPost('wycena_api.php', {action:'spec_delete', id:r.id}); row.remove(); }
+          catch(e){ handleGateOrAlert(e); }
+        };
+        row.appendChild(delBtn);
+        addSpecDraftRow();
+      }catch(err){ input.disabled=false; handleGateOrAlert(err); }
+    });
+  }
+  card.querySelector('[data-addspec]').onclick = addSpecDraftRow;
+
+  return card;
+}
+
+function handleGateOrAlert(e){
+  if(String(e.message||'').includes('wycena_locked')){ showGate(); return; }
+  alert('Wystąpił błąd zapisu.');
+}
+
+async function saveMaterialRow(tr){
+  const id = Number(tr.dataset.matId);
+  const materialId = tr.querySelector('[data-mfield="material_id"]').value || null;
+  const materialName = tr.querySelector('[data-mfield="material_name"]').value.trim();
+  const quantity = Number(tr.querySelector('[data-mfield="quantity"]').value||0);
+  const unitPrice = Number(tr.querySelector('[data-mfield="unit_price"]').value||0);
+  try{
+    await wApiPost('wycena_api.php', {action:'material_update', id, material_id:materialId, material_name:materialName, unit_price:unitPrice, quantity});
+    await loadQuote();
+  }catch(e){ handleGateOrAlert(e); }
+}
+async function saveFurnitureRow(furnitureId, card){
+  const name = card.querySelector('[data-ffield="name"]').value.trim();
+  const multiplier = Number(card.querySelector('[data-ffield="multiplier"]').value||2.3);
+  const discount_amount = Number(card.querySelector('[data-ffield="discount_amount"]').value||0);
+  const pmodeRadio = card.querySelector('[data-pmode]:checked');
+  const pricing_mode = pmodeRadio ? pmodeRadio.value : 'materials';
+  const fixedPriceInput = card.querySelector('[data-ffield="fixed_price"]');
+  const fixed_price = fixedPriceInput ? Number(fixedPriceInput.value||0) : 0;
+  try{ await wApiPost('wycena_api.php', {action:'furniture_update', id:furnitureId, name, multiplier, discount_amount, pricing_mode, fixed_price}); await loadQuote(); }
+  catch(e){ handleGateOrAlert(e); }
+}
+
+document.getElementById('addFurnitureBtn').onclick = async ()=>{
+  try{ await wApiPost('wycena_api.php', {action:'furniture_add', quote_id:Number(id), name:'Nowy mebel'}); await loadQuote(); }
+  catch(e){ handleGateOrAlert(e); }
+};
+
+[q_date,q_source,q_first,q_last,q_phone,q_email,q_street,q_no,q_postcode,q_city].forEach(el=>{
+  el.addEventListener('change', saveClient);
+});
+async function saveClient(){
+  try{
+    await wApiPost('wycena_api.php', {
+      action:'save_client', id:Number(id),
+      quote_date:q_date.value, source:q_source.value.trim(),
+      client_first_name:q_first.value.trim(), client_last_name:q_last.value.trim(),
+      client_phone:q_phone.value.trim(), client_email:q_email.value.trim(),
+      install_street:q_street.value.trim(), install_no:q_no.value.trim(),
+      install_postcode:q_postcode.value.trim(), install_city:q_city.value.trim()
+    });
+  }catch(e){ handleGateOrAlert(e); }
+}
+
+document.getElementById('backBtn').onclick = ()=>location.href='wycena.html';
+document.getElementById('logoutBtn').onclick = ()=>{ localStorage.removeItem('token'); location.href='login.html'; };
+document.getElementById('offerBtn').onclick = ()=>window.open('wycena_offer.html?id='+id, '_blank');
+document.getElementById('specDocBtn').onclick = async ()=>{
+  const btn = document.getElementById('specDocBtn');
+  const oldText = btn.textContent;
+  btn.textContent = 'Generuję…'; btn.disabled = true;
+  try{
+    const r = await fetch(API_BASE+'wycena_specyfikacja.php?id='+id, {headers: wycenaHeaders()});
+    if(!r.ok){
+      const t = await r.text();
+      if(t.includes('wycena_locked')){ showGate(); return; }
+      throw new Error(t);
+    }
+    const blob = await r.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'Specyfikacja_wycena_'+id+'.docx';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href), 5000);
+  }catch(e){
+    alert('Nie udało się wygenerować specyfikacji.');
+  }finally{
+    btn.textContent = oldText; btn.disabled = false;
+  }
+};
+document.getElementById('deleteQuoteBtn').onclick = async ()=>{
+  if(!confirm('Usunąć całą wycenę bezpowrotnie?')) return;
+  try{ await wApiPost('wycena_api.php', {action:'delete', id:Number(id)}); location.href='wycena.html'; }
+  catch(e){ handleGateOrAlert(e); }
+};
+document.getElementById('createOrderBtn').onclick = ()=>{
+  if(!QUOTE) return;
+  const furnitureNames = (QUOTE.furniture||[]).map(f=>f.name).filter(Boolean).join(', ');
+  const prefill = {
+    first: QUOTE.client_first_name||'', last: QUOTE.client_last_name||'',
+    phone: QUOTE.client_phone||'', email: QUOTE.client_email||'',
+    street: QUOTE.install_street||'', no: QUOTE.install_no||'',
+    postcode: QUOTE.install_postcode||'', city: QUOTE.install_city||'',
+    items: furnitureNames, total: QUOTE.total_value||0, quoteId: QUOTE.id,
+    wycenaToken: sessionStorage.getItem('wycena_token')||''
+  };
+  sessionStorage.setItem('quotePrefill', JSON.stringify(prefill));
+  location.href = 'order_add.html?fromQuote=1';
+};
+
+document.addEventListener('DOMContentLoaded', async ()=>{
+  const ok = await checkRole();
+  if(!ok) return;
+  if(!id){ document.getElementById('furnitureList').innerHTML='<div class="card">Brak ID wyceny.</div>'; return; }
+  if(sessionStorage.getItem('wycena_token')){ loadQuote(); } else { showGate(); }
+});
+</script>
+</body></html>

@@ -1,0 +1,154 @@
+<!doctype html><html lang="pl"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Smart Meble – Reklamacje</title>
+<link rel="icon" href="assets/img/favicon.ico">
+<link rel="stylesheet" href="assets/css/theme_v17.css"/>
+<style>
+.complaints-layout{display:grid;grid-template-columns:1fr;gap:14px}
+.complaint-toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.complaint-table{width:100%;border-collapse:collapse;table-layout:fixed}
+.complaint-table th,.complaint-table td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.08);vertical-align:middle;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.complaint-table th{font-size:12px;text-transform:uppercase;letter-spacing:.02em;color:#e5e7eb}
+.complaint-subject{font-weight:700;color:#d9ff5c}
+.complaint-empty{color:var(--muted);padding:12px 0}
+.complaint-actions{display:flex;gap:8px;flex-wrap:wrap}
+.btn-danger{background:#ef4444!important;color:#fff!important}
+.btn-green{background:linear-gradient(135deg,#b7d61c,#95b80f)!important;color:#111827!important;font-weight:800!important}
+@media(max-width:900px){
+  .complaint-table,.complaint-table thead,.complaint-table tbody,.complaint-table tr,.complaint-table th,.complaint-table td{display:block;width:100%}
+  .complaint-table thead{display:none}
+  .complaint-table tr{border:1px solid rgba(255,255,255,.08);border-radius:14px;margin:10px 0;padding:8px;background:rgba(255,255,255,.03)}
+  .complaint-table td{border:0;white-space:normal}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand"><img src="assets/img/logo_smartmeble.png" style="height:28px"/><div>PANEL</div></div>
+    <nav id="sideNav"></nav>
+  </aside>
+  <div class="content">
+    <div id="appTopbar" data-title="Reklamacje" data-subtitle="Panel zamówień"></div>
+    <main class="main">
+      <div id="err" class="err" style="margin-bottom:10px"></div>
+
+      <div class="complaints-layout">
+        <div class="card">
+          <h3>Aktywne reklamacje</h3>
+          <div class="complaint-toolbar" style="margin:10px 0 12px">
+            <input class="input" id="activeQ" placeholder="Szukaj reklamacji: klient, przedmiot, opis..." style="min-width:280px;flex:1">
+            <button class="btn" id="activeSearchBtn">Szukaj</button>
+            <button class="btn" id="activeClearBtn">Wyczyść</button>
+          </div>
+          <div id="activeWrap"><div class="complaint-empty">Ładowanie...</div></div>
+        </div>
+
+        <div class="card">
+          <h3>Dodaj reklamację do zamówienia</h3>
+          <div style="color:var(--muted);font-size:13px;margin-bottom:10px">Wyszukaj zamówienie z całej puli: aktualne, zakończone i inne nieusunięte.</div>
+          <div class="complaint-toolbar">
+            <input class="input" id="searchQ" placeholder="Nazwisko, klient, przedmiot albo ID zamówienia..." style="min-width:280px;flex:1">
+            <button class="btn btn-green" id="searchBtn">Szukaj zamówienia</button>
+          </div>
+          <div id="searchWrap" style="margin-top:12px"><div class="complaint-empty">Wpisz minimum 2 znaki i kliknij Szukaj.</div></div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="assets/js/helpers_ext.js"></script>
+<script src="assets/js/menu.js"></script>
+<script src="assets/js/topbar.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+function esc(v){ return String(v==null?'':v).replace(/[&<>"']/g, s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[s])); }
+function statusText(row){
+  if(Number(row.is_finished||0)===1 || row.finished_at) return 'Zakończone';
+  return 'Aktualne';
+}
+function clientName(row){ return ((row.client_first_name||'')+' '+(row.client_last_name||'')).trim(); }
+function pill(text, color){
+  return '<span style="display:inline-block;padding:6px 10px;border-radius:999px;color:#fff;background:'+(color||'#065f46')+'">'+esc(text||'—')+'</span>';
+}
+function renderActive(items){
+  const wrap = $('activeWrap');
+  if(!items.length){ wrap.innerHTML='<div class="complaint-empty">Brak aktywnych reklamacji.</div>'; return; }
+  wrap.innerHTML = '<div style="overflow:auto"><table class="complaint-table">'
+    + '<colgroup><col style="width:90px"><col style="width:18%"><col><col style="width:16%"><col style="width:14%"><col style="width:220px"></colgroup>'
+    + '<thead><tr><th>ID</th><th>Klient</th><th>Przedmiot / reklamacja</th><th>Status</th><th>Data zgłoszenia</th><th>Akcje</th></tr></thead><tbody>'
+    + items.map(r => '<tr>'
+      + '<td>#'+esc(r.id)+'</td>'
+      + '<td title="'+esc(clientName(r))+'">'+esc(clientName(r))+'</td>'
+      + '<td title="'+esc((r.item_description||"") + " / " + (r.complaint_subject||""))+'"><div>'+esc(r.item_description||'')+'</div><div class="complaint-subject">'+esc(r.complaint_subject||'')+'</div></td>'
+      + '<td>'+pill(statusText(r), r.status_color || '#065f46')+'</td>'
+      + '<td>'+esc(r.complaint_created_at||'')+'</td>'
+      + '<td><div class="complaint-actions"><button class="btn openBtn" data-id="'+r.id+'">Otwórz kartę</button><button class="btn btn-danger closeBtn" data-id="'+r.id+'">Zakończ reklamację</button></div></td>'
+      + '</tr>').join('')
+    + '</tbody></table></div>';
+  wrap.querySelectorAll('.openBtn').forEach(btn=>btn.onclick=()=>{ location.href='order_details.html?id='+btn.dataset.id; });
+  wrap.querySelectorAll('.closeBtn').forEach(btn=>btn.onclick=async()=>{
+    if(!confirm('Zakończyć reklamację? Zamówienie zostanie ukryte w zakładce Reklamacje, a w uwagach pojawi się wpis.')) return;
+    await apiPost('complaints.php',{action:'close',order_id:Number(btn.dataset.id)});
+    await loadActive();
+  });
+}
+function renderSearch(items){
+  const wrap = $('searchWrap');
+  if(!items.length){ wrap.innerHTML='<div class="complaint-empty">Brak wyników.</div>'; return; }
+  wrap.innerHTML = '<div style="overflow:auto"><table class="complaint-table">'
+    + '<colgroup><col style="width:90px"><col style="width:18%"><col><col style="width:16%"><col style="width:140px"><col style="width:190px"></colgroup>'
+    + '<thead><tr><th>ID</th><th>Klient</th><th>Przedmiot</th><th>Status</th><th>Montaż</th><th>Akcje</th></tr></thead><tbody>'
+    + items.map(r => '<tr>'
+      + '<td>#'+esc(r.id)+'</td>'
+      + '<td title="'+esc(clientName(r))+'">'+esc(clientName(r))+'</td>'
+      + '<td title="'+esc(r.item_description||'')+'">'+esc(r.item_description||'')+(Number(r.complaint_active||0)===1 ? '<div class="complaint-subject">Ma aktywną reklamację: '+esc(r.complaint_subject||'')+'</div>' : '')+'</td>'
+      + '<td>'+pill(statusText(r), r.status_color || '#065f46')+'</td>'
+      + '<td>'+esc(r.install_date_new || r.install_date || '')+'</td>'
+      + '<td><div class="complaint-actions"><button class="btn openBtn" data-id="'+r.id+'">Otwórz</button><button class="btn btn-green addBtn" data-id="'+r.id+'" '+(Number(r.complaint_active||0)===1?'disabled':'')+'>Dodaj reklamację</button></div></td>'
+      + '</tr>').join('')
+    + '</tbody></table></div>';
+  wrap.querySelectorAll('.openBtn').forEach(btn=>btn.onclick=()=>{ location.href='order_details.html?id='+btn.dataset.id; });
+  wrap.querySelectorAll('.addBtn').forEach(btn=>btn.onclick=async()=>{
+    const subject = prompt('Przedmiot reklamacji:');
+    if(subject === null) return;
+    const s = subject.trim();
+    if(!s){ alert('Podaj przedmiot reklamacji.'); return; }
+    await apiPost('complaints.php',{action:'create',order_id:Number(btn.dataset.id),subject:s});
+    await loadActive();
+    await searchOrders();
+  });
+}
+async function loadActive(){
+  try{
+    const qs = new URLSearchParams();
+    if($('activeQ').value.trim()) qs.set('q',$('activeQ').value.trim());
+    const r = await apiGet('complaints.php?'+qs.toString());
+    renderActive(r.items||[]);
+  }catch(e){
+    console.error(e);
+    $('activeWrap').innerHTML='<div class="complaint-empty">Nie udało się wczytać aktywnych reklamacji. Sprawdź Network → complaints.php.</div>';
+  }
+}
+async function searchOrders(){
+  try{
+    const q = $('searchQ').value.trim();
+    if(q.length < 2){ $('searchWrap').innerHTML='<div class="complaint-empty">Wpisz minimum 2 znaki.</div>'; return; }
+    $('searchWrap').innerHTML='<div class="complaint-empty">Szukam...</div>';
+    const r = await apiGet('complaints.php?mode=search&q='+encodeURIComponent(q));
+    renderSearch(r.items||[]);
+  }catch(e){
+    console.error(e);
+    $('searchWrap').innerHTML='<div class="complaint-empty">Błąd wyszukiwania. Sprawdź Network → complaints.php?mode=search.</div>';
+  }
+}
+$('activeSearchBtn').onclick=loadActive;
+$('activeClearBtn').onclick=()=>{ $('activeQ').value=''; loadActive(); };
+$('searchBtn').onclick=searchOrders;
+$('searchQ').addEventListener('keydown', e=>{ if(e.key==='Enter') searchOrders(); });
+$('activeQ').addEventListener('keydown', e=>{ if(e.key==='Enter') loadActive(); });
+document.addEventListener('DOMContentLoaded', loadActive);
+</script>
+</body></html>

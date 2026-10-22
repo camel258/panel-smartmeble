@@ -1,0 +1,40 @@
+<!doctype html><html lang="pl"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Smart Meble – Moje zamówienia</title>
+<link rel="icon" href="assets/img/favicon.ico">
+<link rel="stylesheet" href="assets/css/theme_v17.css"/>
+<style>
+.scope-cell{max-width:520px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+@media (max-width:1100px){.scope-cell{max-width:260px}}
+</style></head>
+<body><div class="app"><aside class="sidebar"><div class="brand"><img src="assets/img/logo_smartmeble.png" style="height:28px"/><div>PANEL</div></div><nav id="sideNav"></nav></aside>
+<div class="content"><div id="appTopbar" data-title="Moje zamówienia" data-subtitle="Panel zamówień"></div>
+    <main class="main"><div id="err" class="err" style="margin-bottom:10px"></div><div class="card">
+<div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px"><input id="q" class="input" placeholder="Szukaj klienta lub zakresu prac"/><button class="btn" id="go">Szukaj</button></div>
+<div style="overflow:auto"><table class="table"><thead><tr><th>Status</th><th>Imię i nazwisko</th><th>Data umowy</th><th>Data montażu</th><th>Nowa data montażu</th><th>Zakres prac</th></tr></thead><tbody id="rows"></tbody></table></div>
+</div></main></div></div>
+<script src="config.js"></script><script src="assets/js/menu.js"></script><script src="assets/js/topbar.js"></script>
+<script>
+function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function pill(name,color){ const c=color||'#166534'; return '<span style="display:inline-block;padding:6px 10px;border-radius:999px;color:#fff;background:'+c+'">'+esc(name||'—')+'</span>'; }
+async function load(){
+  try{
+    err.textContent='';
+    const qs = new URLSearchParams();
+    if(q.value.trim()) qs.set('q', q.value.trim());
+    const r = await apiGet('orders_my.php?'+qs.toString());
+    rows.innerHTML='';
+    (r.items||[]).forEach(o=>{
+      const tr=document.createElement('tr');
+      tr.className='tr';
+      tr.style.cursor='pointer';
+      tr.onclick=()=>location.href='order_details.html?id='+o.id;
+      const full=((o.client_first_name||'')+' '+(o.client_last_name||'')).trim();
+      tr.innerHTML='<td>'+pill(o.status_name||'',o.status_color||'')+'</td><td>'+esc(full)+'</td><td>'+esc(o.contract_date||'')+'</td><td>'+esc(o.install_date||'')+'</td><td>'+esc(o.install_date_new||'')+'</td><td class="scope-cell" title="'+esc(o.item_description||'')+'">'+esc(o.item_description||'')+'</td>';
+      rows.appendChild(tr);
+    });
+    if(!(r.items||[]).length){ rows.innerHTML='<tr><td colspan="6" style="color:var(--muted)">Brak przypisanych zamówień.</td></tr>'; }
+  }catch(e){ err.textContent='Nie udało się wczytać Twoich zamówień.'; }
+}
+go.onclick=load; document.addEventListener('DOMContentLoaded', load);
+</script></body></html>

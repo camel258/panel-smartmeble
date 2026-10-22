@@ -1,0 +1,300 @@
+<!doctype html><html lang="pl"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Monitoring GPS – Smart Meble</title>
+<link rel="icon" href="assets/img/favicon.ico">
+<link rel="stylesheet" href="assets/css/theme_v17.css"/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" crossorigin=""/>
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" crossorigin=""/>
+<style>
+  .gps-wrap{display:grid;grid-template-columns:minmax(0,1fr) 420px;gap:14px}
+  .gps-card{background:var(--panel);border:1px solid var(--line);border-radius:18px;box-shadow:0 8px 24px rgba(0,0,0,.16)}
+  .gps-map-wrap{overflow:hidden}
+  #gpsMap{height:calc(100vh - 220px);min-height:520px;width:100%}
+  .gps-toolbar{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .gps-toolbar-left,.gps-toolbar-right{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .gps-toolbar input[type="datetime-local"]{height:40px;border-radius:10px;border:1px solid var(--line);background:#fff;color:#1f2937;padding:0 12px}
+  .gps-toolbar select,.gps-toolbar button{height:40px;border-radius:10px;border:1px solid var(--line);background:#fff;color:var(--text);padding:0 12px}
+  .gps-events{padding:12px;display:flex;flex-direction:column;gap:10px;max-height:calc(100vh - 220px);overflow:auto}
+  .gps-event{padding:12px;border:1px solid var(--line);border-radius:14px;background:#fff;cursor:pointer;transition:.15s ease}
+  .gps-event:hover{transform:translateY(-1px);box-shadow:0 8px 20px rgba(0,0,0,.08)}
+  .gps-event-top{display:flex;justify-content:space-between;gap:10px;margin-bottom:6px}
+  .gps-event-title{font-weight:700}
+  .gps-event-time{font-size:12px;color:var(--muted);white-space:nowrap}
+  .gps-event-address{font-size:13px;line-height:1.4}
+  .gps-event-meta{margin-top:6px;font-size:12px;color:var(--muted)}
+  .gps-empty{padding:18px;color:var(--muted)}
+  .gps-popup h3{margin:0 0 6px;font-size:15px}
+  .gps-popup p{margin:4px 0;font-size:13px}
+  .gps-legend{display:flex;gap:10px;flex-wrap:wrap;padding:10px 14px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
+  .gps-legend-item{display:flex;align-items:center;gap:6px}
+  .gps-legend-dot{display:inline-block;width:10px;height:10px;border-radius:50%}
+  .gps-marker-wrap{display:flex;align-items:center;gap:6px}
+  .gps-marker-dot{width:16px;height:16px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,.25);flex:0 0 16px}
+  .gps-marker-label{background:rgba(255,255,255,.92);border:1px solid rgba(0,0,0,.08);padding:2px 6px;border-radius:999px;font-size:11px;font-weight:700;color:#111827;line-height:1.2;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+  .gps-cluster-panel{position:absolute;left:16px;bottom:52px;z-index:600;background:rgba(255,255,255,.96);border:1px solid rgba(0,0,0,.08);border-radius:14px;box-shadow:0 8px 22px rgba(0,0,0,.18);padding:10px 12px;min-width:200px;max-width:260px;display:none}
+  .gps-cluster-panel.show{display:block}
+  .gps-cluster-title{font-weight:700;margin-bottom:8px;font-size:13px}
+  .gps-cluster-list{font-size:12px;line-height:1.5;color:#374151;max-height:180px;overflow:auto}
+  .gps-cluster-list div{padding:2px 0}
+  .marker-cluster-small,.marker-cluster-medium,.marker-cluster-large{background:rgba(17,24,39,.18)!important}
+  .marker-cluster-small div,.marker-cluster-medium div,.marker-cluster-large div{background:#111827!important;color:#fff!important;font-weight:800}
+  @media (max-width: 1200px){ .gps-wrap{grid-template-columns:1fr} #gpsMap{height:480px;min-height:480px} .gps-events{max-height:520px} }
+  @media (max-width: 768px){ #gpsMap{height:380px;min-height:380px} .gps-marker-label{font-size:10px;padding:1px 5px} .gps-cluster-panel{left:10px;right:10px;max-width:none;min-width:0} }
+
+/* Czytelniejsze napisy na białym tle */
+.gps-toolbar select,
+.gps-toolbar input,
+.gps-toolbar option,
+.gps-event,
+.gps-event-title,
+.gps-event-time,
+.gps-event-address,
+.gps-event-meta,
+.gps-empty,
+.gps-card .muted {
+  color: #111 !important;
+}
+
+.gps-event-time,
+.gps-event-meta,
+.gps-empty,
+.gps-card .muted {
+  color: #374151 !important;
+}
+
+.gps-toolbar select,
+.gps-toolbar input {
+  background: #fff !important;
+  color: #111 !important;
+}
+
+.gps-toolbar select::placeholder,
+.gps-toolbar input::placeholder {
+  color: #6b7280 !important;
+}
+
+.gps-event-title {
+  color: #111 !important;
+  font-weight: 700;
+}
+
+.gps-event-address {
+  color: #111 !important;
+}
+
+.gps-event-time,
+.gps-event-meta {
+  color: #4b5563 !important;
+}
+
+
+
+
+</style></head>
+<body>
+<div class="app">
+  <aside class="sidebar"><div class="brand"><img src="assets/img/logo_smartmeble.png" style="height:28px"/></div><nav></nav></aside>
+  <div class="content"><div id="appTopbar" data-title="Monitoring GPS" data-subtitle="Panel zamówień"></div>
+    <main class="main">
+      <div class="gps-wrap">
+        <section class="gps-card gps-map-wrap">
+          <div class="gps-toolbar">
+            <div class="gps-toolbar-left">
+              <select id="filterDevice"><option value="">Wszystkie auta</option></select>
+              <select id="filterType">
+                <option value="">Wszystkie zdarzenia</option>
+                <option value="ignitionOn">Zapłon włączony</option>
+                <option value="ignitionOff">Zapłon wyłączony</option>
+                <option value="deviceOnline">Online</option>
+                <option value="deviceOffline">Offline</option>
+                <option value="deviceMoving">Ruch</option>
+                <option value="deviceStopped">Postój</option>
+                <option value="geofenceEnter">Wejście do strefy</option>
+                <option value="geofenceExit">Wyjście ze strefy</option>
+              </select>
+              <input type="datetime-local" id="filterFrom" title="Od">
+              <input type="datetime-local" id="filterTo" title="Do">
+              <button type="button" id="btnToday">Dziś</button>
+              <button type="button" id="btn7Days">7 dni</button>
+            </div>
+            <div class="gps-toolbar-right">
+              <span id="lastRefreshLabel" class="muted">—</span>
+              <button class="btn" id="btnRefresh" type="button">Odśwież</button>
+            </div>
+          </div>
+          <div style="position:relative">
+            <div id="gpsMap"></div>
+            <div id="clusterPanel" class="gps-cluster-panel">
+              <div id="clusterTitle" class="gps-cluster-title"></div>
+              <div id="clusterList" class="gps-cluster-list"></div>
+            </div>
+          </div>
+          <div class="gps-legend">
+            <span class="gps-legend-item"><span class="gps-legend-dot" style="background:#16a34a"></span> online / jazda</span>
+            <span class="gps-legend-item"><span class="gps-legend-dot" style="background:#d97706"></span> postój</span>
+            <span class="gps-legend-item"><span class="gps-legend-dot" style="background:#6b7280"></span> offline</span>
+            <span class="gps-legend-item"><strong>Kółko z liczbą</strong> = kilka aut blisko siebie</span>
+          </div>
+        </section>
+        <aside class="gps-card">
+          <div class="gps-toolbar"><strong>Ostatnie zdarzenia</strong><span class="muted">Traccar API</span></div>
+          <div id="gpsEvents" class="gps-events"><div class="gps-empty">Ładowanie…</div></div>
+        </aside>
+      </div>
+    </main>
+  </div>
+</div>
+<script src="config.js"></script>
+<script src="assets/js/menu.js"></script>
+<script src="assets/js/topbar.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js" crossorigin=""></script>
+<script>
+function logout(){ localStorage.removeItem('token'); location.href='login.html'; }
+const gpsState = { map:null, markers:new Map(), markerLayer:null, devices:[], events:[], timer:null, refreshMs:20000, initializedBounds:false };
+const GPS_EVENT_LIMIT = 300;
+const markerColors = { green:'#16a34a', yellow:'#d97706', gray:'#6b7280' };
+function esc(s){ return String(s ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])); }
+function fmtDt(value){ if(!value) return '—'; const d = new Date(value); return isNaN(d) ? value : d.toLocaleString('pl-PL'); }
+function fmtInputLocal(d){ const pad=n=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`; }
+function fmtDuration(total){ total = Math.max(0, Number(total)||0); const days=Math.floor(total/86400); const hrs=Math.floor((total%86400)/3600); const mins=Math.floor((total%3600)/60); const parts=[]; if(days) parts.push(days+' d'); if(hrs) parts.push(hrs+' h'); if(mins || !parts.length) parts.push(mins+' min'); return parts.join(' '); }
+function statusColor(row){ if(!Number(row.online)) return 'gray'; if(Number(row.motion) || Number(row.speed_kmh||0) > 1) return 'green'; return 'yellow'; }
+function deviceLabel(d){ return d.vehicle_name || d.name || ('Urządzenie #' + (d.id || '')); }
+function eventLabel(t){ return ({ignitionOn:'Zapłon włączony',ignitionOff:'Zapłon wyłączony',deviceOnline:'Online',deviceOffline:'Offline',deviceMoving:'Ruch',deviceStopped:'Postój',geofenceEnter:'Wejście do strefy',geofenceExit:'Wyjście ze strefy'})[t] || t; }
+function markerIcon(color, label){
+  return L.divIcon({
+    className:'',
+    html:`<div class="gps-marker-wrap"><div class="gps-marker-dot" style="background:${markerColors[color]}"></div><div class="gps-marker-label">${esc(label)}</div></div>`,
+    iconSize:[140,24],
+    iconAnchor:[12,12],
+    popupAnchor:[12,-8]
+  });
+}
+function showClusterPanel(names){
+  const panel = document.getElementById('clusterPanel');
+  document.getElementById('clusterTitle').textContent = names.length + ' auta w tej okolicy';
+  document.getElementById('clusterList').innerHTML = names.map(n => '<div>' + esc(n) + '</div>').join('');
+  panel.classList.add('show');
+}
+function hideClusterPanel(){ document.getElementById('clusterPanel').classList.remove('show'); }
+
+function initMap(){
+  gpsState.map = L.map('gpsMap',{zoomControl:true}).setView([52.2297,21.0122],6);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap'}).addTo(gpsState.map);
+  gpsState.markerLayer = L.markerClusterGroup({
+    maxClusterRadius: 40,
+    spiderfyOnMaxZoom: true,
+    showCoverageOnHover: false,
+    zoomToBoundsOnClick: false,
+    iconCreateFunction: function(cluster){
+      const count = cluster.getChildCount();
+      const cls = count < 10 ? 'marker-cluster-small' : count < 100 ? 'marker-cluster-medium' : 'marker-cluster-large';
+      return new L.DivIcon({ html: '<div><span>' + count + '</span></div>', className: 'marker-cluster ' + cls, iconSize: new L.Point(40, 40) });
+    }
+  });
+  gpsState.markerLayer.on('clusterclick', function(e){
+    const children = e.layer.getAllChildMarkers();
+    const names = children.map(m => m.options.deviceLabel || '').filter(Boolean).sort();
+    showClusterPanel(names);
+    gpsState.map.fitBounds(e.layer.getBounds().pad(0.25));
+  });
+  gpsState.map.on('click', hideClusterPanel);
+  gpsState.map.addLayer(gpsState.markerLayer);
+}
+function renderDeviceFilter(){
+  const sel = document.getElementById('filterDevice');
+  const current = sel.value;
+  sel.innerHTML = '<option value="">Wszystkie auta</option>';
+  gpsState.devices.forEach(d=>{ const o=document.createElement('option'); o.value=String(d.id); o.textContent=deviceLabel(d); sel.appendChild(o); });
+  sel.value=current;
+}
+function rebuildMarkers(){
+  gpsState.markers.clear();
+  gpsState.markerLayer.clearLayers();
+  hideClusterPanel();
+  const bounds=[];
+  gpsState.devices.forEach(d=>{
+    if(d.latitude == null || d.longitude == null) return;
+    const latlng=[Number(d.latitude), Number(d.longitude)];
+    const color=statusColor(d);
+    const label=deviceLabel(d);
+    const popup=`<div class="gps-popup"><h3>${esc(label)}</h3><p><strong>Adres:</strong> ${esc(d.address || 'Brak')}</p><p><strong>Prędkość:</strong> ${Number(d.speed_kmh || 0).toFixed(0)} km/h</p><p><strong>Zapłon:</strong> ${Number(d.ignition) ? 'ON' : 'OFF'}</p><p><strong>Online:</strong> ${Number(d.online) ? 'Tak' : 'Nie'}</p><p><strong>Ostatnia pozycja:</strong> ${esc(fmtDt(d.fixTime || d.lastUpdate))}</p></div>`;
+    const marker=L.marker(latlng,{icon:markerIcon(color, label), deviceLabel: label});
+    marker.bindPopup(popup);
+    marker.on('click', hideClusterPanel);
+    gpsState.markerLayer.addLayer(marker);
+    gpsState.markers.set(String(d.id), marker);
+    bounds.push(latlng);
+  });
+  if(bounds.length && !gpsState.initializedBounds){
+    gpsState.map.fitBounds(L.latLngBounds(bounds).pad(0.2));
+    gpsState.initializedBounds = true;
+  }
+}
+function renderEvents(){
+  const box=document.getElementById('gpsEvents');
+  if(!gpsState.events.length){ box.innerHTML='<div class="gps-empty">Brak zdarzeń do wyświetlenia.</div>'; return; }
+  box.innerHTML = gpsState.events.map(ev=>{
+    const stopMeta = ev.type === 'deviceStopped' ? ` • czas postoju: ${esc(fmtDuration(ev.durationSeconds))}${ev.endTime ? ' • do: ' + esc(fmtDt(ev.endTime)) : ''}` : '';
+    return `<div class="gps-event" data-device-id="${ev.deviceId||''}" data-lat="${ev.latitude??''}" data-lon="${ev.longitude??''}"><div class="gps-event-top"><div class="gps-event-title">${esc(ev.deviceName || ('Urządzenie #' + (ev.deviceId||'')))}</div><div class="gps-event-time">${esc(fmtDt(ev.eventTime))}</div></div><div class="gps-event-address">${esc(ev.address || 'Brak adresu')}</div><div class="gps-event-meta">${esc(eventLabel(ev.type))}${ev.geofenceName ? ' • ' + esc(ev.geofenceName) : ''}${stopMeta}</div></div>`;
+  }).join('');
+  [...box.querySelectorAll('.gps-event')].forEach(el=>el.addEventListener('click', ()=>{
+    const lat=Number(el.dataset.lat);
+    const lon=Number(el.dataset.lon);
+    const did=String(el.dataset.deviceId||'');
+    if(!Number.isNaN(lat) && !Number.isNaN(lon) && lat && lon){ gpsState.map.setView([lat,lon],16); }
+    const marker=gpsState.markers.get(did);
+    if(marker){
+      gpsState.markerLayer.zoomToShowLayer(marker, ()=>marker.openPopup());
+    }
+  }));
+}
+async function loadOverview(){
+  const data = await apiGet('gps/overview.php');
+  gpsState.devices = data.devices || [];
+  renderDeviceFilter();
+  rebuildMarkers();
+}
+async function loadEvents(){
+  const params=[];
+  const deviceId=document.getElementById('filterDevice').value;
+  const type=document.getElementById('filterType').value;
+  const from=document.getElementById('filterFrom').value;
+  const to=document.getElementById('filterTo').value;
+  if(deviceId) params.push('deviceId='+encodeURIComponent(deviceId));
+  if(type) params.push('type='+encodeURIComponent(type));
+  if(from) params.push('from='+encodeURIComponent(new Date(from).toISOString()));
+  if(to) params.push('to='+encodeURIComponent(new Date(to).toISOString()));
+  params.push('limit='+GPS_EVENT_LIMIT);
+  const data = await apiGet('gps/events.php' + (params.length ? '?' + params.join('&') : ''));
+  gpsState.events = data.events || [];
+  renderEvents();
+}
+async function refreshAll(){
+  try{
+    await Promise.all([loadOverview(), loadEvents()]);
+    document.getElementById('lastRefreshLabel').textContent = 'Odświeżono: ' + new Date().toLocaleTimeString('pl-PL');
+  }catch(e){
+    console.error(e);
+    document.getElementById('lastRefreshLabel').textContent = 'Błąd odświeżania';
+    document.getElementById('gpsEvents').innerHTML = '<div class="gps-empty">Nie udało się wczytać zdarzeń.</div>';
+  }
+}
+function setRangeToday(){ const now=new Date(); const start=new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0); document.getElementById('filterFrom').value=fmtInputLocal(start); document.getElementById('filterTo').value=fmtInputLocal(now); }
+function setRangeLast7Days(){ const now=new Date(); const start=new Date(now.getTime() - 7*24*3600*1000); document.getElementById('filterFrom').value=fmtInputLocal(start); document.getElementById('filterTo').value=fmtInputLocal(now); }
+document.addEventListener('DOMContentLoaded', async ()=>{
+  initMap();
+  setRangeToday();
+  document.getElementById('btnRefresh').addEventListener('click', refreshAll);
+  document.getElementById('btnToday').addEventListener('click', async ()=>{ setRangeToday(); await loadEvents(); });
+  document.getElementById('btn7Days').addEventListener('click', async ()=>{ setRangeLast7Days(); await loadEvents(); });
+  document.getElementById('filterDevice').addEventListener('change', loadEvents);
+  document.getElementById('filterType').addEventListener('change', loadEvents);
+  document.getElementById('filterFrom').addEventListener('change', loadEvents);
+  document.getElementById('filterTo').addEventListener('change', loadEvents);
+  await refreshAll();
+  gpsState.timer = setInterval(refreshAll, gpsState.refreshMs);
+});
+</script>
+</body></html>

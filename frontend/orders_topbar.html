@@ -1,0 +1,315 @@
+<!doctype html><html lang="pl"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Smart Meble – Zamówienia</title>
+<link rel="icon" href="assets/img/favicon.ico"><link rel="stylesheet" href="assets/css/theme_v17.css"/>
+<style>
+.ordersWrap{overflow:auto}
+.ordersTable{width:100%;table-layout:fixed;border-collapse:collapse}
+.ordersTable th,.ordersTable td{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ordersTable th:nth-child(1),.ordersTable td:nth-child(1){width:36px}
+.ordersTable th:nth-child(2),.ordersTable td:nth-child(2){width:150px}
+.ordersTable th:nth-child(3),.ordersTable td:nth-child(3){width:140px}
+.ordersTable th:nth-child(4),.ordersTable td:nth-child(4){width:520px}
+.ordersTable th:nth-child(5),.ordersTable td:nth-child(5){width:92px}
+.ordersTable th:nth-child(6),.ordersTable td:nth-child(6){width:92px}
+.ordersTable th:nth-child(7),.ordersTable td:nth-child(7){width:92px}
+.ordersTable th:nth-child(8),.ordersTable td:nth-child(8){width:92px}
+.ordersTable th:nth-child(9),.ordersTable td:nth-child(9){width:95px}
+.ordersTable th:nth-child(10),.ordersTable td:nth-child(10){width:95px}
+.ordersTable th:nth-child(11),.ordersTable td:nth-child(11){width:95px}
+.ordersTable th:nth-child(12),.ordersTable td:nth-child(12){width:110px}
+.ordersTable th:nth-child(13),.ordersTable td:nth-child(13){width:150px}
+.cell-ellipsis{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.mobileMenuBtn{display:none}
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:14px 20px;border-bottom:1px solid var(--border);
+  background:linear-gradient(180deg,#2a2a2a 0%, #262626 100%);
+  box-shadow:0 4px 20px rgba(0,0,0,.30);
+  position:sticky;top:0;z-index:1000
+}
+.topbar-left{display:flex;align-items:center;gap:16px;min-width:0}
+.topbar-logo{height:48px;width:auto;flex:0 0 auto;filter:drop-shadow(0 4px 14px rgba(0,0,0,.28))}
+.topbar-title-wrap{display:flex;flex-direction:column;min-width:0;gap:4px}
+.topbar-title{font-size:18px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar-sub{font-size:12px;color:#fff;font-weight:700;letter-spacing:.22em;text-transform:uppercase}
+.topbar-right{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.user-chip{display:flex;align-items:center;gap:10px;padding:6px 12px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.06);box-shadow:0 8px 18px rgba(0,0,0,.14)}
+.user-chip small{display:block;font-size:10px;color:var(--muted);line-height:1.1}
+.user-chip strong{display:block;font-size:13px;line-height:1.2}
+.topbar-link{font-size:13px;color:var(--muted);padding:8px 12px;border:1px solid rgba(183,211,49,.18);background:rgba(183,211,49,.07);border-radius:12px}
+.topbar-link.is-disabled{opacity:.92}
+#logoutBtn{box-shadow:0 10px 24px rgba(183,211,49,.26)}
+
+@media (max-width: 768px){
+  .app{display:block}
+  .sidebar{
+    position:fixed;left:0;top:0;bottom:0;width:260px;z-index:1200;
+    transform:translateX(-100%);transition:transform .22s ease;
+    box-shadow:0 20px 60px rgba(0,0,0,.35)
+  }
+  body.menu-open .sidebar{transform:translateX(0)}
+  body.menu-open::before{
+    content:'';position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1100
+  }
+  .content{min-width:0}
+  .main{padding:10px}
+  .mobileMenuBtn{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:42px;height:42px;border-radius:10px;border:1px solid var(--border);
+    background:rgba(255,255,255,.04);color:var(--text);cursor:pointer;
+    font-size:22px;line-height:1;flex:0 0 auto
+  }
+  .topbar{
+    flex-direction:column;align-items:flex-start;gap:10px;padding:12px 14px;
+  }
+  .topbar-left{
+    width:100%;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    min-width:0;
+  }
+  .topbar-right{
+    width:100%;
+    display:grid;
+    grid-template-columns:1fr auto auto;
+    gap:8px;
+    align-items:center;
+  }
+  .user-chip{grid-column:1/-1}
+  .topbar-logo{height:34px}
+  .topbar-title{font-size:16px;line-height:1.15}
+  .topbar-sub{font-size:11px;letter-spacing:.18em}
+  #addOrderBtn{margin-left:0 !important}
+  .card{padding:10px}
+  .ordersWrap{overflow-x:auto}
+  .ordersTable{min-width:760px}
+  .ordersTable th,.ordersTable td{font-size:12px;padding:7px 8px}
+  .ordersTable th:nth-child(1), .ordersTable td:nth-child(1){display:none !important}
+  .ordersTable th:nth-child(5), .ordersTable td:nth-child(5){display:none !important}
+  .ordersTable th:nth-child(9), .ordersTable td:nth-child(9),
+  .ordersTable th:nth-child(10), .ordersTable td:nth-child(10),
+  .ordersTable th:nth-child(11), .ordersTable td:nth-child(11),
+  .ordersTable th:nth-child(12), .ordersTable td:nth-child(12),
+  .ordersTable th:nth-child(13), .ordersTable td:nth-child(13){display:none !important}
+  .ordersTable th:nth-child(2), .ordersTable td:nth-child(2){width:110px}
+  .ordersTable th:nth-child(3), .ordersTable td:nth-child(3){width:150px}
+  .ordersTable th:nth-child(4), .ordersTable td:nth-child(4){width:180px}
+  .ordersTable th:nth-child(6), .ordersTable td:nth-child(6),
+  .ordersTable th:nth-child(7), .ordersTable td:nth-child(7),
+  .ordersTable th:nth-child(8), .ordersTable td:nth-child(8){width:92px}
+  .cell-ellipsis{max-width:100%}
+}
+@media (max-width: 420px){
+  .topbar-right{grid-template-columns:1fr 1fr}
+  .user-chip{grid-column:1/-1}
+  .topbar-link{grid-column:1/2;text-align:center}
+  #logoutBtn{grid-column:2/3}
+}
+</style></head>
+<body><div class="app"><aside class="sidebar"><div class="brand"><img src="assets/img/logo_smartmeble.png" style="height:28px"/><div>PANEL</div></div><nav><a class="active" href="orders.html">Zamówienia aktualne</a><a href="orders_finished.html">Zamówienia zakończone</a><a data-super-only href="orders_deleted.html">Zamówienia usunięte</a><a data-finance-only href="payments.html">Rozliczenia</a><a data-admin-only href="import_orders.html">Import zamówień</a><a href="schedule.html">Grafik</a><a data-admin-only href="users.html">Użytkownicy</a><a data-admin-only href="statuses.html">Statusy</a><a data-admin-only href="notifications.html">Powiadomienia</a><a data-admin-only href="settings.html">Ustawienia</a></nav></aside>
+<div class="content"><div class="topbar">
+  <div class="topbar-left">
+    <button type="button" id="mobileMenuBtn" class="mobileMenuBtn" aria-label="Menu">☰</button>
+    <img src="assets/img/logo_smartmeble.png" class="topbar-logo" alt="Smart Meble"/>
+    <div class="topbar-title-wrap">
+      <div class="topbar-title">Zamówienia aktualne</div>
+      <div class="topbar-sub">Panel zamówień</div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="user-chip">
+      <div>
+        <small>Zalogowany użytkownik</small>
+        <strong id="topbarUserName">Ładowanie…</strong>
+      </div>
+    </div>
+    <span class="topbar-link is-disabled" title="Przygotowane pod kolejny etap">Zmień hasło</span>
+    <button class="btn" id="logoutBtn">Wyloguj</button>
+  </div>
+</div>
+<main class="main"><div id="err" class="err" style="margin-bottom:10px"></div><div class="card">
+<div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;align-items:center"><input id="q" class="input" placeholder="Szukaj: klient, przedmiot…"><select id="statusFilter" class="input"><option value="">Wszystkie statusy</option></select><input id="year" class="input" style="width:110px" placeholder="Rok"><input id="month" class="input" style="width:110px" placeholder="Miesiąc"><input id="from" class="input" type="date"><input id="to" class="input" type="date"><button class="btn" id="go">Szukaj</button><button class="btn" id="exportBtn">Eksport XLS</button><button class="btn" id="addOrderBtn" style="margin-left:auto">+ Dodaj zamówienie</button></div>
+
+<div id="bulkBar" class="card" style="display:none;margin-bottom:12px;padding:12px;background:#f8fafc;border:1px solid var(--line)">
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+    <b id="bulkCount">Zaznaczono: 0</b>
+    <button class="btn" id="bulkStatusBtn">Zmień status</button>
+    <button class="btn" id="bulkAssignBtn">Przypisz monterów</button>
+    <button class="btn" id="bulkFinishBtn">Zakończ</button>
+    <button class="btn" id="bulkDeleteBtn">Przenieś do usuniętych</button>
+    <button class="btn" id="bulkClearBtn">Wyczyść zaznaczenie</button>
+  </div>
+</div>
+
+<div id="wrap"></div></div></main></div></div>
+<script src="config.js"></script><script src="assets/js/helpers_ext.js"></script><script src="assets/js/menu.js"></script>
+<script>
+logoutBtn.onclick=()=>{ localStorage.removeItem('token'); location.href='login.html'; };
+addOrderBtn.onclick=()=>location.href='order_add.html';
+async function fillTopbarUser(){
+  const setName = (val) => {
+    const el = document.getElementById('topbarUserName');
+    if(el) el.textContent = val || 'Użytkownik';
+  };
+  try{
+    let me = null;
+    try{ me = await apiGet('session_user.php'); }catch(e){}
+    if(!me){
+      try{ me = await apiGet('session_check.php'); }catch(e){}
+    }
+    const u = (me && (me.user || me)) || {};
+    const name = u.full_name || u.name || [u.first_name,u.last_name].filter(Boolean).join(' ').trim() || u.email || u.login || 'Użytkownik';
+    setName(name);
+  }catch(e){
+    setName('Użytkownik');
+  }
+}
+function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function pill(name,color){ const c=color||'#166534'; return '<span style="display:inline-block;padding:6px 10px;border-radius:999px;color:#fff;background:'+c+'">'+esc(name||'—')+'</span>'; }
+const selectedIds = new Set();
+let canManageBulk = false;
+let statusesCache = [];
+let usersCache = [];
+
+function updateBulkBar(){
+  const n = selectedIds.size;
+  bulkBar.style.display = (canManageBulk && n>0) ? '' : 'none';
+  bulkCount.textContent = 'Zaznaczono: ' + n;
+  document.querySelectorAll('.order-check').forEach(ch=>{ ch.checked = selectedIds.has(Number(ch.value)); });
+  const all = document.querySelectorAll('.order-check').length;
+  const checked = document.querySelectorAll('.order-check:checked').length;
+  document.querySelectorAll('.check-all').forEach(ch=>{ ch.checked = all>0 && checked===all; ch.indeterminate = checked>0 && checked<all; });
+}
+
+async function loadStatuses(){
+  statusFilter.innerHTML='<option value="">Wszystkie statusy</option>';
+  try{
+    const r=await apiGet('statuses.php');
+    statusesCache = r.items || [];
+    statusesCache.forEach(s=>{ const o=document.createElement('option'); o.value=s.id; o.textContent=s.name; statusFilter.appendChild(o);});
+  }catch(e){}
+}
+
+async function loadUsers(){
+  usersCache = [];
+  const tries = ['users_list.php','users.php'];
+  for(const endpoint of tries){
+    try{
+      const r = await apiGet(endpoint);
+      const items = r.items || r.users || [];
+      if(Array.isArray(items) && items.length){
+        usersCache = items.map(u=>({id:Number(u.id), name:[u.first_name,u.last_name].filter(Boolean).join(' ').trim() || u.name || u.login || ('Użytkownik '+u.id)}));
+        break;
+      }
+    }catch(e){}
+  }
+}
+
+function buildQs(){ const qs=new URLSearchParams(); if(q.value.trim()) qs.set('q',q.value.trim()); if(statusFilter.value) qs.set('status',statusFilter.value); if(year.value.trim()) qs.set('year',year.value.trim()); if(month.value.trim()) qs.set('month',month.value.trim()); if(from.value) qs.set('from',from.value); if(to.value) qs.set('to',to.value); return qs; }
+
+async function detectCaps(){
+  try{
+    const r = await apiGet('session_check.php');
+    const caps = r.caps || {};
+    canManageBulk = !!(caps.is_admin || caps.is_superadmin);
+  }catch(e){ canManageBulk = false; }
+}
+
+function bindCheckboxes(){
+  document.querySelectorAll('.order-check').forEach(ch=>{
+    ch.addEventListener('click', e=>e.stopPropagation());
+    ch.addEventListener('change', ()=>{
+      const id = Number(ch.value);
+      if(ch.checked) selectedIds.add(id); else selectedIds.delete(id);
+      updateBulkBar();
+    });
+  });
+  document.querySelectorAll('.check-all').forEach(ch=>{
+    ch.addEventListener('change', ()=>{
+      document.querySelectorAll('.order-check').forEach(item=>{
+        const id = Number(item.value);
+        if(ch.checked){ selectedIds.add(id); item.checked=true; } else { selectedIds.delete(id); item.checked=false; }
+      });
+      updateBulkBar();
+    });
+  });
+  updateBulkBar();
+}
+
+async function load(){
+  try{ err.textContent=''; const res=await apiGet('orders.php?'+buildQs().toString()); const canFinance=!!res.can_view_finance; const groups=groupOrders(res.items||[]); wrap.innerHTML=''; groups.forEach(g=>{ const sec=document.createElement('section'); const heads=(canManageBulk?'<th style="width:36px"><input type="checkbox" class="check-all"></th>':'') + (canFinance?'<th>Status</th><th>Klient</th><th>Przedmiot</th><th>Utworzono</th><th>Data umowy</th><th>Data montażu</th><th>Nowa data</th><th>Wartość</th><th>Wpłacona</th><th>Pozostało</th><th>Rozpiska</th><th>Monterzy</th>':'<th>Status</th><th>Klient</th><th>Przedmiot</th><th>Utworzono</th><th>Data umowy</th><th>Data montażu</th><th>Nowa data</th><th>Rozpiska</th><th>Monterzy</th>'); sec.innerHTML='<h3 style="margin:12px 6px">'+esc(g.title)+'</h3><div class="ordersWrap"><table class="table ordersTable"><thead><tr>'+heads+'</tr></thead><tbody></tbody></table></div>'; const tb=sec.querySelector('tbody'); (g.items||[]).forEach(r=>{ const tr=document.createElement('tr'); tr.className='tr'; tr.style.cursor='pointer'; tr.onclick=(ev)=>{ if(ev.target.closest('input,button,label,select')) return; location.href='order_details.html?id='+r.id; }; let html=''; const clientName=((r.client_first_name||'')+' '+(r.client_last_name||'')).trim(); if(canManageBulk){ html+='<td><input type="checkbox" class="order-check" value="'+r.id+'"></td>'; } html+='<td title="'+esc(r.status_name||'')+'">'+pill(r.status_name||'',r.status_color||'')+'</td><td title="'+esc(clientName)+'"><span class="cell-ellipsis">'+esc(clientName)+'</span></td><td title="'+esc(r.item_description||'')+'"><span class="cell-ellipsis">'+esc(r.item_description||'')+'</span></td><td title="'+esc(r.created_at||'')+'"><span class="cell-ellipsis">'+esc(r.created_at||'')+'</span></td><td title="'+esc(r.contract_date||'')+'"><span class="cell-ellipsis">'+esc(r.contract_date||'')+'</span></td><td title="'+esc(r.install_date||'')+'"><span class="cell-ellipsis">'+esc(r.install_date||'')+'</span></td><td title="'+esc(r.install_date_new||'')+'"><span class="cell-ellipsis">'+esc(r.install_date_new||'')+'</span></td>'; if(canFinance){ html+='<td title="'+esc(fmtMoney(r.total_with_addons ?? r.total_amount))+'"><span class="cell-ellipsis">'+fmtMoney(r.total_with_addons ?? r.total_amount)+'</span></td><td title="'+esc(fmtMoney(r.paid_sum ?? 0))+'"><span class="cell-ellipsis">'+fmtMoney(r.paid_sum ?? 0)+'</span></td><td title="'+esc(fmtMoney(r.remaining ?? 0))+'"><span class="cell-ellipsis">'+fmtMoney(r.remaining ?? 0)+'</span></td>'; } html+='<td title="'+esc(r.scheduler_name||'')+'"><span class="cell-ellipsis">'+esc(r.scheduler_name||'')+'</span></td><td title="'+esc((r.mounters||[]).join(', '))+'"><span class="cell-ellipsis">'+esc((r.mounters||[]).join(', '))+'</span></td>'; tr.innerHTML=html; tb.appendChild(tr); }); wrap.appendChild(sec); }); bindCheckboxes(); }catch(e){ err.textContent='Błąd połączenia z serwerem (orders).'; }
+}
+
+async function bulkAction(payload, successMsg){
+  if(!selectedIds.size) return;
+  try{
+    await apiPost('orders_bulk.php', Object.assign({}, payload, { ids:[...selectedIds] }));
+    selectedIds.clear();
+    err.textContent = successMsg || 'Operacja wykonana ✅';
+    await load();
+  }catch(e){
+    console.error(e);
+    err.textContent = 'Nie udało się wykonać operacji zbiorczej.';
+  }
+}
+
+bulkStatusBtn.onclick = async ()=>{
+  const options = statusesCache.map(s=>`${s.id}: ${s.name}`).join('\n');
+  const picked = prompt('Podaj ID nowego statusu:\n\n' + options);
+  if(!picked) return;
+  const statusId = Number(picked);
+  if(!statusId) return alert('Nieprawidłowe ID statusu.');
+  await bulkAction({action:'set_status', status_id:statusId}, 'Zmieniono status zaznaczonych zamówień ✅');
+};
+
+bulkAssignBtn.onclick = async ()=>{
+  if(!usersCache.length) await loadUsers();
+  const options = usersCache.map(u=>`${u.id}: ${u.name}`).join('\n');
+  const picked = prompt('Podaj ID monterów oddzielone przecinkami:\n\n' + options);
+  if(!picked) return;
+  await bulkAction({action:'assign_mounters', mounters:picked}, 'Przypisano monterów ✅');
+};
+
+bulkFinishBtn.onclick = async ()=>{
+  const now = new Date();
+  const year = prompt('Podaj rok zakończenia:', String(now.getFullYear()));
+  if(!year) return;
+  const month = prompt('Podaj miesiąc zakończenia (1-12):', String(now.getMonth()+1));
+  if(!month) return;
+  await bulkAction({action:'finish', year:Number(year), month:Number(month)}, 'Zaznaczone zamówienia przeniesiono do zakończonych ✅');
+};
+
+bulkDeleteBtn.onclick = async ()=>{
+  if(!confirm('Czy na pewno przenieść zaznaczone zamówienia do usuniętych?')) return;
+  const reason = prompt('Powód usunięcia zbiorczego:', 'Usunięcie zbiorcze') || 'Usunięcie zbiorcze';
+  await bulkAction({action:'delete', reason}, 'Zaznaczone zamówienia przeniesiono do usuniętych ✅');
+};
+
+bulkClearBtn.onclick = ()=>{ selectedIds.clear(); updateBulkBar(); };
+exportBtn.onclick=()=>{ location.href = API_BASE + 'orders_export.php?state=current&' + buildQs().toString(); };
+go.onclick=load;
+
+function initMobileMenu(){
+  const btn = document.getElementById('mobileMenuBtn');
+  const sidebar = document.querySelector('.sidebar');
+  if(!btn || !sidebar) return;
+  btn.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    document.body.classList.toggle('menu-open');
+  });
+  document.addEventListener('click', (e)=>{
+    if(window.innerWidth > 768) return;
+    if(document.body.classList.contains('menu-open') && !sidebar.contains(e.target) && e.target !== btn){
+      document.body.classList.remove('menu-open');
+    }
+  });
+  window.addEventListener('resize', ()=>{
+    if(window.innerWidth > 768) document.body.classList.remove('menu-open');
+  });
+}
+
+document.addEventListener('DOMContentLoaded', async()=>{ initMobileMenu(); await fillTopbarUser(); await detectCaps(); await loadStatuses(); await loadUsers(); await load(); });
+</script></body></html>

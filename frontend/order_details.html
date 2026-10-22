@@ -1,0 +1,1608 @@
+<!doctype html><html lang="pl"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Szczegóły zamówienia – Smart Meble</title>
+<link rel="icon" href="assets/img/favicon.ico">
+<link rel="stylesheet" href="assets/css/theme_v17.css"/>
+
+
+<style id="mounter-readonly-fix">
+.mounter-readonly .ro-text{
+  background:transparent !important;
+  border:none !important;
+  box-shadow:none !important;
+  padding:0 !important;
+  min-height:auto !important;
+  color:var(--text) !important;
+  pointer-events:none !important;
+  appearance:none !important;
+}
+.mounter-readonly .ro-text[disabled],
+.mounter-readonly .ro-text[readonly]{
+  opacity:1 !important;
+  -webkit-text-fill-color:var(--text) !important;
+}
+.mounter-readonly .hide-for-mounter{ display:none !important; }
+
+/* action buttons fix */
+.btn-edit,
+.btn-edit-comp{
+  background:#b8d51e !important;
+  color:#111 !important;
+  border:none !important;
+  padding:6px 10px !important;
+  border-radius:8px !important;
+  cursor:pointer !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  white-space:nowrap !important;
+  box-shadow:none !important;
+}
+.btn-delete,
+.btn-delete-comp,
+.btn-delete-mini{
+  background:#b91c1c !important;
+  color:#fff !important;
+  border:none !important;
+  padding:6px 10px !important;
+  border-radius:8px !important;
+  cursor:pointer !important;
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+  white-space:nowrap !important;
+  box-shadow:none !important;
+}
+.btn-delete:hover,
+.btn-delete-comp:hover,
+.btn-delete-mini:hover{
+  background:#dc2626 !important;
+}
+#compTable td:last-child{ width:190px; }
+.finance-author{font-size:12px;line-height:1.3;color:var(--muted)}
+.finance-author strong{display:block;color:#e5e7eb;font-weight:600}
+#compTable tr td{ vertical-align:middle; }
+
+
+.audit-card{grid-column:1/-1}
+.audit-list{max-height:320px;overflow:auto;display:flex;flex-direction:column;gap:10px}
+.audit-item{padding:10px;border:1px solid rgba(255,255,255,0.08);border-radius:10px;background:rgba(255,255,255,0.02)}
+.audit-head{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+.audit-title{font-weight:700}
+.audit-meta{color:var(--muted);font-size:12px}
+.audit-details{color:#d1d5db;font-size:13px;display:flex;flex-direction:column;gap:4px}
+.audit-empty{color:var(--muted)}
+
+
+.work-plan-grid{
+  grid-column:1/-1;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
+}
+.work-plan-grid .card{min-width:0}
+.work-summary-total td,
+.planned-payments-total td{
+  background:linear-gradient(135deg,#b7d61c,#95b80f) !important;
+  color:#111827 !important;
+  font-weight:700 !important;
+  border:none !important;
+  font-family:inherit !important;
+  padding:12px 14px !important;
+}
+
+.work-summary-total td:first-child,
+.planned-payments-total td:first-child{
+  border-radius:14px 0 0 14px !important;
+}
+
+.work-summary-total td:last-child,
+.planned-payments-total td:last-child{
+  border-radius:0 14px 14px 0 !important;
+}
+.planned-payments-form{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  align-items:flex-end;
+  margin-bottom:8px;
+}
+.planned-payments-form .input{min-width:120px}
+@media(max-width:1000px){
+  .work-plan-grid{grid-template-columns:1fr}
+}
+
+
+.notes-timeline-grid{
+  grid-column:1/-1;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
+}
+.notes-timeline-grid .card{min-width:0}
+.timeline-wrap{
+  position:relative;
+  padding:8px 4px 4px;
+}
+.timeline-line{
+  position:absolute;
+  left:20px;
+  top:24px;
+  bottom:18px;
+  width:3px;
+  border-radius:999px;
+  background:linear-gradient(180deg,#b7d61c,#5f6f0b);
+  opacity:.9;
+}
+.timeline-list{
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+.timeline-item{
+  position:relative;
+  display:grid;
+  grid-template-columns:44px 1fr;
+  gap:10px;
+  align-items:flex-start;
+}
+.timeline-dot{
+  position:relative;
+  z-index:2;
+  width:36px;
+  height:36px;
+  border-radius:999px;
+  display:grid;
+  place-items:center;
+  background:linear-gradient(135deg,#b7d61c,#95b80f);
+  color:#111827;
+  font-weight:900;
+  box-shadow:0 0 0 5px rgba(183,214,28,.12);
+  margin-left:3px;
+}
+.timeline-box{
+  background:rgba(255,255,255,.035);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:14px;
+  padding:10px 12px;
+}
+.timeline-title{
+  font-weight:800;
+  color:#f9fafb;
+  font-size:13px;
+  line-height:1.25;
+}
+.timeline-date{
+  margin-top:4px;
+  color:#cbd5e1;
+  font-size:12px;
+}
+.timeline-meta{
+  margin-top:5px;
+  color:var(--muted);
+  font-size:12px;
+  line-height:1.35;
+}
+.timeline-status-list{
+  margin-top:12px;
+  padding-top:10px;
+  border-top:1px solid rgba(255,255,255,.08);
+}
+.timeline-status-title{
+  color:#b7d61c;
+  font-size:12px;
+  font-weight:800;
+  margin-bottom:6px;
+}
+.timeline-status-item{
+  font-size:12px;
+  color:#d1d5db;
+  padding:5px 0;
+  border-bottom:1px solid rgba(255,255,255,.045);
+}
+.timeline-status-item:last-child{border-bottom:0}
+.timeline-empty{color:var(--muted);font-size:13px}
+@media(max-width:1000px){
+  .notes-timeline-grid{grid-template-columns:1fr}
+}
+
+
+.order-schedule-wrap{
+  margin-top:8px;
+  overflow:auto;
+  max-height:320px;
+}
+.order-schedule-table{
+  width:100%;
+  border-collapse:collapse;
+}
+.order-schedule-table th,
+.order-schedule-table td{
+  padding:10px 12px;
+  border-bottom:1px solid rgba(255,255,255,.08);
+  vertical-align:top;
+}
+.order-schedule-table th{
+  color:#e5e7eb;
+  font-size:12px;
+  font-weight:800;
+  text-transform:uppercase;
+  letter-spacing:.02em;
+}
+.order-schedule-table td{
+  color:#f3f4f6;
+  font-size:13px;
+}
+.schedule-mode-pill{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:999px;
+  padding:5px 10px;
+  font-weight:800;
+  font-size:12px;
+  white-space:nowrap;
+}
+.schedule-mode-pill.workshop{
+  background:rgba(183,214,28,.16);
+  color:#d9ff5c;
+  border:1px solid rgba(183,214,28,.32);
+}
+.schedule-mode-pill.install{
+  background:rgba(59,130,246,.16);
+  color:#bfdbfe;
+  border:1px solid rgba(59,130,246,.32);
+}
+.schedule-workers{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+}
+.schedule-worker-pill{
+  display:inline-flex;
+  padding:5px 9px;
+  border-radius:999px;
+  background:rgba(255,255,255,.07);
+  color:#f9fafb;
+  border:1px solid rgba(255,255,255,.08);
+  font-size:12px;
+  font-weight:600;
+}
+.schedule-empty{
+  color:var(--muted);
+  font-size:13px;
+  padding:8px 0;
+}
+
+.stages-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(190px,1fr));
+  gap:8px;
+}
+.stage-chip{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:8px 10px;
+  border-radius:10px;
+  border:1px solid rgba(255,255,255,.08);
+  background:rgba(255,255,255,.02);
+  cursor:pointer;
+  user-select:none;
+  transition:background .15s,border-color .15s;
+}
+.stage-chip:hover{ background:rgba(255,255,255,.05); }
+.stage-icon-circle{
+  border-radius:999px;
+  flex:none;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  transition:background .15s;
+}
+.stage-chip.done{
+  border-color:rgba(183,214,28,.4);
+  background:rgba(183,214,28,.08);
+}
+.stage-chip .stage-label{
+  font-size:13px;
+  color:var(--text);
+}
+.stage-chip.done .stage-label{ color:#f3f7d8; font-weight:600; }
+.stage-chip .stage-meta{
+  font-size:11px;
+  color:var(--muted);
+  margin-left:auto;
+  white-space:nowrap;
+}
+
+.corr-item{
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:12px;
+  padding:10px 12px;
+  margin-bottom:10px;
+  background:rgba(255,255,255,.02);
+}
+.corr-item-head{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-bottom:8px;
+}
+.corr-item-title{
+  font-weight:700;
+  flex:1;
+  min-width:160px;
+}
+.corr-item-meta{
+  font-size:11px;
+  color:var(--muted);
+}
+.corr-stage-row{
+  display:flex;
+  gap:6px;
+  flex-wrap:wrap;
+}
+.corr-stage-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  padding:5px 9px;
+  border-radius:999px;
+  font-size:12px;
+  cursor:pointer;
+  border:1px solid rgba(255,255,255,.1);
+  background:rgba(255,255,255,.04);
+  color:var(--muted);
+  user-select:none;
+}
+.corr-stage-chip.done{
+  background:var(--accent);
+  border-color:var(--accent);
+  color:var(--accent-contrast);
+  font-weight:700;
+}
+.corr-stage-chip-ro{ cursor:default; opacity:.85; }
+.corr-files-row{ margin-top:6px; }
+.corr-add-file-btn:hover{ background:rgba(255,255,255,.12) !important; }
+
+</style>
+
+
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand"><img src="assets/img/logo_smartmeble.png" style="height:28px"/><div>PANEL</div></div>
+    <nav id="sideNav">
+      <a href="orders.html">Zamówienia aktualne</a>
+      <a href="orders_finished.html">Zamówienia zakończone</a>
+      <a href="orders_deleted.html">Zamówienia usunięte</a>
+      <a href="payments.html">Rozliczenia</a>
+      <a href="schedule.html">Grafik</a>
+      <a href="users.html">Użytkownicy</a>
+      <a href="statuses.html">Statusy</a><a href="notifications.html">Powiadomienia</a>
+      <a href="settings.html">Ustawienia</a>
+    </nav>
+  </aside>
+  <div class="content">
+    <div id="appTopbar" data-title="Szczegóły zamówienia" data-subtitle="Panel zamówień" data-extra-html='<button class="btn" id="saveBtnTop">Zapisz zmiany</button><button class="btn" id="finishBtnTop" style="display:none">Zakończ zamówienie</button><button class="btn" id="receiptDocBtnTop" style="display:none">Drukuj pokwitowanie</button><button class="btn" id="protocolDocBtnTop" style="display:none">Drukuj protokół odbioru</button><button class="btn" id="coverPdfBtnTop">Okładka PDF</button><button class="btn" id="dupBtnTop" style="display:none">Duplikuj zamówienie</button>'></div>
+    <div style="display:none">
+      <button class="btn" id="finishBtn" style="display:none;background:var(--accent);color:#fff;">Zakończ zamówienie</button>
+      <button class="btn" id="deleteBtn" style="display:none;background:#ef4444;color:#fff;">Usuń zamówienie</button>
+      <button class="btn" id="coverPdfBtn">Okładka PDF</button>
+      <button class="btn" id="logoutBtn">Wyloguj</button>
+    </div>
+    <main class="main">
+      <div id="err" class="err" style="margin-bottom:10px"></div>
+
+      <div class="grid" style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+        <div class="card">
+          <h3>Dane klienta</h3>
+          <div class="row">
+            <div><label>Imię</label><input class="input" id="f_first"></div>
+            <div><label>Nazwisko</label><input class="input" id="f_last"></div>
+            <div style="grid-column:1/-1"><label>Przedmiot</label><input class="input" id="f_items"></div>
+            <div><label>Telefon</label><input class="input" id="f_phone"></div>
+            <div><label>E-mail</label><input class="input" id="f_email"></div>
+            <div style="grid-column:1/-1;margin-top:6px"><label>Adres montażu – ulica i nr</label><input class="input" id="f_addr_street"></div>
+            <div><label>Kod pocztowy</label><input class="input" id="f_addr_zip"></div>
+            <div><label>Miasto</label><input class="input" id="f_addr_city"></div>
+            <div style="grid-column:1/-1;margin-top:6px"><label>Uwagi</label><textarea class="input" id="f_client_notes" rows="5" style="resize:vertical;min-height:110px"></textarea></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Daty i status</h3>
+          <div class="row">
+            <div><label>Data umowy</label><input class="input" id="f_contract" type="date"></div>
+            <div><label>Data montażu</label><input class="input" id="f_install" type="date"></div>
+            <div><label>Nowa data montażu</label><input class="input" id="f_install_new" type="date"></div>
+            <div><label>Data pomiaru do</label><input class="input" id="f_measure_to" type="date"><label style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:13px;color:#e5e7eb"><input type="checkbox" id="f_measure_done" style="width:18px;height:18px"> <span>POMIAR WYKONANY</span></label></div>
+            <div id="finishBucketWrap" style="display:none"><label>Miesiąc zakończenia</label><input class="input" id="f_finish_bucket" type="month"></div>
+            <div style="grid-column:1/-1"><label>Status</label><select class="input" id="f_status"></select></div>
+            <div style="grid-column:1/-1"><label>Osoba rozpisująca</label><select class="input" id="f_scheduler"></select></div>
+            <div style="grid-column:1/-1"><label>Umowę podpisał(a)</label>
+              <div style="display:flex;gap:8px"><select class="input" id="f_signer" style="flex:1"><option value="">— nie wybrano —</option></select><button class="btn" type="button" id="addSignerBtn" style="display:none;white-space:nowrap">+ Dodaj osobę</button></div>
+            </div>
+            <div style="grid-column:1/-1">
+              <label>Monterzy</label>
+              <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px">
+                <button class="btn" id="btnShowMounterPicker" type="button">Dodaj / zmień monterów</button>
+              </div>
+              <div id="mounterChosen" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+              <div id="mounterPickerWrap" style="display:none;margin-top:10px;padding:10px;border:1px solid rgba(255,255,255,0.08);border-radius:10px">
+                <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+                  <div style="flex:1;min-width:280px">
+                    <label>Dostępni monterzy</label>
+                    <select class="input" id="f_mounters" multiple size="8" style="height:auto"></select>
+                  </div>
+                  <div style="display:flex;gap:8px;flex-wrap:wrap">
+                    <button class="btn" id="btnAddSelectedMounters" type="button">Dodaj zaznaczonych</button>
+                    <button class="btn" id="btnHideMounterPicker" type="button">Zamknij</button>
+                  </div>
+                </div>
+                <div style="color:var(--muted);font-size:12px;margin-top:6px">Jeśli nie masz jeszcze osobnej roli „Monter”, lista pokaże wszystkich aktywnych użytkowników.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" id="wycenaLinkCard" style="grid-column:1/-1;display:none">
+          <h3>Wycena</h3>
+          <div id="wycenaLinkContent"></div>
+        </div>
+
+        <div class="card" id="stagesCard" style="grid-column:1/-1">
+          <h3>Etapy produkcji</h3>
+          <div id="stagesGrid" class="stages-grid"><div style="color:var(--muted)">Ładowanie...</div></div>
+        </div>
+
+        <div class="card" id="correctionsCard" style="grid-column:1/-1">
+          <h3>Elementy do poprawy</h3>
+          <div style="color:var(--muted);font-size:12px;margin-bottom:8px">Dodanie elementu automatycznie ustawi status zamówienia na PILNE-POPRAWKI i wyśle powiadomienie mailowe (adresy w zakładce „Powiadomienia”).</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:flex-end">
+            <div style="flex:1;min-width:200px"><label>Nazwa</label><input class="input" id="corrName" placeholder="np. Lustro, blenda..."></div>
+            <div style="flex:2;min-width:240px"><label>Opis</label><input class="input" id="corrDesc" placeholder="Krótki opis co jest do zrobienia"></div>
+            <div><label>Zdjęcie / skan</label><input class="input" id="corrFile" type="file" accept="image/*,.pdf" capture="environment" style="padding:6px"></div>
+            <button class="btn" id="addCorr">Dodaj</button>
+          </div>
+          <div id="correctionsAddHint" style="display:none;color:var(--muted);font-size:12px;margin-bottom:8px">Podgląd bez możliwości edycji.</div>
+          <div id="correctionsList"></div>
+          <div id="correctionsEmpty" style="color:var(--muted);display:none">Brak elementów do poprawy.</div>
+        </div>
+
+        <div class="card" id="financeCard" style="grid-column:1/-1">
+          <h3>Finanse</h3>
+          <div class="row" style="grid-template-columns:1fr 1fr 1fr;gap:12px">
+            <div><label>Wartość zamówienia (suma)</label><input class="input" id="f_total" type="number" step="0.01"></div>
+            <div><label>Wpłacone</label><input class="input" id="f_paid" type="number" step="0.01" disabled></div>
+            <div><label>Pozostało</label><input class="input" id="f_left" type="number" step="0.01" disabled></div>
+          </div>
+
+          <div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:14px">
+            <div>
+              <h4 style="margin:8px 0">Składniki wartości</h4>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <input class="input" id="comp_desc" placeholder="Opis (np. domówione biurko)" style="flex:2;min-width:240px">
+                <input class="input" id="comp_amount" placeholder="Kwota" type="number" step="0.01" style="width:140px">
+                <button class="btn" id="addComp">Dodaj</button>
+              </div>
+              <div style="overflow:auto;margin-top:8px"><table class="table"><thead><tr><th>Opis</th><th style="width:140px">Kwota</th><th style="width:180px">Dodał</th><th style="width:80px"></th></tr></thead><tbody id="compTable"></tbody></table></div>
+            </div>
+            <div>
+              <h4 style="margin:8px 0">Wpłaty</h4>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <input class="input" id="pay_date" type="date" style="width:160px">
+                <input class="input" id="pay_amount" placeholder="Kwota" type="number" step="0.01" style="width:140px">
+                <input class="input" id="pay_desc" placeholder="Opis (np. Zaliczka)" style="flex:2;min-width:220px">
+                <button class="btn" id="addPay">Dodaj</button>
+              </div>
+              <div style="overflow:auto;margin-top:8px"><table class="table"><thead><tr><th>Data</th><th style="width:140px">Kwota</th><th>Opis</th><th style="width:180px">Dodał</th><th style="width:80px"></th></tr></thead><tbody id="payTable"></tbody></table></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="notes-timeline-grid">
+          <div class="card" id="notesCard"><h3>Uwagi</h3><div id="notes" style="max-height:260px;overflow:auto;margin-bottom:8px"></div><div style="display:flex;gap:8px"><input class="input" id="noteInput" placeholder="Dodaj uwagę..."><button class="btn" id="addNote">Dodaj</button></div></div>
+
+          <div class="card" id="scheduleCard">
+            <h3>GRAFIK</h3>
+            <div id="orderSchedule" class="order-schedule-wrap"><div class="schedule-empty">Ładowanie grafiku...</div></div>
+          </div>
+        </div>
+
+        <div class="card" id="filesCard" style="grid-column:1/-1">
+          <h3>Pliki</h3>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+            <div id="filesPublicSection">
+              <h4 style="margin:8px 0">Pliki ogólne</h4>
+              <div id="filesWrapPublic" style="display:flex;gap:10px;flex-wrap:wrap"></div>
+            </div>
+            <div id="filesAdminSection">
+              <h4 style="margin:8px 0">Pliki administracyjne</h4>
+              <div id="filesWrapAdmin" style="display:flex;gap:10px;flex-wrap:wrap"></div>
+            </div>
+          </div>
+          <div style="margin-top:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <input type="file" id="fileInput" multiple>
+            <select class="input" id="fileScope" style="width:220px">
+              <option value="public">Dodaj do plików ogólnych</option>
+              <option value="admin">Dodaj do plików administracyjnych</option>
+            </select>
+            <button class="btn" id="uploadBtn">Wyślij</button>
+            <button class="btn" id="deleteFilesBtn" class="hide-for-mounter" type="button" style="display:none;background:#ef4444;color:#fff">Usuń zaznaczone pliki</button>
+          </div>
+          <div style="color:var(--muted);font-size:12px;margin-top:8px">Pliki administracyjne są widoczne tylko dla administracji. Stare pliki z publicznego katalogu nadal działają jako fallback.</div>
+        </div>
+
+        <div class="work-plan-grid">
+          <div class="card" id="workSummaryCard">
+            <h3>CZAS PRACY MONTERÓW</h3>
+            <div style="overflow:auto;margin-top:8px">
+              <table class="table">
+                <thead><tr><th>MONTER</th><th style="width:130px">DNI WARSZTAT</th><th style="width:130px">DNI MONTAŻ</th></tr></thead>
+                <tbody id="workSummaryTable"><tr><td colspan="3" style="color:var(--muted)">Ładowanie...</td></tr></tbody>
+                <tfoot>
+                  <tr class="work-summary-total">
+                    <td>SUMA</td>
+                    <td id="workshopDaysTotal">0</td>
+                    <td id="installDaysTotal">0</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+
+          <div class="card" id="plannedPaymentsCard">
+            <h3>PLANOWANE WPŁATY</h3>
+            <div class="planned-payments-form" id="plannedPaymentsForm">
+              <div><label>Kwota</label><input class="input" id="plannedPayAmount" type="number" step="0.01" style="width:130px"></div>
+              <div><label>Data</label><input class="input" id="plannedPayDate" type="date" style="width:155px"></div>
+              <div style="flex:1;min-width:180px"><label>Opis</label><input class="input" id="plannedPayDesc" placeholder="np. II rata"></div>
+              <button class="btn" id="addPlannedPayment" type="button">Dodaj</button>
+            </div>
+            <div style="overflow:auto;margin-top:8px">
+              <table class="table">
+                <thead><tr><th style="width:130px">KWOTA</th><th style="width:135px">DATA</th><th>OPIS</th><th style="width:120px"></th></tr></thead>
+                <tbody id="plannedPaymentsTable"><tr><td colspan="4" style="color:var(--muted)">Ładowanie...</td></tr></tbody>
+                <tfoot>
+                  <tr class="planned-payments-total">
+                    <td>SUMA</td>
+                    <td id="plannedPaymentsTotal" colspan="3">0,00 zł</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="card audit-card" id="auditCard">
+          <h3>Historia zmian zamówienia</h3>
+          <div id="auditList" class="audit-list"><div class="audit-empty">Ładowanie historii...</div></div>
+        </div>
+      </div>
+
+      <div style="margin-top:12px;display:flex;gap:10px"><button class="btn" id="saveBtn" class="hide-for-mounter" style="background:var(--accent);color:#fff;">Zapisz zmiany</button><button class="btn" id="backBtn">Wróć</button></div>
+    </main>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="assets/js/helpers_ext.js"></script>
+<script src="assets/js/menu.js"></script>
+<script src="assets/js/topbar.js"></script>
+<script>
+const id = new URLSearchParams(location.search).get('id');
+const $ = (x)=>document.getElementById(x);
+function logout(){
+  localStorage.removeItem('token');
+  window.location.href='login.html';
+  setTimeout(()=>{ window.location.replace('login.html'); },50);
+}
+$('logoutBtn').onclick = logout; $('backBtn').onclick = ()=>history.back();
+$('coverPdfBtn').onclick = ()=>{
+  const token = localStorage.getItem('token') || '';
+  const url = API_BASE + 'order_cover_pdf.php?id=' + encodeURIComponent(id) + (token ? '&token=1' : '');
+  fetch(url,{headers: token ? {'Authorization':'Bearer '+token} : {}})
+    .then(r=>r.blob())
+    .then(b=>window.open(URL.createObjectURL(b),'_blank'));
+};
+function sanitizeDownloadFilename(name){ return String(name||'dokument.docx').replace(/[\\/]+/g,' ').trim() || 'dokument.docx'; }
+function filenameFromDisposition(cd){
+  if(!cd) return '';
+  const utf = cd.match(/filename\*=UTF-8''([^;]+)/i);
+  if(utf) return decodeURIComponent(utf[1].replace(/"/g,''));
+  const simple = cd.match(/filename="?([^";]+)"?/i);
+  return simple ? simple[1] : '';
+}
+async function printOrderDoc(type){
+  const label = type === 'receipt' ? 'pokwitowania' : 'protokołu odbioru';
+  const raw = prompt('Podaj kwotę do ' + label + ':');
+  if(raw === null) return;
+  const amount = String(raw).replace(/\s/g,'').replace(',', '.');
+  const parsed = Number(amount);
+  if(!isFinite(parsed) || parsed <= 0){ alert('Podaj poprawną kwotę większą od 0.'); return; }
+  const token = localStorage.getItem('token') || '';
+  const url = API_BASE + 'order_print_doc.php?id=' + encodeURIComponent(id) + '&type=' + encodeURIComponent(type) + '&amount=' + encodeURIComponent(amount);
+  try{
+    const res = await fetch(url, {headers: token ? {'Authorization':'Bearer '+token} : {}});
+    if(!res.ok){
+      let msg = 'Nie udało się wygenerować dokumentu.';
+      try{ const j = await res.json(); if(j && (j.details || j.error)) msg += '\n' + (j.details || j.error); }catch(e){}
+      alert(msg);
+      return;
+    }
+    const blob = await res.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = sanitizeDownloadFilename(filenameFromDisposition(res.headers.get('Content-Disposition')) || (type === 'receipt' ? 'POKWITOWANIE.docx' : 'PROTOKÓŁ.docx'));
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  }catch(e){
+    console.error(e);
+    alert('Błąd połączenia przy generowaniu dokumentu.');
+  }
+}
+document.addEventListener('click', (ev)=>{
+  if(ev.target && ev.target.id === 'receiptDocBtnTop') printOrderDoc('receipt');
+  if(ev.target && ev.target.id === 'protocolDocBtnTop') printOrderDoc('protocol');
+});
+function setErr(msg){ $('err').textContent = msg || ''; }
+function num(v){ const n = Number(String(v||'').replace(',','.')); return isFinite(n) ? n : 0; }
+
+function applyFieldCaps(caps){
+  const showSummary = !!(caps?.finance_summary?.view);
+  const showComponents = !!(caps?.finance_components?.view);
+  const showPayments = !!(caps?.finance_payments?.view);
+  const showAnyFinance = showSummary || showComponents || showPayments;
+  const financeCard = $('financeCard');
+  if(financeCard) financeCard.style.display = showAnyFinance ? '' : 'none';
+  if(showAnyFinance){
+    if(!showSummary){ ['f_total','f_paid','f_left'].forEach(id=>{ if($(id)) $(id).value=''; if($(id) && $(id).closest('div')) $(id).closest('div').style.display='none'; }); }
+    if(!showComponents){ if($('comp_desc')) $('comp_desc').closest('div').parentElement.parentElement.style.display='none'; }
+    if(!showPayments){ if($('pay_date')) $('pay_date').closest('div').parentElement.parentElement.style.display='none'; }
+  }
+  if($('notesCard') && caps?.notes && !caps.notes.view) $('notesCard').style.display='none';
+  if($('filesCard') && caps?.files && !caps.files.view) $('filesCard').style.display='none';
+  applyCorrectionsCaps(caps?.corrections);
+}
+function applyCorrectionsCaps(cap){
+  const card = $('correctionsCard');
+  if(!card) return;
+  const canView = !cap || cap.view === undefined ? true : !!cap.view;
+  if(!canView){ card.style.display='none'; return; }
+  card.style.display='';
+  _correctionsCanEdit = !cap || cap.edit === undefined ? true : !!cap.edit;
+  ['corrName','corrDesc','corrFile','addCorr'].forEach(id=>{ const el=$(id); if(el) el.style.display = _correctionsCanEdit ? '' : 'none'; });
+  const hint = document.getElementById('correctionsAddHint');
+  if(hint) hint.style.display = _correctionsCanEdit ? 'none' : '';
+}
+
+let _mounterCandidates = [];
+let _selectedMounterIds = [];
+let _canViewPublicFiles = true;
+let _canViewAdminFiles = false;
+let _canUploadPublicFiles = false;
+let _canUploadAdminFiles = false;
+let _canDeleteFiles = false;
+
+async function getRoleId(){
+  try{ const me = await apiGet('session_check.php'); return Number(me?.user?.role_id ?? me?.user?.role ?? 0); }
+  catch(e){ return 0; }
+}
+async function showPrivButtons(){
+  const roleId = await getRoleId();
+  if([1,999].includes(roleId)) {
+    $('finishBtn').style.display='inline-flex';
+    const topFinish = document.getElementById('finishBtnTop');
+    if(topFinish) topFinish.style.display='inline-flex';
+    const receiptBtn = document.getElementById('receiptDocBtnTop');
+    const protocolBtn = document.getElementById('protocolDocBtnTop');
+    if(receiptBtn) receiptBtn.style.display='inline-flex';
+    if(protocolBtn) protocolBtn.style.display='inline-flex';
+  }
+  if([1,2,999].includes(roleId)) {
+    const dupB = document.getElementById('dupBtnTop');
+    if(dupB) dupB.style.display='inline-flex';
+  }
+  if([999].includes(roleId)) {
+    $('deleteBtn').style.display='inline-flex';
+    $('deleteFilesBtn').style.display='inline-flex';
+    if($('finishBucketWrap')) $('finishBucketWrap').style.display='';
+  }
+}
+async function loadStatuses(){
+  const sel = $('f_status'); sel.innerHTML='';
+  const r = await apiGet('statuses.php');
+  (r.items||[]).forEach(s=>{ const o=document.createElement('option'); o.value=s.id; o.textContent=s.name; sel.appendChild(o); });
+}
+function renderChosenMounters(){
+  const wrap = $('mounterChosen');
+  wrap.innerHTML = '';
+  const selected = _mounterCandidates.filter(u => _selectedMounterIds.includes(String(u.id)));
+  if(!selected.length){
+    wrap.innerHTML = '<div style="color:var(--muted)">Brak przypisanych monterów</div>';
+    return;
+  }
+  selected.forEach(u=>{
+    const pill = document.createElement('div');
+    pill.style.cssText = 'display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:999px;background:rgba(255,255,255,0.08)';
+    pill.innerHTML = '<span>'+ (u.full_name || u.email || ('Monter #'+u.id)) +'</span><button type="button" class="btn-delete-mini">Usuń</button>';
+    pill.querySelector('button').onclick = ()=>{
+      _selectedMounterIds = _selectedMounterIds.filter(x => x !== String(u.id));
+      renderChosenMounters();
+      renderAvailableMounters();
+    };
+    wrap.appendChild(pill);
+  });
+}
+function renderAvailableMounters(){
+  const msel = $('f_mounters');
+  msel.innerHTML = '';
+  _mounterCandidates
+    .filter(u => !_selectedMounterIds.includes(String(u.id)))
+    .forEach(u=>{
+      const o=document.createElement('option');
+      o.value=u.id;
+      o.textContent=u.full_name || u.email || ('Użytkownik #'+u.id);
+      msel.appendChild(o);
+    });
+}
+async function loadUsersForSchedulerAndMounters(selectedSchedulerId, selectedMounterIds){
+  const r = await apiGet('users_list.php');
+  const items = r.items||[];
+
+  const sch = $('f_scheduler');
+  sch.innerHTML = '<option value="">— wybierz —</option>';
+  items.forEach(u=>{
+    const o=document.createElement('option');
+    o.value=u.id;
+    o.textContent=u.full_name || u.email || ('Użytkownik #'+u.id);
+    sch.appendChild(o);
+  });
+  if(selectedSchedulerId) sch.value = String(selectedSchedulerId);
+
+  let mounters = items.filter(u=>{
+    const rn = String(u.role_name || '').toLowerCase();
+    return rn.includes('monter') || Number(u.role_id)===3;
+  });
+  if(!mounters.length){
+    mounters = items.slice();
+  }
+  const seen = new Set();
+  _mounterCandidates = mounters.filter(u=>{
+    const k = String(u.id);
+    if(seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+  _selectedMounterIds = (selectedMounterIds||[]).map(x=>String(x));
+  renderChosenMounters();
+  renderAvailableMounters();
+}
+function selectedMountersCsv(){
+  return _selectedMounterIds.join(',');
+}
+$('btnShowMounterPicker').onclick = ()=>{ $('mounterPickerWrap').style.display = 'block'; };
+$('btnHideMounterPicker').onclick = ()=>{ $('mounterPickerWrap').style.display = 'none'; };
+$('btnAddSelectedMounters').onclick = ()=>{
+  const sel = $('f_mounters');
+  const toAdd = Array.from(sel.selectedOptions).map(o=>String(o.value));
+  _selectedMounterIds = Array.from(new Set(_selectedMounterIds.concat(toAdd)));
+  renderChosenMounters();
+  renderAvailableMounters();
+};
+
+async function renderComps(list){
+  const tb = $('compTable');
+  tb.innerHTML='';
+
+  const roleId = await getRoleId();
+  const isSuperAdmin = (roleId === 999);
+
+  (list||[]).forEach(row=>{
+    const tr=document.createElement('tr');
+
+    let actions = '<div style="display:flex;gap:8px;align-items:center;justify-content:flex-end;flex-wrap:nowrap;">';
+    if(isSuperAdmin){
+      actions += '<button type="button" class="btn-edit-comp">Edytuj</button>';
+    }
+    actions += '<button type="button" class="btn-delete-comp">Usuń</button>';
+    actions += '</div>';
+
+    tr.innerHTML =
+      '<td>'+ escHtml(row.description||'') +'</td>'
+      + '<td>'+ fmtMoney(row.amount) +'</td>'
+      + '<td><div class="finance-author"><strong>'+escHtml(row.created_by_name || '—')+'</strong>'+(row.created_at?'<span>'+escHtml(row.created_at)+'</span>':'')+'</div></td>'
+      + '<td>'+ actions +'</td>';
+
+    tr.querySelector('.btn-delete-comp').onclick = async ()=>{
+      if(!confirm('Usunąć składnik?')) return;
+      await apiPost('order_component_delete.php', {id:Number(row.id)});
+      await loadFinance();
+      await loadAudit();
+    };
+
+    if(isSuperAdmin){
+      tr.querySelector('.btn-edit-comp').onclick = async ()=>{
+        const newDesc = prompt('Opis:', row.description || '');
+        if(newDesc === null) return;
+
+        const newAmountRaw = prompt('Kwota:', String(row.amount).replace('.', ','));
+        if(newAmountRaw === null) return;
+
+        const newAmount = Number(String(newAmountRaw).replace(',', '.'));
+
+        if(!newDesc.trim() || !isFinite(newAmount)){
+          alert('Błędne dane');
+          return;
+        }
+
+        await apiPost('order_component_update.php', {
+          id: Number(row.id),
+          description: newDesc.trim(),
+          amount: newAmount
+        });
+
+        await loadFinance();
+        await loadAudit();
+      };
+    }
+
+    tb.appendChild(tr);
+  });
+}
+function renderPays(list){
+  const tb = $('payTable'); tb.innerHTML='';
+  (list||[]).forEach(row=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML = '<td>'+ ((row.paid_at||'').substring(0,10)) +'</td><td>'+ fmtMoney(row.amount) +'</td><td>'+ escHtml(row.description||'') +'</td><td><div class="finance-author"><strong>'+escHtml(row.created_by_name || '—')+'</strong>'+(row.created_at?'<span>'+escHtml(row.created_at)+'</span>':'')+'</div></td><td><button class="btn" style="padding:6px 10px">Usuń</button></td>';
+    tr.querySelector('button').onclick = async ()=>{ await apiPost('order_payment_delete.php', {id:Number(row.id)}); await loadFinance(); await loadAudit(); };
+    tb.appendChild(tr);
+  });
+}
+function computeTotals(totalSum, payments){
+  const paid = (payments||[]).reduce((a,p)=>a+num(p.amount),0);
+  $('f_paid').value = paid.toFixed(2);
+  $('f_left').value = (num(totalSum)-paid).toFixed(2);
+}
+async function loadFinance(){
+  try{
+    const r = await apiGet('order_finance.php?id='+id);
+    const canSummary = !!r.can_view_summary;
+    const canComponents = !!r.can_view_components;
+    const canPayments = !!r.can_view_payments;
+    await renderComps(canComponents ? (r.components||[]) : []);
+    renderPays(canPayments ? (r.payments||[]) : []);
+    $('f_total').value = canSummary ? num(r.total_amount).toFixed(2) : '';
+    computeTotals(canSummary ? r.total_amount : 0, canPayments ? (r.payments||[]) : []);
+    if($('compTable')) $('compTable').closest('div').previousElementSibling.style.display = canComponents ? '' : 'none';
+    if($('compTable')) $('compTable').closest('div').style.display = canComponents ? '' : 'none';
+    if($('addComp')) $('addComp').parentElement.style.display = canComponents ? '' : 'none';
+    if($('payTable')) $('payTable').closest('div').previousElementSibling.style.display = canPayments ? '' : 'none';
+    if($('payTable')) $('payTable').closest('div').style.display = canPayments ? '' : 'none';
+    if($('addPay')) $('addPay').parentElement.style.display = canPayments ? '' : 'none';
+  }catch(e){}
+}
+$('addComp').onclick = async ()=>{
+  const d = $('comp_desc').value.trim(); const a = num($('comp_amount').value);
+  if(!d || Math.abs(a) < 0.000001) return;
+  await apiPost('order_component_add.php', {order_id:Number(id), description:d, amount:a});
+  $('comp_desc').value=''; $('comp_amount').value='';
+  await loadFinance();
+  await loadAudit();
+};
+$('addPay').onclick = async ()=>{
+  const dt = $('pay_date').value || null; const a = num($('pay_amount').value);
+  const d = $('pay_desc').value.trim() || 'Wpłata';
+  if(a<=0) return;
+  await apiPost('order_payment_add.php', {order_id:Number(id), paid_at:dt, amount:a, description:d});
+  $('pay_amount').value=''; $('pay_desc').value='';
+  await loadFinance();
+};
+
+async function loadOrderCore(){
+  const r = await apiGet('order_get.php?id='+id);
+  const o = r.item || {};
+  $('f_first').value=o.client_first_name||'';
+  $('f_last').value=o.client_last_name||'';
+  $('f_items').value=o.item_description||'';
+  $('f_phone').value=o.client_phone||'';
+  $('f_email').value=o.client_email||'';
+  $('f_addr_street').value=o.install_street||'';
+  $('f_addr_zip').value=o.install_zip||'';
+  $('f_addr_city').value=o.install_city||'';
+  $('f_client_notes').value=o.client_notes||'';
+  $('f_contract').value=(o.contract_date||'').substring(0,10);
+  $('f_install').value=(o.install_date||'').substring(0,10);
+  $('f_install_new').value=(o.install_date_new||'').substring(0,10);
+  $('f_measure_to').value=(o.measure_due_date||'').substring(0,10);
+  if($('f_finish_bucket')){
+    const fy = Number(o.finished_bucket_year || 0);
+    const fm = Number(o.finished_bucket_month || 0);
+    $('f_finish_bucket').value = (fy && fm) ? (String(fy).padStart(4,'0') + '-' + String(fm).padStart(2,'0')) : '';
+  }
+  $('f_measure_done').checked = Number(o.measure_done||0) === 1;
+  if(o.status_id) $('f_status').value=String(o.status_id);
+  await loadUsersForSchedulerAndMounters(o.scheduler_id, o.mounter_ids||[]);
+  applyFieldCaps(r.field_caps || {});
+  applyWycenaLinkCard(o).catch(()=>{});
+  loadSignerField(o.contract_signer_id).catch(()=>{});
+}
+
+let _signersLoaded = false;
+async function loadSignerField(selectedId){
+  const sel = $('f_signer');
+  const r = await apiGet('contract_signers.php');
+  const items = r.items || [];
+  sel.innerHTML = '<option value="">— nie wybrano —</option>' + items.map(x=>'<option value="'+Number(x.id)+'">'+escHtml(x.full_name)+'</option>').join('');
+  if(selectedId) sel.value = String(selectedId);
+  _signersLoaded = true;
+  const roleId = await getRoleId();
+  const addBtn = $('addSignerBtn');
+  if(addBtn) addBtn.style.display = [1,999].includes(roleId) ? '' : 'none';
+}
+$('addSignerBtn').onclick = async ()=>{
+  const name = prompt('Imię i nazwisko nowej osoby podpisującej umowy:');
+  if(!name || !name.trim()) return;
+  try{
+    const r = await apiPost('contract_signers.php', {action:'add', full_name:name.trim()});
+    const current = $('f_signer').value;
+    await loadSignerField(r.id || current);
+  }catch(e){ alert('Nie udało się dodać osoby.'); }
+};
+
+async function applyWycenaLinkCard(o){
+  const roleId = await getRoleId();
+  if(roleId !== 999) return;
+  const card = $('wycenaLinkCard');
+  card.style.display='';
+  const content = $('wycenaLinkContent');
+  if(o.linked_quote_id){
+    content.innerHTML = '<a class="btn" href="wycena_details.html?id='+Number(o.linked_quote_id)+'">Otwórz powiązaną wycenę #'+Number(o.linked_quote_id)+'</a>';
+  } else {
+    content.innerHTML = '<div style="color:var(--muted)">Brak powiązanej wyceny.</div>';
+  }
+}
+
+async function saveOrder(){
+  const payload = {
+    id:Number(id),
+    client_first_name:$('f_first').value.trim(),
+    client_last_name:$('f_last').value.trim(),
+    item_description:$('f_items').value.trim(),
+    client_phone:$('f_phone').value.trim(),
+    client_email:$('f_email').value.trim(),
+    install_street:$('f_addr_street').value.trim(),
+    install_zip:$('f_addr_zip').value.trim(),
+    install_city:$('f_addr_city').value.trim(),
+    client_notes:$('f_client_notes').value.trim(),
+    contract_date:$('f_contract').value||null,
+    install_date:$('f_install').value||null,
+    install_date_new:$('f_install_new').value||null,
+    measure_due_date:$('f_measure_to').value||null,
+    measure_done:$('f_measure_done').checked ? 1 : 0,
+    finished_bucket: $('f_finish_bucket') ? ($('f_finish_bucket').value || '') : '',
+    finished_bucket_year: ($('f_finish_bucket') && $('f_finish_bucket').value) ? Number($('f_finish_bucket').value.split('-')[0]) : null,
+    finished_bucket_month: ($('f_finish_bucket') && $('f_finish_bucket').value) ? Number($('f_finish_bucket').value.split('-')[1]) : null,
+    status_id:Number($('f_status').value||0)||null,
+    scheduler_id:Number($('f_scheduler').value||0)||null,
+    mounters:selectedMountersCsv(),
+    total_amount:num($('f_total').value)
+  };
+  if(_signersLoaded){ payload.contract_signer_id = Number($('f_signer').value||0) || 0; }
+  try{ await apiPost('order_update.php', payload); await loadAudit(); await loadOrderSchedule(); alert('Zapisano'); }
+  catch(e){ alert('Błąd zapisu'); }
+}
+$('saveBtn').onclick = saveOrder;
+
+const STAGE_ICONS = {
+  umowa:   {color:'#2563eb', svg:'<path d="M6 2.5h7l4.5 4.5v14.5H6z" fill="none" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/><path d="M13 2.5v4.5h4.5" fill="none" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/><line x1="8.5" y1="12.5" x2="15.5" y2="12.5" stroke="#fff" stroke-width="1.4"/><line x1="8.5" y1="16" x2="15.5" y2="16" stroke="#fff" stroke-width="1.4"/>'},
+  pomiar:  {color:'#f97316', svg:'<rect x="2.5" y="9.5" width="19" height="5" rx="1" fill="none" stroke="#fff" stroke-width="1.6"/><line x1="6.5" y1="9.5" x2="6.5" y2="12" stroke="#fff" stroke-width="1.4"/><line x1="10.5" y1="9.5" x2="10.5" y2="13" stroke="#fff" stroke-width="1.4"/><line x1="14.5" y1="9.5" x2="14.5" y2="12" stroke="#fff" stroke-width="1.4"/><line x1="18.5" y1="9.5" x2="18.5" y2="13" stroke="#fff" stroke-width="1.4"/>'},
+  rozpiska:{color:'#16a34a', svg:'<path d="M4 20l0.8-3.6L15.5 5.7l2.8 2.8L7.6 19.2z" fill="none" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/><line x1="13.8" y1="7.4" x2="16.6" y2="10.2" stroke="#fff" stroke-width="1.4"/>'},
+  okucia:  {color:'#92663d', svg:'<text x="12" y="16.5" font-size="12" font-weight="800" fill="#fff" text-anchor="middle" font-family="Arial,Helvetica,sans-serif">O</text>'},
+  plyty_zamowione:{color:'#92663d', svg:'<text x="12" y="16.5" font-size="12" font-weight="800" fill="#fff" text-anchor="middle" font-family="Arial,Helvetica,sans-serif">P</text>'},
+  plyty_ciete:{color:'#f97316', svg:'<path d="M3 15.5h13.5l4-2.5-4-2.5H3z" fill="none" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/><path d="M4.5 15.5l1.8 3M8 15.5l1.8 3M11.5 15.5l1.8 3" stroke="#fff" stroke-width="1.3"/>'},
+  plyty_oklejone:{color:'#7c3aed', svg:'<rect x="4" y="4.5" width="16" height="15" rx="1.2" fill="none" stroke="#fff" stroke-width="1.6"/><line x1="4" y1="9.5" x2="20" y2="9.5" stroke="#fff" stroke-width="1.1" opacity="0.85"/><line x1="4" y1="14.5" x2="20" y2="14.5" stroke="#fff" stroke-width="1.1" opacity="0.85"/>'},
+  fronty:  {color:'#38bdf8', svg:'<text x="12" y="16.5" font-size="12" font-weight="800" fill="#fff" text-anchor="middle" font-family="Arial,Helvetica,sans-serif">F</text>'},
+  zamontowane_warsztat:{color:'#16a34a', svg:'<text x="12" y="15.5" font-size="7.6" font-weight="800" fill="#fff" text-anchor="middle" font-family="Arial,Helvetica,sans-serif">OK</text>'},
+  gotowe_montaz:{color:'#16a34a', svg:'<text x="12" y="15.5" font-size="7.6" font-weight="800" fill="#fff" text-anchor="middle" font-family="Arial,Helvetica,sans-serif">GM</text>'},
+  gotowe_transport:{color:'#16a34a', svg:'<rect x="2.5" y="9.5" width="13" height="7" rx="1.2" fill="none" stroke="#fff" stroke-width="1.6"/><path d="M15.5 11.5h3.2l2.3 2.8v2.2h-5.5z" fill="none" stroke="#fff" stroke-width="1.6" stroke-linejoin="round"/><circle cx="6.5" cy="17.3" r="1.5" fill="#fff"/><circle cx="17" cy="17.3" r="1.5" fill="#fff"/>'},
+  w_trakcie_montazu:{color:'#6366f1', svg:'<path d="M13.2 3.6l3.6 3.6-2.3 2.3-3.6-3.6z" fill="none" stroke="#fff" stroke-width="1.5" stroke-linejoin="round"/><path d="M11.8 7.4L4.5 14.7" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/><path d="M4.3 14.9l-1.6 3.8 3.8-1.6z" fill="#fff"/>'},
+};
+const STAGE_DEFS = [
+  ['umowa','Podpisana umowa'],
+  ['pomiar','Pomiar'],
+  ['rozpiska','Rozpiska'],
+  ['okucia','Zamówione okucia'],
+  ['plyty_zamowione','Zamówione płyty'],
+  ['plyty_ciete','Pocięte płyty'],
+  ['plyty_oklejone','Oklejone płyty'],
+  ['fronty','Zamówione fronty'],
+  ['zamontowane_warsztat','Zamontowane na warsztacie'],
+  ['gotowe_montaz','Gotowe do montażu'],
+  ['gotowe_transport','Gotowe do transportu'],
+  ['w_trakcie_montazu','W trakcie montażu'],
+];
+function stageIconHtml(code, done, size){
+  const def = STAGE_ICONS[code] || {color:'#4b5563',svg:''};
+  const bg = done ? def.color : '#4b5563';
+  const inner = Math.round(size*0.64);
+  return '<span class="stage-icon-circle" style="width:'+size+'px;height:'+size+'px;background:'+bg+'"><svg viewBox="0 0 24 24" width="'+inner+'" height="'+inner+'">'+def.svg+'</svg></span>';
+}
+let _stagesData = {};
+let _correctionsCanEdit = true;
+async function loadStages(){
+  try{
+    const r = await apiGet('order_checklist.php?order_id='+id);
+    _stagesData = {};
+    (r.items||[]).forEach(it=>{ _stagesData[it.item_code] = it; });
+    renderStages();
+  }catch(e){
+    $('stagesGrid').innerHTML = '<div style="color:var(--muted)">Nie udało się wczytać etapów.</div>';
+  }
+}
+function renderStages(){
+  const grid = $('stagesGrid');
+  grid.innerHTML = '';
+  STAGE_DEFS.forEach(([code,label])=>{
+    const it = _stagesData[code] || {};
+    const done = Number(it.is_done||0)===1;
+    const chip = document.createElement('div');
+    chip.className = 'stage-chip'+(done?' done':'');
+    chip.title = done && it.done_by_name ? ('Odznaczył: '+it.done_by_name+(it.done_at?(' • '+it.done_at):'')) : label;
+    chip.innerHTML = stageIconHtml(code, done, 26)+'<span class="stage-label">'+escHtml(label)+'</span>';
+    chip.onclick = ()=>toggleStage(code, !done);
+    grid.appendChild(chip);
+  });
+}
+async function toggleStage(code, isDone){
+  try{
+    await apiPost('order_checklist.php', {order_id:Number(id), item_code:code, is_done:isDone?1:0});
+    await loadStages();
+  }catch(e){ alert('Błąd zapisu etapu'); }
+}
+
+const CORR_STAGE_DEFS = [
+  ['zgloszone','Zgłoszone'],
+  ['zamowione','Zamówione'],
+  ['wyciete','Wycięte'],
+  ['oklejone','Oklejone'],
+  ['przygotowane','Przygotowane do montażu'],
+  ['gotowe','Gotowe do montażu'],
+];
+function authFileUrl(url){
+  const t = localStorage.getItem('token') || '';
+  if(!t) return url;
+  return url + (url.includes('?') ? '&' : '?') + 'token=' + encodeURIComponent(t);
+}
+async function loadCorrections(){
+  try{
+    const r = await apiGet('order_corrections.php?order_id='+id);
+    renderCorrections(r.items||[]);
+  }catch(e){
+    $('correctionsList').innerHTML = '<div style="color:var(--muted)">Nie udało się wczytać listy.</div>';
+  }
+}
+function renderCorrections(items){
+  const wrap = $('correctionsList');
+  wrap.innerHTML = '';
+  $('correctionsEmpty').style.display = items.length ? 'none' : '';
+  const canEdit = _correctionsCanEdit;
+  items.forEach(item=>{
+    const div = document.createElement('div');
+    div.className = 'corr-item';
+    const stagesHtml = CORR_STAGE_DEFS.map(([code,label])=>{
+      const done = Number(item.stages?.[code]||0)===1;
+      const cls = 'corr-stage-chip'+(done?' done':'')+(canEdit?'':' corr-stage-chip-ro');
+      return '<span class="'+cls+'" data-id="'+item.id+'" data-stage="'+code+'">'+(done?'✓ ':'')+escHtml(label)+'</span>';
+    }).join('');
+    const filesHtml = (item.files||[]).map(f=>{
+      const url = authFileUrl(f.url);
+      if(f.is_image){
+        return '<a href="'+url+'" target="_blank" style="display:inline-block;margin:4px 6px 0 0"><img src="'+authFileUrl(f.thumb||f.url)+'" style="width:46px;height:46px;object-fit:cover;border-radius:8px;border:1px solid rgba(255,255,255,.12)"></a>';
+      }
+      return '<a href="'+url+'" target="_blank" style="display:inline-block;margin:4px 6px 0 0;padding:6px 8px;border-radius:8px;background:rgba(255,255,255,.06);color:#e5e7eb;text-decoration:none;font-size:12px">'+escHtml(f.name)+'</a>';
+    }).join('');
+    div.innerHTML =
+      '<div class="corr-item-head">'
+        + '<div class="corr-item-title">'+escHtml(item.name || item.description || '')+'</div>'
+        + '<div class="corr-item-meta">'+escHtml(item.created_by_name||'')+(item.created_at?(' • '+escHtml(item.created_at)):'')+'</div>'
+        + (canEdit ? '<button class="btn-delete-mini" data-del="'+item.id+'" type="button" style="padding:4px 8px;border-radius:8px;border:none;background:#b91c1c;color:#fff;cursor:pointer">Usuń</button>' : '')
+      + '</div>'
+      + (item.description ? '<div style="color:var(--muted);font-size:13px;margin-bottom:8px">'+escHtml(item.description)+'</div>' : '')
+      + '<div class="corr-stage-row">'+stagesHtml+'</div>'
+      + '<div class="corr-files-row">'+filesHtml+(canEdit ? '<label class="corr-add-file-btn" style="display:inline-block;margin-top:6px;padding:5px 9px;border-radius:8px;background:rgba(255,255,255,.06);color:#e5e7eb;font-size:12px;cursor:pointer">+ Dodaj zdjęcie<input type="file" accept="image/*,.pdf" capture="environment" data-uploadfor="'+item.id+'" style="display:none"></label>' : '')+'</div>';
+    wrap.appendChild(div);
+  });
+  if(!canEdit) return;
+  wrap.querySelectorAll('.corr-stage-chip').forEach(chip=>{
+    chip.onclick = async ()=>{
+      const itemId = Number(chip.dataset.id);
+      const stage = chip.dataset.stage;
+      const willBeDone = !chip.classList.contains('done');
+      try{
+        await apiPost('order_corrections.php', {action:'toggle_stage', id:itemId, stage:stage, is_done:willBeDone?1:0});
+        await loadCorrections();
+        await loadOrderCore();
+      }catch(e){ alert('Błąd zapisu etapu poprawki'); }
+    };
+  });
+  wrap.querySelectorAll('[data-del]').forEach(btn=>{
+    btn.onclick = async ()=>{
+      if(!confirm('Usunąć ten element z listy poprawek?')) return;
+      try{
+        await apiPost('order_corrections.php', {action:'delete', id:Number(btn.dataset.del)});
+        await loadCorrections();
+        await loadOrderCore();
+      }catch(e){ alert('Błąd usuwania'); }
+    };
+  });
+  wrap.querySelectorAll('[data-uploadfor]').forEach(inp=>{
+    inp.onchange = async ()=>{
+      const f = inp.files && inp.files[0];
+      if(!f) return;
+      const fd = new FormData();
+      fd.append('action','upload_file');
+      fd.append('id', inp.dataset.uploadfor);
+      fd.append('file', f);
+      try{
+        const resp = await fetch(API_BASE+'order_corrections.php', {method:'POST', headers:authHeaders(), body:fd});
+        if(!resp.ok) throw new Error('upload_failed');
+        await loadCorrections();
+      }catch(e){ alert('Błąd wysyłania zdjęcia'); }
+    };
+  });
+}
+$('addCorr').onclick = async ()=>{
+  const name = $('corrName').value.trim();
+  const desc = $('corrDesc').value.trim();
+  const file = $('corrFile').files && $('corrFile').files[0];
+  if(!name){ alert('Podaj nazwę elementu.'); return; }
+  try{
+    const fd = new FormData();
+    fd.append('action','add');
+    fd.append('order_id', String(Number(id)));
+    fd.append('name', name);
+    fd.append('description', desc);
+    if(file) fd.append('file', file);
+    const resp = await fetch(API_BASE+'order_corrections.php', {method:'POST', headers:authHeaders(), body:fd});
+    if(!resp.ok) throw new Error('add_failed');
+    $('corrName').value='';
+    $('corrDesc').value='';
+    $('corrFile').value='';
+    await loadCorrections();
+    await loadOrderCore();
+  }catch(e){ alert('Błąd dodawania elementu'); }
+};
+
+async function loadNotes(){ try{ const r=await apiGet('order_comments.php?id='+id); $('notes').innerHTML=''; (r.items||[]).forEach(n=>{ const d=document.createElement('div'); d.style.margin='6px 0'; d.innerHTML='<div style="color:var(--muted);font-size:12px">'+(n.created_at||'')+' • '+(n.user_name||n.author||'')+'</div><div>'+(n.text||'')+'</div>'; $('notes').appendChild(d); }); }catch(e){} }
+function escHtml(v){ return String(v==null?'':v).replace(/[&<>"']/g, s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[s])); }
+function fmtAuditValue(v){ if(v===null || v===undefined || v==='') return '—'; return escHtml(v); }
+function renderAuditDetails(payload){
+  if(!payload) return '';
+  let html='';
+  if(Array.isArray(payload.changes) && payload.changes.length){
+    html += payload.changes.map(ch=>'<div>• <strong>'+escHtml(ch.field||'Pole')+'</strong>: '+fmtAuditValue(ch.from)+' → '+fmtAuditValue(ch.to)+'</div>').join('');
+  }
+  if(payload.description || payload.amount || payload.pay_date){
+    const parts=[];
+    if(payload.description) parts.push('Opis: '+escHtml(payload.description));
+    if(payload.amount!=null) parts.push('Kwota: '+escHtml(payload.amount));
+    if(payload.pay_date) parts.push('Data wpłaty: '+escHtml(payload.pay_date));
+    html += '<div>'+parts.join(' • ')+'</div>';
+  }
+  if(payload.from || payload.to){
+    if(payload.from){ html += '<div>Przed: '+escHtml(JSON.stringify(payload.from))+'</div>'; }
+    if(payload.to){ html += '<div>Po: '+escHtml(JSON.stringify(payload.to))+'</div>'; }
+  }
+  if(payload.text){ html += '<div>Treść: '+escHtml(payload.text)+'</div>'; }
+  return html;
+}
+async function loadWorkSummary(){
+  const tb = $('workSummaryTable');
+  if(!tb) return;
+  try{
+    const r = await apiGet('order_work_summary.php?id='+id);
+    const items = r.items || [];
+    const workshopTotal = items.reduce((s,row)=>s + Number(row.workshop_days || 0), 0);
+    const installTotal = items.reduce((s,row)=>s + Number(row.install_days || 0), 0);
+    if($('workshopDaysTotal')) $('workshopDaysTotal').textContent = workshopTotal;
+    if($('installDaysTotal')) $('installDaysTotal').textContent = installTotal;
+    if(!items.length){ tb.innerHTML = '<tr><td colspan="3" style="color:var(--muted)">Brak wpisów w grafiku dla tego zamówienia.</td></tr>'; return; }
+    tb.innerHTML = items.map(row => '<tr><td>'+escHtml(row.monter||'—')+'</td><td>'+Number(row.workshop_days||0)+'</td><td>'+Number(row.install_days||0)+'</td></tr>').join('');
+  }catch(e){ tb.innerHTML = '<tr><td colspan="3" style="color:var(--muted)">Nie udało się wczytać czasu pracy.</td></tr>'; }
+}
+
+function plannedPaymentRow(row){
+  return '<tr>'
+    + '<td>'+fmtMoney(row.amount || 0)+'</td>'
+    + '<td>'+escHtml((row.planned_date||'').substring(0,10))+'</td>'
+    + '<td>'+escHtml(row.description||'')+'</td>'
+    + '<td><button class="btn btn-edit-planned" type="button" style="padding:6px 10px">Edytuj</button> <button class="btn btn-delete-planned" type="button" style="padding:6px 10px;background:#ef4444;color:#fff">Usuń</button></td>'
+    + '</tr>';
+}
+
+async function loadPlannedPayments(){
+  const tb = $('plannedPaymentsTable');
+  if(!tb) return;
+  try{
+    const r = await apiGet('order_planned_payments.php?id='+id);
+    const items = r.items || [];
+    if($('plannedPaymentsCard')) $('plannedPaymentsCard').style.display = '';
+    const total = items.reduce((s,row)=>s + num(row.amount || 0), 0);
+    if($('plannedPaymentsTotal')) $('plannedPaymentsTotal').textContent = fmtMoney(total);
+    if(!items.length){ tb.innerHTML = '<tr><td colspan="4" style="color:var(--muted)">Brak planowanych wpłat.</td></tr>'; return; }
+    tb.innerHTML = items.map(plannedPaymentRow).join('');
+    tb.querySelectorAll('tr').forEach((tr,idx)=>{
+      const row = items[idx];
+      const editBtn = tr.querySelector('.btn-edit-planned');
+      const delBtn = tr.querySelector('.btn-delete-planned');
+      if(editBtn) editBtn.onclick = async ()=>{
+        const amount = prompt('Kwota:', String(row.amount || '').replace('.', ','));
+        if(amount === null) return;
+        const planned_date = prompt('Data (RRRR-MM-DD):', (row.planned_date||'').substring(0,10));
+        if(planned_date === null) return;
+        const description = prompt('Opis:', row.description || '');
+        if(description === null) return;
+        await apiPost('order_planned_payments.php', {
+          action:'update',
+          id:Number(row.id),
+          amount:num(amount),
+          planned_date:planned_date,
+          description:description.trim()
+        });
+        await loadPlannedPayments();
+      };
+      if(delBtn) delBtn.onclick = async ()=>{
+        if(!confirm('Usunąć planowaną wpłatę?')) return;
+        await apiPost('order_planned_payments.php', {action:'delete', id:Number(row.id)});
+        await loadPlannedPayments();
+      };
+    });
+  }catch(e){
+    if($('plannedPaymentsCard')) $('plannedPaymentsCard').style.display = 'none';
+  }
+}
+
+
+
+function scheduleModeLabel(mode){
+  if(mode === 'workshop') return 'WARSZTAT';
+  if(mode === 'install') return 'MONTAŻ';
+  if(mode === 'custom') return 'RĘCZNY WPIS';
+  if(mode === 'leave') return 'URLOP';
+  if(mode === 'day_off') return 'WOLNE';
+  if(mode === 'sick') return 'L4';
+  return String(mode || '—').toUpperCase();
+}
+function scheduleModeClass(mode){
+  if(mode === 'workshop') return 'workshop';
+  if(mode === 'install') return 'install';
+  return 'workshop';
+}
+function renderOrderSchedule(data){
+  const wrap = $('orderSchedule');
+  if(!wrap) return;
+  const items = data.items || [];
+  if(!items.length){
+    wrap.innerHTML = '<div class="schedule-empty">Brak wpisów w grafiku dla tego zamówienia.</div>';
+    return;
+  }
+
+  wrap.innerHTML =
+    '<table class="order-schedule-table">'
+    + '<thead><tr><th style="width:120px">Data</th><th style="width:130px">Typ pracy</th><th>Pracownicy</th></tr></thead>'
+    + '<tbody>'
+    + items.map(row => {
+        const workers = (row.workers || []).map(w => '<span class="schedule-worker-pill">'+escHtml(w)+'</span>').join('');
+        return '<tr>'
+          + '<td>'+escHtml(row.work_date || '')+'</td>'
+          + '<td><span class="schedule-mode-pill '+scheduleModeClass(row.work_mode)+'">'+escHtml(scheduleModeLabel(row.work_mode))+'</span></td>'
+          + '<td><div class="schedule-workers">'+(workers || '<span style="color:var(--muted)">—</span>')+'</div></td>'
+          + '</tr>';
+      }).join('')
+    + '</tbody></table>';
+}
+async function loadOrderSchedule(){
+  const wrap = $('orderSchedule');
+  if(!wrap) return;
+  try{
+    const r = await apiGet('order_schedule.php?id='+id);
+    renderOrderSchedule(r);
+  }catch(e){
+    wrap.innerHTML = '<div class="schedule-empty">Nie udało się wczytać grafiku.</div>';
+  }
+}
+
+
+async function loadAudit(){
+  const wrap = $('auditList');
+  if(!wrap) return;
+  try{
+    const r = await apiGet('order_audit.php?id='+id);
+    const items = r.items || [];
+    if(!items.length){ wrap.innerHTML = '<div class="audit-empty">Brak historii zmian.</div>'; return; }
+    wrap.innerHTML = '';
+    items.forEach(it=>{
+      const row = document.createElement('div');
+      row.className = 'audit-item';
+      row.innerHTML = '<div class="audit-head"><div class="audit-title">'+escHtml(it.message||'Zmiana')+'</div><div class="audit-meta">'+escHtml(it.created_at||'')+' • '+escHtml(it.user_name||'')+'</div></div><div class="audit-details">'+renderAuditDetails(it.payload)+'</div>';
+      wrap.appendChild(row);
+    });
+  }catch(e){ wrap.innerHTML = '<div class="audit-empty">Nie udało się wczytać historii zmian.</div>'; }
+}
+$('addNote').onclick = async ()=>{ const t=$('noteInput').value.trim(); if(!t) return; await apiPost('order_comments.php',{id:Number(id),text:t}); $('noteInput').value=''; await loadNotes(); await loadAudit(); };
+
+function _fileVisual(filename, url, ext){
+  const e = String(ext || (filename||'').split('.').pop() || '').toLowerCase();
+  const isImg = ['png','jpg','jpeg','gif','webp','bmp','svg'].includes(e);
+  if(isImg){
+    return '<img src="'+url+'" style="width:44px;height:44px;object-fit:cover;border-radius:10px;border:1px solid rgba(255,255,255,0.08)">';
+  }
+  const map = {
+    pdf:['PDF','#b91c1c'],
+    xls:['XLS','#166534'], xlsx:['XLS','#166534'], csv:['XLS','#166534'],
+    doc:['DOC','#1d4ed8'], docx:['DOC','#1d4ed8'], rtf:['DOC','#1d4ed8'],
+    zip:['ZIP','#92400e'], rar:['ZIP','#92400e'], '7z':['ZIP','#92400e']
+  };
+  const info = map[e] || ['PLIK','#374151'];
+  return '<div style="width:44px;height:44px;border-radius:10px;display:grid;place-items:center;background:'+info[1]+';color:#fff;font-weight:700">'+info[0]+'</div>';
+}
+function renderFileList(targetId, files){
+  const wrap = $(targetId);
+  wrap.innerHTML = '';
+  if(!files.length){
+    wrap.innerHTML = '<div style="color:var(--muted)">Brak plików</div>';
+    return;
+  }
+  files.forEach(f=>{
+    const row=document.createElement('label');
+    row.style.display='flex';
+    row.style.alignItems='center';
+    row.style.gap='10px';
+    row.style.padding='10px';
+    row.style.border='1px solid rgba(255,255,255,0.08)';
+    row.style.borderRadius='10px';
+    row.style.minWidth='280px';
+    const ext = (f.name||'').split('.').pop() || '';
+    row.innerHTML = '<input type="checkbox" class="fileChk" value="'+(f.name||'')+'" style="width:16px;height:16px">'
+      + _fileVisual(f.name||'', f.thumb || f.url || '', ext)
+      + '<a href="'+(f.url||'#')+'" target="_blank" style="text-decoration:none;color:inherit;display:block">'
+      + '<div style="font-weight:600">'+(f.name||'')+'</div>'
+      + '<div style="color:var(--muted);font-size:12px">'+ String(ext).toUpperCase() + (f.legacy ? ' • stary plik' : '') +'</div></a>';
+    wrap.appendChild(row);
+  });
+}
+async function loadFiles(){
+  try{
+    const r=await apiGet('order_files.php?id='+id);
+    _canViewPublicFiles = ('can_view_public_files' in r) ? !!r.can_view_public_files : true;
+    _canViewAdminFiles = !!r.can_view_admin_files;
+    _canUploadPublicFiles = !!r.can_upload_public_files;
+    _canUploadAdminFiles = !!r.can_upload_admin_files;
+    _canDeleteFiles = !!r.can_delete_files;
+
+    const items = r.items || [];
+    const publicFiles = items.filter(f => (f.scope || 'public') !== 'admin');
+    const adminFiles = items.filter(f => (f.scope || 'public') === 'admin');
+
+    renderFileList('filesWrapPublic', publicFiles);
+    renderFileList('filesWrapAdmin', adminFiles);
+
+    $('filesPublicSection').style.display = _canViewPublicFiles ? '' : 'none';
+    $('filesAdminSection').style.display = _canViewAdminFiles ? '' : 'none';
+    const canAnyUpload = !!(_canUploadPublicFiles || _canUploadAdminFiles);
+    $('uploadBtn').style.display = canAnyUpload ? 'inline-flex' : 'none';
+    $('fileInput').disabled = !canAnyUpload;
+    $('fileScope').style.display = _canUploadAdminFiles ? '' : 'none';
+    if(!_canUploadAdminFiles) $('fileScope').value = 'public';
+    $('deleteFilesBtn').style.display = _canDeleteFiles ? 'inline-flex' : 'none';
+  }catch(e){}
+}
+$('uploadBtn').onclick = async ()=>{
+  const files=$('fileInput').files;
+  if(!files.length) return;
+  const fd=new FormData();
+  for(const f of files) fd.append('files[]', f);
+  fd.append('file_scope', $('fileScope').value || 'public');
+  const r=await fetch(API_BASE+'order_files.php?id='+id,{method:'POST',headers:authHeaders(),body:fd});
+  if(!r.ok){ alert('Błąd uploadu'); return; }
+  $('fileInput').value = '';
+  await loadFiles();
+};
+$('deleteFilesBtn').onclick = async ()=>{
+  const checked = Array.from(document.querySelectorAll('.fileChk:checked')).map(x=>x.value);
+  if(!checked.length){ alert('Zaznacz pliki do usunięcia.'); return; }
+  if(!confirm('Usunąć zaznaczone pliki?')) return;
+  try{
+    const fd = new FormData();
+    fd.append('action','delete');
+    checked.forEach(name => fd.append('names[]', name));
+    const r = await fetch(API_BASE+'order_files.php?id='+id, { method:'POST', headers: authHeaders(), body: fd });
+    if(!r.ok) throw new Error('delete_failed');
+    await loadFiles();
+  }catch(e){
+    alert('Błąd usuwania plików');
+  }
+};
+
+if($('addPlannedPayment')){
+  $('addPlannedPayment').onclick = async ()=>{
+    const amount = num($('plannedPayAmount').value);
+    const planned_date = $('plannedPayDate').value || '';
+    const description = $('plannedPayDesc').value.trim();
+    if(Math.abs(amount) < 0.000001){ alert('Podaj kwotę.'); return; }
+    if(!planned_date){ alert('Podaj datę planowanej wpłaty.'); return; }
+    await apiPost('order_planned_payments.php', {
+      action:'add',
+      order_id:Number(id),
+      amount,
+      planned_date,
+      description
+    });
+    $('plannedPayAmount').value='';
+    $('plannedPayDate').value='';
+    $('plannedPayDesc').value='';
+    await loadPlannedPayments();
+  };
+}
+
+$('finishBtn').onclick = async ()=>{
+  let defYear = String(new Date().getFullYear());
+  let defMonth = String(new Date().getMonth()+1);
+  if($('f_finish_bucket') && $('f_finish_bucket').value){
+    const parts = $('f_finish_bucket').value.split('-');
+    if(parts.length===2){ defYear = parts[0]; defMonth = String(Number(parts[1])); }
+  }
+  const year=prompt('Rok miesiąca zakończenia (np. 2026):', defYear); if(!year) return;
+  const month=prompt('Miesiąc zakończenia (1-12):', defMonth); if(!month) return;
+  try{ await apiPost('order_finish.php',{id:Number(id),bucket_year:Number(year),bucket_month:Number(month)}); alert('Zamówienie zakończone'); location.href='orders_finished.html'; }
+  catch(e){ alert('Błąd kończenia zamówienia'); }
+};
+$('deleteBtn').onclick = async ()=>{
+  const reason=prompt('Powód usunięcia zamówienia:'); if(!reason) return;
+  if(!confirm('Usunąć zamówienie (przenieść do usuniętych)?')) return;
+  try{ await apiPost('order_delete.php',{id:Number(id),reason:reason}); alert('Zamówienie przeniesione do usuniętych'); location.href='orders.html'; }
+  catch(e){ alert('Błąd usuwania zamówienia'); }
+};
+
+document.addEventListener('DOMContentLoaded', async ()=>{
+  setErr('');
+  try{
+    await showPrivButtons();
+    await loadStatuses();
+    await loadOrderCore();
+  }catch(e){
+    setErr('Nie udało się wczytać zamówienia.');
+    return;
+  }
+  loadFinance().catch(()=>{});
+  loadNotes().catch(()=>{});
+  loadFiles().catch(()=>{});
+  loadStages().catch(()=>{});
+  loadCorrections().catch(()=>{});
+  loadAudit().catch(()=>{});
+  loadWorkSummary().catch(()=>{});
+  loadPlannedPayments().catch(()=>{});
+  loadOrderSchedule().catch(()=>{});
+  applyMounterReadonly().catch(()=>{});
+});
+
+
+async function applyMounterReadonly(){
+  try{
+    const roleId = await getRoleId();
+    if(roleId !== 3) return;
+
+    document.body.classList.add('mounter-readonly');
+
+    const readonlyIds = [
+      'f_first','f_last','f_items','f_phone','f_email',
+      'f_addr_street','f_addr_zip','f_addr_city','f_client_notes','f_signer',
+      'f_contract','f_install','f_install_new','f_measure_to',
+      'f_status','f_scheduler'
+    ];
+    readonlyIds.forEach(id=>{
+      const el = document.getElementById(id);
+      if(!el) return;
+      el.classList.add('ro-text');
+      if(el.tagName === 'SELECT'){
+        el.disabled = true;
+      }else{
+        el.readOnly = true;
+      }
+    });
+    const measureDone = document.getElementById('f_measure_done');
+    if(measureDone) measureDone.disabled = true;
+
+    const hideIds = [
+      'btnShowMounterPicker','mounterPickerWrap',
+      'addComp','addPay','addPlannedPayment','deleteFilesBtn',
+      'saveBtn','saveBtnTop','finishBtn','deleteBtn'
+    ];
+    hideIds.forEach(id=>{
+      const el = document.getElementById(id);
+      if(el) el.style.display = 'none';
+    });
+
+    // ukryj przyciski usuwania przy monterach / finansach / wpłatach jeśli się wyrenderują
+    document.querySelectorAll('#mounterChosen button, #compTable button, #payTable button, #plannedPaymentsTable button').forEach(el=>{
+      el.style.display = 'none';
+    });
+
+    // nie pozwalaj edytować monterów i finansów
+    ['f_mounters','comp_desc','comp_amount','pay_date','pay_amount','pay_desc','plannedPayAmount','plannedPayDate','plannedPayDesc','uploadScope'].forEach(id=>{
+      const el = document.getElementById(id);
+      if(!el) return;
+      el.disabled = true;
+      el.classList.add('ro-text');
+    });
+  }catch(e){}
+}
+
+
+document.addEventListener('DOMContentLoaded', ()=>{
+  const topPdf = document.getElementById('coverPdfBtnTop');
+  const legacyPdf = document.getElementById('coverPdfBtn');
+  if(topPdf && legacyPdf){
+    topPdf.addEventListener('click', ()=> legacyPdf.click());
+  }
+
+  const topFinish = document.getElementById('finishBtnTop');
+  const legacyFinish = document.getElementById('finishBtn');
+  if(topFinish && legacyFinish){
+    topFinish.addEventListener('click', ()=> legacyFinish.click());
+  }
+
+  const topSave = document.getElementById('saveBtnTop');
+  const legacySave = document.getElementById('saveBtn');
+  if(topSave && legacySave){
+    topSave.addEventListener('click', ()=> legacySave.click());
+  }
+});
+
+</script>
+
+<div id="dupModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;padding:16px">
+  <div style="background:#fff;color:#111;border-radius:14px;padding:22px;max-width:440px;width:100%;box-shadow:0 20px 50px rgba(0,0,0,.3)">
+    <h3 style="margin:0 0 6px">Duplikuj zamówienie</h3>
+    <div style="font-size:13px;color:#666;margin-bottom:14px">Wybierz, co skopiować do nowego zamówienia:</div>
+    <label style="display:flex;gap:10px;align-items:center;margin:8px 0"><input type="checkbox" id="dup_client" checked> <span><b>Dane klienta</b> <small style="color:#777">(imię, kontakt, adres, uwagi)</small></span></label>
+    <label style="display:flex;gap:10px;align-items:center;margin:8px 0"><input type="checkbox" id="dup_dates" checked> <span><b>Terminy</b> <small style="color:#777">(umowa, pomiar, montaż, rozpisujący, montażyści, podpisujący)</small></span></label>
+    <label style="display:flex;gap:10px;align-items:center;margin:8px 0"><input type="checkbox" id="dup_item" checked> <span><b>Przedmiot zamówienia</b></span></label>
+    <label style="display:flex;gap:10px;align-items:center;margin:8px 0"><input type="checkbox" id="dup_amounts"> <span><b>Kwoty</b> <small style="color:#777">(wartość i składniki; bez wpłat)</small></span></label>
+    <div id="dupErr" style="color:#b91c1c;font-size:13px;margin-top:8px"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px">
+      <button class="btn" id="dupCancel" type="button">Anuluj</button>
+      <button class="btn" id="dupGo" type="button" style="background:var(--accent);color:#fff">Utwórz zamówienie</button>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+  const m=document.getElementById('dupModal');
+  document.addEventListener('click', async (e)=>{
+    if(e.target.closest('#dupBtnTop')){ document.getElementById('dupErr').textContent=''; m.style.display='flex'; }
+    else if(e.target.closest('#dupCancel') || e.target===m){ m.style.display='none'; }
+    else if(e.target.closest('#dupGo')){
+      const btn=document.getElementById('dupGo'); btn.disabled=true;
+      try{
+        const r=await apiPost('order_duplicate.php',{order_id:Number(new URLSearchParams(location.search).get('id')),parts:{
+          client:document.getElementById('dup_client').checked,
+          dates:document.getElementById('dup_dates').checked,
+          item:document.getElementById('dup_item').checked,
+          amounts:document.getElementById('dup_amounts').checked}});
+        const nid=r.order_id||(r.data&&r.data.order_id);
+        if(!nid) throw new Error('no id');
+        location.href='order_details.html?id='+nid;
+      }catch(err){ document.getElementById('dupErr').textContent='Nie udało się zduplikować zamówienia.'; btn.disabled=false; }
+    }
+  });
+})();
+</script>
+</body></html>

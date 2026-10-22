@@ -1,0 +1,35 @@
+<!doctype html><html lang="pl"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Smart Meble – Zestawienie pracy montera</title>
+<link rel="icon" href="assets/img/favicon.ico"><link rel="stylesheet" href="assets/css/theme_v17.css"/>
+<style>.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin-bottom:14px}.toolbar .input{width:auto}.summary-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:12px 0}.kpi{background:#232323;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px}.kpi .label{font-size:12px;color:var(--muted)}.kpi .value{font-size:22px;font-weight:800;margin-top:4px}.warn{background:rgba(239,68,68,.10);border:1px solid rgba(239,68,68,.28);border-radius:14px;padding:12px;margin:12px 0;color:#fecaca}.chip{display:inline-flex;padding:4px 8px;border-radius:999px;background:rgba(255,255,255,.08);font-size:12px;margin:2px}.table-wrap{overflow:auto}@media(max-width:900px){.summary-grid{grid-template-columns:1fr 1fr}}</style>
+</head><body><div class="app"><aside class="sidebar"><div class="brand"><img src="assets/img/logo_smartmeble.png" style="height:28px"/><div>PANEL</div></div><nav></nav></aside><div class="content"><div id="appTopbar" data-title="Zestawienie pracy montera" data-subtitle="Grafik i rozliczenie dni pracy"></div><main class="main"><div id="err" class="err" style="margin-bottom:10px"></div><div class="card">
+<div class="toolbar"><div><label>Monter</label><select class="input" id="userSelect"></select></div><div><label>Od</label><input class="input" id="fromDate" type="date"></div><div><label>Do</label><input class="input" id="toDate" type="date"></div><button class="btn" id="runBtn">Pokaż</button></div>
+<div class="summary-grid"><div class="kpi"><div class="label">Urlop</div><div class="value" id="kLeave">0</div></div><div class="kpi"><div class="label">Wolne</div><div class="value" id="kOff">0</div></div><div class="kpi"><div class="label">L4 / Zwolnienie</div><div class="value" id="kSick">0</div></div><div class="kpi"><div class="label">Inne prace</div><div class="value" id="kCustom">0</div></div></div>
+<div id="emptyWarn"></div><h3>Praca nad zamówieniami</h3><div class="table-wrap"><table class="table"><thead><tr><th>Zamówienie</th><th>Tryb</th><th style="width:100px">Dni</th><th>Daty</th></tr></thead><tbody id="ordersBody"></tbody></table></div>
+<h3 style="margin-top:18px">Pozycje ręczne</h3><div class="table-wrap"><table class="table"><thead><tr><th>Typ</th><th>Uwagi</th><th style="width:100px">Dni</th><th>Daty</th></tr></thead><tbody id="specialBody"></tbody></table></div>
+</div></main></div></div><script src="config.js"></script><script src="assets/js/helpers_ext.js"></script><script src="assets/js/menu.js"></script><script src="assets/js/topbar.js"></script><script>
+const $=id=>document.getElementById(id);function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));}
+function monthDefault(){const d=new Date();const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0');fromDate.value=`${y}-${m}-01`;toDate.value=new Date(y,d.getMonth()+1,0).toISOString().slice(0,10);}
+function renderDates(a){return (a||[]).map(d=>'<span class="chip">'+esc(d)+'</span>').join('');}
+async function loadUsers(){const r=await apiGet('schedule_report.php?user_id=1&from=2000-01-01&to=2000-01-01').catch(()=>({users:[]}));userSelect.innerHTML=(r.users||[]).map(u=>'<option value="'+u.id+'">'+esc(u.name||('Użytkownik #'+u.id))+'</option>').join('');}
+async function run(){err.textContent='';const uid=userSelect.value;if(!uid){err.textContent='Wybierz montera.';return;}try{const qs=new URLSearchParams({user_id:uid,from:fromDate.value,to:toDate.value});const r=await apiGet('schedule_report.php?'+qs.toString());kLeave.textContent=r.totals?.leave??0;kOff.textContent=r.totals?.day_off??0;kSick.textContent=r.totals?.sick??0;kCustom.textContent=r.totals?.custom??0;ordersBody.innerHTML=(r.summary||[]).length?(r.summary||[]).map(x=>'<tr><td><b>#'+esc(x.order_id)+'</b> — '+esc(x.client_name||'')+'<div style="color:var(--muted);font-size:12px">'+esc(x.item_description||'')+'</div></td><td>'+esc(x.label||x.mode||'')+'</td><td><b>'+esc(x.days)+'</b></td><td>'+renderDates(x.dates)+'</td></tr>').join(''):'<tr><td colspan="4" style="color:var(--muted)">Brak pracy nad zamówieniami w wybranym okresie.</td></tr>';specialBody.innerHTML=(r.special||[]).length?(r.special||[]).map(x=>'<tr><td><b>'+esc(x.label||x.type||'')+'</b></td><td>'+esc(x.note||'—')+'</td><td><b>'+esc(x.days)+'</b></td><td>'+renderDates(x.dates)+'</td></tr>').join(''):'<tr><td colspan="4" style="color:var(--muted)">Brak pozycji ręcznych.</td></tr>';emptyWarn.innerHTML=(r.empty_workdays||[]).length?'<div class="warn"><b>Uwaga: dni robocze bez wpisu w grafiku:</b><div style="margin-top:6px">'+renderDates(r.empty_workdays)+'</div></div>':'';}catch(e){console.error(e);err.textContent='Nie udało się pobrać zestawienia.';}}
+runBtn.onclick=run;document.addEventListener('DOMContentLoaded',async()=>{monthDefault();await loadUsers();await run();});
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', async ()=>{
+  try{
+    if(typeof apiGet !== 'function') return;
+    const r = await apiGet('session_check.php');
+    const caps = r.caps || {};
+    if(!(caps.is_admin || caps.is_superadmin)){
+      alert('Brak dostępu do Zestawienia pracy.');
+      location.href = 'schedule.html';
+    }
+  }catch(e){
+    location.href = 'schedule.html';
+  }
+});
+</script>
+
+</body></html>

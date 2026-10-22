@@ -1,0 +1,3 @@
+function el(id){ return document.getElementById(id); }
+function fmtMoney(v){ if(v==null||v==='') return ''; return new Intl.NumberFormat('pl-PL',{style:'currency',currency:'PLN'}).format(Number(v)); }
+function statusPill(name){ const map={'Montaż w trakcie':'green','Rozpisane i zamówione':'orange','Do zmierzenia':'blue'}; const cls=map[name]||'blue'; return `<span class="status ${cls}">${name||''}</span>`; }

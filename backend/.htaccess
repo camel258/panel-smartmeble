@@ -1,0 +1,3 @@
+Options -Indexes
+# Wymuszenie przekazania nagłówka Authorization do PHP
+SetEnvIf Authorization "(.*)" HTTP_AUTHORIZATION=$1

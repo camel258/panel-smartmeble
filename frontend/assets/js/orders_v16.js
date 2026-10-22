@@ -1,0 +1,4 @@
+function monthNamePL(m){const n=['Styczeń','Luty','Marzec','Kwiecień','Maj','Czerwiec','Lipiec','Sierpień','Wrzesień','Październik','Listopad','Grudzień'];return n[(m-1+12)%12]||'';}
+function deriveRealYearMonth(r){const p=r.install_date_new||r.install_date||r.contract_date||'';let y=parseInt(r.real_year||0,10),m=parseInt(r.real_month||0,10);if((!y||!m)&&p){const t=new Date(p.replace(' ','T'));if(!y)y=t.getFullYear();if(!m)m=t.getMonth()+1;}return {year:y,month:m};}
+function groupOrders(items){const g={};(items||[]).forEach(r=>{const d=deriveRealYearMonth(r);const k=`${d.year}-${String(d.month).padStart(2,'0')}`;if(!g[k])g[k]={title:`${monthNamePL(d.month)} ${d.year}`,items:[]};g[k].items.push(r);});const ks=Object.keys(g).sort((a,b)=>a<b?1:-1);return ks.map(k=>({key:k,title:g[k].title,items:g[k].items}));}
+function logoutAndRedirect(){try{localStorage.removeItem('token');}catch(e){} window.location.href='login.html';}

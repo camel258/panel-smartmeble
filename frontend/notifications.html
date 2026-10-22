@@ -1,0 +1,115 @@
+<!doctype html><html lang="pl"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Powiadomienia – Smart Meble</title>
+<link rel="icon" href="assets/img/favicon.ico">
+<link rel="stylesheet" href="assets/css/theme_v17.css"/>
+<style>
+.notif-email-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+.notif-email-row:last-child{border-bottom:none}
+.notif-email{flex:1}
+.notif-empty{color:var(--muted);padding:8px 0}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand"><img src="assets/img/logo_smartmeble.png" style="height:28px"/></div>
+    <nav>
+      <a  href="orders.html">Zamówienia aktualne</a>
+      <a  href="orders_finished.html">Zamówienia zakończone</a>
+      <a data-super-only  href="orders_deleted.html">Zamówienia usunięte</a>
+      <a data-finance-only  href="payments.html">Rozliczenia</a>
+      <a  href="schedule.html">Grafik</a>
+      <a data-admin-only  href="users.html">Użytkownicy</a>
+      <a data-admin-only  href="statuses.html">Statusy</a>
+      <a data-admin-only class="active" href="notifications.html">Powiadomienia</a>
+      <a data-admin-only  href="settings.html">Ustawienia</a>
+    </nav>
+  </aside>
+
+  <div class="content">
+    <div id="appTopbar" data-title="Powiadomienia" data-subtitle="Panel zamówień"></div>
+    <main class="main">
+      <div id="notifTypes"></div>
+    </main>
+  </div>
+</div>
+
+<script src="config.js"></script><script src="assets/js/menu.js"></script><script src="assets/js/topbar.js"></script>
+<script>
+function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+async function loadNotificationSettings(){
+  try{
+    const r = await apiGet('notifications_settings.php');
+    const types = r.types || {};
+    const items = r.items || [];
+    const wrap = document.getElementById('notifTypes');
+    wrap.innerHTML = '';
+    Object.keys(types).forEach(key=>{
+      const label = types[key];
+      const rows = items.filter(it=>it.notification_key===key);
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.style.marginBottom = '16px';
+      card.innerHTML =
+        '<h3>'+esc(label)+'</h3>'
+        + '<div style="color:var(--muted);font-size:13px;margin-bottom:10px">Adresy e-mail, na które ma iść powiadomienie.</div>'
+        + '<div id="rows_'+key+'"></div>'
+        + '<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">'
+          + '<input class="input" id="email_'+key+'" type="email" placeholder="adres@smartmeble.pl" style="max-width:320px">'
+          + '<button class="btn" data-addkey="'+key+'">Dodaj adres</button>'
+          + '<button class="btn" data-testkey="'+key+'" style="background:#555">Wyślij testowy mail</button>'
+        + '</div>';
+      wrap.appendChild(card);
+      const rowsWrap = card.querySelector('#rows_'+key);
+      if(!rows.length){
+        rowsWrap.innerHTML = '<div class="notif-empty">Brak skonfigurowanych adresów – powiadomienia nie będą wysyłane.</div>';
+      }else{
+        rows.forEach(it=>{
+          const row = document.createElement('div');
+          row.className = 'notif-email-row';
+          row.innerHTML = '<span class="notif-email">'+esc(it.email)+'</span><button class="btn" data-delid="'+it.id+'" style="background:#b91c1c;color:#fff">Usuń</button>';
+          rowsWrap.appendChild(row);
+        });
+      }
+    });
+    wrap.querySelectorAll('[data-addkey]').forEach(btn=>{
+      btn.onclick = async ()=>{
+        const key = btn.dataset.addkey;
+        const input = document.getElementById('email_'+key);
+        const email = (input.value||'').trim();
+        if(!email) return;
+        try{
+          await apiPost('notifications_settings.php', {action:'add', notification_key:key, email});
+          input.value='';
+          await loadNotificationSettings();
+        }catch(e){ alert('Nie udało się dodać adresu (sprawdź poprawność e-mail).'); }
+      };
+    });
+    wrap.querySelectorAll('[data-delid]').forEach(btn=>{
+      btn.onclick = async ()=>{
+        if(!confirm('Usunąć ten adres z listy powiadomień?')) return;
+        try{
+          await apiPost('notifications_settings.php', {action:'delete', id:Number(btn.dataset.delid)});
+          await loadNotificationSettings();
+        }catch(e){ alert('Błąd usuwania adresu'); }
+      };
+    });
+    wrap.querySelectorAll('[data-testkey]').forEach(btn=>{
+      btn.onclick = async ()=>{
+        try{
+          const r = await apiPost('notifications_settings.php', {action:'test_send', notification_key:btn.dataset.testkey});
+          alert('Wysłano testowy mail do '+r.sent+' z '+r.total+' adresów.');
+        }catch(e){
+          alert('Nie udało się wysłać testu (najpewniej brak dodanych adresów dla tego typu).');
+        }
+      };
+    });
+  }catch(e){
+    document.getElementById('notifTypes').innerHTML = '<div class="card">Nie udało się wczytać ustawień powiadomień.</div>';
+  }
+}
+document.addEventListener('DOMContentLoaded', loadNotificationSettings);
+</script>
+</body></html>

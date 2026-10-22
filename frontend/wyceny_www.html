@@ -1,0 +1,203 @@
+<!doctype html><html lang="pl"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Smart Meble – Wyceny do zrobienia</title>
+<link rel="icon" href="assets/img/favicon.ico">
+<link rel="stylesheet" href="assets/css/theme_v17.css"/>
+<style>
+.ww-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.ww-tab{background:rgba(255,255,255,.05);border:1px solid var(--border);color:var(--muted);padding:7px 12px;border-radius:999px;cursor:pointer;font-weight:600}
+.ww-tab.on{background:var(--accent);color:var(--accent-contrast);border-color:var(--accent)}
+.ww-tab b{margin-left:4px}
+.ww-bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.ww-table{width:100%;border-collapse:collapse}
+.ww-table th,.ww-table td{padding:10px 12px;border-bottom:1px solid var(--border);text-align:left;vertical-align:middle}
+.ww-table th{font-size:12px;color:#e5e7eb}
+.ww-table tbody tr{cursor:pointer}
+.ww-table tbody tr:hover{background:rgba(255,255,255,.04)}
+.ww-num{font-weight:800;color:#d9ff5c;white-space:nowrap}
+.ww-pill{display:inline-block;padding:4px 10px;border-radius:999px;color:#fff;font-size:12px;font-weight:700;white-space:nowrap}
+.ww-agd{display:inline-block;padding:2px 7px;border-radius:6px;border:1px solid var(--accent);color:var(--accent);font-size:11px;font-weight:800;margin-left:6px}
+.ww-empty{color:var(--muted);padding:16px 0}
+.ww-drawer{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;display:none}
+.ww-drawer.open{display:block}
+.ww-panel{position:absolute;top:0;right:0;bottom:0;width:min(1100px,100%);background:#232323;border-left:1px solid var(--border);overflow-y:auto;padding:18px 20px 40px}
+.ww-head{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.ww-head h2{margin:0;flex:1;font-size:20px}
+.ww-grid{display:grid;grid-template-columns:1.25fr 1fr;gap:14px}
+.ww-sec{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px}
+.ww-sec h3{margin:0 0 10px;font-size:15px}
+.ww-kv{display:grid;grid-template-columns:130px 1fr;gap:6px 10px;font-size:14px}
+.ww-kv span{color:var(--muted)}
+.ww-3d{position:relative;height:430px;border-radius:10px;overflow:hidden;background:#f4f4f1}
+.ww-3d canvas{width:100%;height:100%;display:block;cursor:grab}
+.ww-3d .ov{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.smk-dim{position:absolute;left:0;top:0;background:#2c2c2c;color:#fff;font-size:12px;font-weight:600;padding:3px 8px;border-radius:3px;white-space:nowrap;border-left:3px solid #a0c525}
+.ww-3d .tools{position:absolute;right:10px;top:10px;display:flex;gap:6px}
+.ww-3d .tools button{background:#fff;color:#111;border:1px solid #ccc;border-radius:6px;padding:5px 9px;cursor:pointer;font-weight:600;font-size:12px}
+.ww-shots{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.ww-shots img{width:100%;border-radius:8px;border:1px solid var(--border);display:block}
+.ww-list{list-style:none;margin:0;padding:0}
+.ww-list li{display:flex;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);font-size:14px}
+.ww-list li span{flex:1}
+.ww-list li b{white-space:nowrap}
+.ww-files a{color:var(--accent)}
+.ww-note{padding:8px 0;border-bottom:1px solid var(--border);font-size:14px}
+.ww-note small{color:var(--muted);display:block;margin-bottom:2px}
+.ww-note.st{color:var(--muted);font-size:13px}
+.ww-actions{display:flex;flex-direction:column;gap:10px}
+.ww-actions label{margin:0}
+.ww-warn{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.35);color:#fecaca;border-radius:8px;padding:8px 10px;margin-top:8px;font-size:13px}
+.btn-ghost{background:transparent!important;color:var(--text)!important;border:1px solid var(--border)!important}
+.btn-danger{background:#ef4444!important;color:#fff!important}
+@media(max-width:900px){.ww-grid{grid-template-columns:1fr}.ww-table thead{display:none}.ww-table tr,.ww-table td{display:block}.ww-table tr{border:1px solid var(--border);border-radius:12px;margin:8px 0;padding:6px}.ww-table td{border:0;padding:4px 8px}.ww-3d{height:320px}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand"><img src="assets/img/logo_smartmeble.png" style="height:28px"/><div>PANEL</div></div>
+    <nav id="sideNav"></nav>
+  </aside>
+  <div class="content">
+    <div id="appTopbar" data-title="Wyceny do zrobienia" data-subtitle="Zgłoszenia ze strony smartmeble.pl"></div>
+    <main class="main">
+      <div id="err" class="err" style="margin-bottom:10px"></div>
+      <div class="card">
+        <div class="ww-tabs" id="tabs"></div>
+        <div class="ww-bar">
+          <input class="input" id="q" placeholder="Szukaj: klient, telefon, e-mail, miejscowość, numer…" style="flex:1;min-width:240px">
+          <button class="btn" id="qBtn">Szukaj</button>
+        </div>
+        <div id="listWrap"><div class="ww-empty">Ładowanie…</div></div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div class="ww-drawer" id="drawer" aria-hidden="true"><div class="ww-panel" id="panel" role="dialog" aria-modal="true"></div></div>
+
+<script src="config.js"></script>
+<script src="assets/js/helpers_ext.js"></script>
+<script src="assets/js/menu.js"></script>
+<script src="assets/js/topbar.js"></script>
+<script src="assets/js/konfigurator-core.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const esc = v => String(v==null?'':v).replace(/[&<>"']/g, s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[s]));
+const TABS = [['open','Do zrobienia'],['nowa','Nowe'],['w_trakcie','W trakcie'],['oferta','Oferta wysłana'],['zamknieta','Zamknięte'],['odrzucona','Odrzucone'],['all','Wszystkie']];
+let cur = 'open', STATUSES = {}, TYPES = {}, viewer = null, detail = null;
+const tok = () => encodeURIComponent(localStorage.getItem('token')||'');
+const fileUrl = (id, inline) => API_BASE + 'www_wyceny_file.php?file=' + id + (inline?'&inline=1':'') + '&token=' + tok();
+const pill = s => { const d = STATUSES[s] || [s,'#4b5563']; return '<span class="ww-pill" style="background:'+d[1]+'">'+esc(d[0])+'</span>'; };
+const kind = r => r.path === 'pliki' ? 'Pliki od klienta' : (TYPES[r.furniture_type] || 'Konfigurator');
+const fmtSize = b => b > 1048576 ? (b/1048576).toFixed(1).replace('.',',')+' MB' : Math.max(1,Math.round(b/1024))+' kB';
+function showErr(e){ let m = String(e&&e.message||e); try{ const j = JSON.parse(m); m = j.error||m; }catch(_){} $('err').textContent = m==='forbidden' ? 'Brak dostępu do tej zakładki – nadaj go w Uprawnieniach grup.' : 'Błąd: '+m; }
+
+async function loadList(){
+  $('err').textContent='';
+  try{
+    const r = await apiGet('www_wyceny.php?action=list&status='+encodeURIComponent(cur)+'&q='+encodeURIComponent($('q').value.trim()));
+    STATUSES = r.statuses||{}; TYPES = r.types||{};
+    const c = r.counts||{}, open = (c.nowa||0)+(c.w_trakcie||0), all = Object.values(c).reduce((a,b)=>a+b,0);
+    $('tabs').innerHTML = TABS.map(t=>{ const n = t[0]==='open'?open:(t[0]==='all'?all:(c[t[0]]||0)); return '<button class="ww-tab'+(cur===t[0]?' on':'')+'" data-t="'+t[0]+'">'+t[1]+'<b>'+n+'</b></button>'; }).join('');
+    $('tabs').querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{ cur=b.dataset.t; loadList(); });
+    const items = r.items||[];
+    if(!items.length){ $('listWrap').innerHTML='<div class="ww-empty">Brak zgłoszeń w tym widoku. Nowe wyceny ze strony pojawią się tutaj automatycznie, a powiadomienie przyjdzie na e-mail.</div>'; return; }
+    $('listWrap').innerHTML = '<div style="overflow:auto"><table class="ww-table"><thead><tr><th>Numer</th><th>Wpłynęło</th><th>Klient</th><th>Telefon</th><th>Rodzaj</th><th>Pliki</th><th>Status</th><th>Prowadzi</th><th>Źródło</th></tr></thead><tbody>'
+      + items.map(r=>'<tr data-id="'+r.id+'"><td class="ww-num">'+esc(r.number)+'</td><td>'+esc(r.submitted_at)+'</td><td><b>'+esc(r.client_name)+'</b>'+(r.client_city?'<br><span style="color:var(--muted)">'+esc(r.client_city)+'</span>':'')+'</td><td>'+esc(r.client_phone)+'</td><td>'+esc(kind(r))+(Number(r.agd)?'<span class="ww-agd">AGD</span>':'')+'</td><td>'+(Number(r.files_count)||'—')+'</td><td>'+pill(r.status)+'</td><td>'+esc(r.assigned_name||'—')+'</td><td>'+esc(r.source||'—')+'</td></tr>').join('')
+      + '</tbody></table></div>';
+    $('listWrap').querySelectorAll('tr[data-id]').forEach(tr=>tr.onclick=()=>openDetail(tr.dataset.id));
+  }catch(e){ showErr(e); $('listWrap').innerHTML=''; }
+}
+
+async function openDetail(id){
+  try{
+    const r = await apiGet('www_wyceny.php?action=get&id='+id);
+    detail = r; STATUSES = r.statuses; TYPES = r.types;
+    renderDetail();
+    $('drawer').classList.add('open'); $('drawer').setAttribute('aria-hidden','false');
+    history.replaceState(null,'','?id='+id);
+  }catch(e){ showErr(e); }
+}
+function closeDetail(){ $('drawer').classList.remove('open'); $('drawer').setAttribute('aria-hidden','true'); viewer=null; history.replaceState(null,'',location.pathname); loadList(); }
+
+function renderDetail(){
+  const r = detail.item, files = detail.files, notes = detail.notes;
+  const uploads = files.filter(f=>f.kind==='upload'), renders = files.filter(f=>f.kind==='render');
+  const s = r.summary, o = r.other;
+  let proj = '';
+  if (s){
+    const byWall = {}; (s.items||[]).forEach(i=>{ (byWall[i.wall]=byWall[i.wall]||[]).push(i); });
+    proj = '<div class="ww-sec"><h3>Projekt z konfiguratora: '+esc(s.title)+'</h3>'
+      + (r.config ? '<div class="ww-3d" id="v3d"><canvas id="v3dc"></canvas><div class="ov" id="v3do"></div><div class="tools"><button data-v="reset">Widok ogólny</button><button data-v="front">Na wprost</button><button data-v="top">Z góry</button></div></div>' : '')
+      + '<div class="ww-grid" style="margin-top:12px"><div><ul class="ww-list">'+(s.lines||[]).concat(s.finishes||[]).map(l=>'<li><span>'+esc(l)+'</span></li>').join('')+'</ul></div><div>'
+      + Object.keys(byWall).map(w=>'<div style="font-weight:700;margin:4px 0">'+(w==='W'?'Wyspa':'Ściana '+esc(w))+'</div><ul class="ww-list">'+byWall[w].map(i=>'<li><span>'+esc(i.name)+'</span><b>'+esc(i.w)+' cm</b></li>').join('')+'</ul>').join('')
+      + '</div></div>' + (s.warnings||[]).map(w=>'<div class="ww-warn">'+esc(w)+'</div>').join('') + '</div>';
+  } else if (o){
+    proj = '<div class="ww-sec"><h3>Inne meble: '+esc(o.kind||'')+'</h3><div class="ww-kv"><span>Wymiary</span><div>'+esc([o.w||'–',o.h||'–',o.d||'–'].join(' × '))+' cm (szer. × wys. × gł.)</div><span>Opis</span><div>'+esc(o.desc||'—').replace(/\n/g,'<br>')+'</div></div></div>';
+  }
+  const users = '<option value="">— nikt —</option>' + detail.users.map(u=>'<option value="'+u.id+'"'+(Number(r.assigned_user_id)===Number(u.id)?' selected':'')+'>'+esc(u.full_name)+'</option>').join('');
+  const stOpts = Object.keys(STATUSES).map(k=>'<option value="'+k+'"'+(r.status===k?' selected':'')+'>'+esc(STATUSES[k][0])+'</option>').join('');
+  $('panel').innerHTML =
+    '<div class="ww-head"><h2>'+esc(r.number)+' · '+esc(r.client_name)+'</h2>'+pill(r.status)+'<button class="btn btn-ghost" id="close">Zamknij</button></div>'
+    + '<div class="ww-grid"><div>'
+      + '<div class="ww-sec"><h3>Klient</h3><div class="ww-kv">'
+        + '<span>Telefon</span><div><a href="tel:'+esc(r.client_phone.replace(/\s/g,''))+'" style="color:var(--accent);font-weight:700">'+esc(r.client_phone)+'</a></div>'
+        + '<span>E-mail</span><div>'+(r.client_email?'<a href="mailto:'+esc(r.client_email)+'?subject='+encodeURIComponent('Wycena '+r.number)+'" style="color:var(--accent)">'+esc(r.client_email)+'</a>':'—')+'</div>'
+        + '<span>Miejsce</span><div>'+esc([r.client_postcode,r.client_city].filter(Boolean).join(' ')||'—')+'</div>'
+        + '<span>Termin</span><div>'+esc(r.deadline||'—')+'</div>'
+        + '<span>Rodzaj</span><div>'+esc(kind(r))+(Number(r.agd)?' <span class="ww-agd">CHCE OFERTĘ AGD/RTV</span>':'')+'</div>'
+        + '<span>Wpłynęło</span><div>'+esc(r.submitted_at||'')+'</div>'
+        + '<span>Skąd o nas wie</span><div>'+esc(r.source||'—')+'</div>'
+      + '</div>'+(r.message?'<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border)">'+esc(r.message).replace(/\n/g,'<br>')+'</div>':'')+'</div>'
+      + (renders.length && !r.config ? '<div class="ww-sec"><h3>Widoki 3D</h3><div class="ww-shots">'+renders.map(f=>'<a href="'+fileUrl(f.id,1)+'" target="_blank"><img src="'+fileUrl(f.id,1)+'" alt=""></a>').join('')+'</div></div>' : '')
+      + '<div class="ww-sec ww-files"><h3>Pliki od klienta ('+uploads.length+')</h3>'+(uploads.length?'<ul class="ww-list">'+uploads.map(f=>'<li><span><a href="'+fileUrl(f.id,0)+'">'+esc(f.orig_name)+'</a></span><b>'+fmtSize(Number(f.size))+'</b></li>').join('')+'</ul>':'<div style="color:var(--muted)">Brak plików.</div>')
+        + (renders.length && r.config ? '<div style="margin-top:10px;font-size:13px">Zrzuty 3D: '+renders.map(f=>'<a href="'+fileUrl(f.id,1)+'" target="_blank">'+esc(f.orig_name)+'</a>').join(', ')+'</div>':'')+'</div>'
+    + '</div><div>'
+      + '<div class="ww-sec"><h3>Obsługa</h3><div class="ww-actions">'
+        + '<div><label>Status</label><select class="input" id="aStatus">'+stOpts+'</select></div>'
+        + '<div><label>Prowadzi</label><select class="input" id="aUser">'+users+'</select></div>'
+        + (r.linked_quote_id ? '<a class="btn" href="wycena_details.html?id='+Number(r.linked_quote_id)+'">Otwórz w module Wycena (#'+Number(r.linked_quote_id)+')</a>' : '<button class="btn" id="aQuote">Przenieś do modułu Wycena</button>')
+        + (detail.can_delete ? '<button class="btn btn-danger" id="aDel">Usuń zgłoszenie</button>' : '')
+      + '</div></div>'
+      + '<div class="ww-sec"><h3>Notatki</h3><textarea class="input" id="nTxt" rows="3" placeholder="Np. dzwoniłem, umówiony pomiar na czwartek…"></textarea><div style="margin-top:8px"><button class="btn" id="nAdd">Dodaj notatkę</button></div>'
+        + '<div style="margin-top:10px">'+(notes.length?notes.map(n=>'<div class="ww-note'+(n.kind==='status'?' st':'')+'"><small>'+esc(n.created_at)+' · '+esc(n.user_name)+'</small>'+esc(n.note).replace(/\n/g,'<br>')+'</div>').join(''):'<div style="color:var(--muted)">Brak notatek.</div>')+'</div></div>'
+    + '</div></div>' + proj;
+
+  $('close').onclick = closeDetail;
+  $('aStatus').onchange = e => act({action:'status', status:e.target.value});
+  $('aUser').onchange = e => act({action:'assign', user_id:e.target.value});
+  const q = $('aQuote'); if(q) q.onclick = async ()=>{ const res = await act({action:'to_quote'}, true); if(res && res.quote_id && confirm('Utworzono wycenę #'+res.quote_id+'. Otworzyć ją teraz?')) location.href='wycena_details.html?id='+res.quote_id; else openDetail(detail.item.id); };
+  const d = $('aDel'); if(d) d.onclick = async ()=>{ if(confirm('Usunąć zgłoszenie '+r.number+' razem z plikami? Tego nie da się cofnąć.')){ await act({action:'delete'}, true); closeDetail(); } };
+  $('nAdd').onclick = ()=>{ const t=$('nTxt').value.trim(); if(t) act({action:'note', note:t}); };
+
+  if (r.config && window.SMK){
+    try{
+      viewer = new SMK.Viewer($('v3dc'), $('v3do'));
+      if(viewer.failed) $('v3d').innerHTML='<div style="padding:20px;color:#333">Przeglądarka nie obsługuje podglądu 3D – zobacz zrzuty w plikach.</div>';
+      else {
+        viewer.setModel(SMK.buildModel(r.config));
+        $('v3d').querySelectorAll('[data-v]').forEach(b=>b.onclick=()=>{ const v=b.dataset.v; v==='front'?viewer.resetView(0,0.12):v==='top'?viewer.resetView(0,1.35):viewer.resetView(); });
+      }
+    }catch(e){ console.error(e); }
+  }
+}
+
+async function act(body, raw){
+  try{
+    body.id = detail.item.id;
+    const res = await apiPost('www_wyceny.php', body);
+    if(raw) return res;
+    await openDetail(detail.item.id);
+  }catch(e){ showErr(e); }
+}
+
+$('qBtn').onclick = loadList;
+$('q').addEventListener('keydown', e=>{ if(e.key==='Enter') loadList(); });
+$('drawer').addEventListener('click', e=>{ if(e.target.id==='drawer') closeDetail(); });
+document.addEventListener('keydown', e=>{ if(e.key==='Escape' && $('drawer').classList.contains('open')) closeDetail(); });
+loadList();
+const startId = new URLSearchParams(location.search).get('id');
+if(startId) openDetail(startId);
+</script>
+</body></html>

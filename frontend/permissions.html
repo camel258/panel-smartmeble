@@ -1,0 +1,82 @@
+<!doctype html><html lang="pl"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Uprawnienia grup – Smart Meble</title>
+<link rel="icon" href="assets/img/favicon.ico">
+<link rel="stylesheet" href="assets/css/theme_v17.css"/>
+<style>
+  .perm-section{margin-top:18px}
+  .perm-table th,.perm-table td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top;text-align:left}
+  .perm-table{width:100%;border-collapse:collapse}
+  .small{font-size:12px;color:var(--muted)}
+</style></head>
+<body>
+<div class="app">
+  <aside class="sidebar"><div class="brand"><img src="assets/img/logo_smartmeble.png" style="height:28px"/></div><nav>
+    <a href="orders.html">Zamówienia aktualne</a><a href="orders_finished.html">Zamówienia zakończone</a><a data-super-only href="orders_deleted.html">Zamówienia usunięte</a><a data-finance-only href="payments.html">Rozliczenia</a><a href="schedule.html">Grafik</a><a data-admin-only href="users.html">Użytkownicy</a><a data-admin-only href="statuses.html">Statusy</a><a data-admin-only href="notifications.html">Powiadomienia</a><a data-admin-only href="settings.html">Ustawienia</a>
+  </nav></aside>
+  <div class="content"><div id="appTopbar" data-title="Uprawnienia grup" data-subtitle="Panel zamówień"></div>
+    <main class="main"><div class="card"><div id="msg" style="margin-bottom:10px;color:var(--muted)">Dostęp tylko dla superadmina.</div>
+    <div class="perm-section"><h3>Moduły menu</h3><div style="overflow:auto"><table class="perm-table" id="modsTable"></table></div></div>
+    <div class="perm-section"><h3>Widgety dashboardu</h3><div class="small">Nowe widgety można później dodawać bez przebudowy całego systemu uprawnień.</div><div style="overflow:auto"><table class="perm-table" id="widgetsTable"></table></div></div>
+    <div class="perm-section"><h3>Pola i sekcje karty zamówienia</h3><div class="small">Dla pól finansowych można ustawić edycję bez podglądu. Sekcje plików można teraz rozdzielać na pliki ogólne i administracyjne.</div><div style="overflow:auto"><table class="perm-table" id="fieldsTable"></table></div></div>
+    <div style="margin-top:12px"><button class="btn" id="saveBtn">Zapisz uprawnienia</button></div>
+  </div></main></div>
+</div>
+<script src="config.js"></script><script src="assets/js/menu.js"></script><script src="assets/js/topbar.js"></script><script>
+function logout(){ localStorage.removeItem('token'); location.href='login.html'; }
+let state=[];
+function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m]));}
+function buildBooleanTable(tableId, sectionKey, valueKey){
+  const table = document.getElementById(tableId);
+  if(!state.length){ table.innerHTML='<tbody><tr><td>Brak danych</td></tr></tbody>'; return; }
+  const cols = state[0][sectionKey] || [];
+  let html = '<thead><tr><th>Rola</th>' + cols.map(c=>`<th>${esc(c.label)}</th>`).join('') + '</tr></thead><tbody>';
+  state.forEach(role=>{
+    html += `<tr><td><b>${esc(role.role_name)}</b></td>`;
+    (role[sectionKey]||[]).forEach(item=>{
+      const checked = Number(item[valueKey])===1 ? 'checked' : '';
+      const disabled = (Number(role.role_id)===999 && ((sectionKey==='modules' && item.code==='permissions'))) ? 'disabled' : '';
+      html += `<td><input type="checkbox" data-section="${sectionKey}" data-role="${role.role_id}" data-code="${esc(item.code)}" data-kind="${valueKey}" ${checked} ${disabled}></td>`;
+    });
+    html += '</tr>';
+  });
+  table.innerHTML = html + '</tbody>';
+}
+function buildFieldsTable(){
+  const table = document.getElementById('fieldsTable');
+  if(!state.length){ table.innerHTML='<tbody><tr><td>Brak danych</td></tr></tbody>'; return; }
+  const cols = state[0].order_fields || [];
+  let html = '<thead><tr><th>Rola</th>' + cols.map(c=>`<th>${esc(c.label)}<div class="small">V / E</div></th>`).join('') + '</tr></thead><tbody>';
+  state.forEach(role=>{
+    html += `<tr><td><b>${esc(role.role_name)}</b></td>`;
+    (role.order_fields||[]).forEach(item=>{
+      const viewChecked = Number(item.allow_view)===1 ? 'checked' : '';
+      const editChecked = Number(item.allow_edit)===1 ? 'checked' : '';
+      html += `<td><label style="display:inline-flex;gap:4px;align-items:center"><input type="checkbox" data-section="order_fields" data-role="${role.role_id}" data-code="${esc(item.code)}" data-kind="allow_view" ${viewChecked}>V</label> <label style="display:inline-flex;gap:4px;align-items:center"><input type="checkbox" data-section="order_fields" data-role="${role.role_id}" data-code="${esc(item.code)}" data-kind="allow_edit" ${editChecked}>E</label></td>`;
+    });
+    html += '</tr>';
+  });
+  table.innerHTML = html + '</tbody>';
+}
+async function load(){
+  const r = await apiGet('role_permissions_get.php');
+  state = r.items || [];
+  buildBooleanTable('modsTable','modules','allow_access');
+  buildBooleanTable('widgetsTable','dashboard_widgets','allow_view');
+  buildFieldsTable();
+}
+document.getElementById('saveBtn').onclick = async ()=>{
+  const modules = [...document.querySelectorAll('input[data-section="modules"]')].map(ch=>({ role_id:Number(ch.dataset.role), module_code:ch.dataset.code, allow_access: ch.checked ? 1 : 0 }));
+  const dashboard_widgets = [...document.querySelectorAll('input[data-section="dashboard_widgets"]')].map(ch=>({ role_id:Number(ch.dataset.role), widget_code:ch.dataset.code, allow_view: ch.checked ? 1 : 0 }));
+  const map = {};
+  [...document.querySelectorAll('input[data-section="order_fields"]')].forEach(ch=>{
+    const key = ch.dataset.role + '|' + ch.dataset.code;
+    if(!map[key]) map[key] = { role_id:Number(ch.dataset.role), field_code:ch.dataset.code, allow_view:0, allow_edit:0 };
+    map[key][ch.dataset.kind] = ch.checked ? 1 : 0;
+  });
+  const order_fields = Object.values(map);
+  await apiPost('role_permissions_save.php', {modules, dashboard_widgets, order_fields});
+  document.getElementById('msg').textContent='Zapisano ✅';
+};
+load().catch(async e=>{ console.error(e); let msg='Błąd ładowania uprawnień'; try{ msg += ' — ' + String(e.message||''); }catch(_){} document.getElementById('msg').textContent=msg; });
+</script></body></html>

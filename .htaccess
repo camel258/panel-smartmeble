@@ -1,0 +1,6 @@
+Options -Indexes
+
+# Blokada plików technicznych (log, ini, txt, sql)
+<FilesMatch "\.(log|ini|txt|sql)$">
+Deny from all
+</FilesMatch>

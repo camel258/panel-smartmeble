@@ -1,0 +1,971 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Smart Meble – Grafik</title>
+<link rel="icon" href="assets/img/favicon.ico">
+<link rel="stylesheet" href="assets/css/theme_v17.css"/>
+<style>
+  .legend{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0 16px}
+  .legend span{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;font-size:12px}
+  .badge-base{background:rgba(148,163,184,.18);border:1px solid rgba(148,163,184,.35);color:#cbd5e1}
+  .badge-manual{background:rgba(34,197,94,.18);border:1px solid rgba(34,197,94,.35);color:#d9f99d}
+  .badge-empty{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);color:var(--muted)}
+  .badge-sel{background:rgba(59,130,246,.18);border:1px solid rgba(59,130,246,.4);color:#bfdbfe}
+  .sched-wrap{overflow:auto;border:1px solid rgba(255,255,255,.08);border-radius:14px}
+  .sched-table{width:max-content;min-width:100%;border-collapse:collapse;table-layout:fixed}
+  .sched-table th,.sched-table td{border-bottom:1px solid rgba(255,255,255,.08);border-right:1px solid rgba(255,255,255,.06);vertical-align:top}
+  .sched-table thead th{position:sticky;top:0;z-index:3;background:#252525}
+  .sticky-left{position:sticky;left:0;z-index:2;background:#232323}
+  .user-col{width:220px;min-width:220px;padding:10px}
+  .day-col{width:150px;min-width:150px}
+  .day-head{padding:8px;text-align:center;font-size:12px}
+  .cell{padding:8px;min-height:118px;background:#202020;cursor:pointer}
+  .cell.has-base{background:rgba(100,116,139,.08)}
+  .cell.has-manual{background:rgba(34,197,94,.10)}
+  .cell.is-selected{outline:2px solid #60a5fa;outline-offset:-2px;box-shadow:inset 0 0 0 1px rgba(96,165,250,.35)}
+  .cell-top{display:flex;justify-content:space-between;gap:6px;align-items:flex-start;margin-bottom:6px}
+  .cell-title{font-size:12px;font-weight:700;line-height:1.25}
+  .cell-meta{font-size:11px;color:var(--muted);line-height:1.3}
+  .cell-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .mini-btn{padding:4px 8px;border-radius:8px;border:0;cursor:pointer;background:#b8d51e;color:#111;font-weight:700;font-size:12px}
+  .mini-btn.alt{background:#404040;color:#fff}
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+  .toolbar .input{width:auto}
+  .muted{color:var(--muted)}
+  dialog{border:1px solid rgba(255,255,255,.1);border-radius:16px;background:#232323;color:#fff;max-width:760px;width:calc(100vw - 40px)}
+  dialog::backdrop{background:rgba(0,0,0,.55)}
+  .editor-grid{display:grid;grid-template-columns:1fr 180px;gap:10px}
+  .pill{display:inline-block;padding:4px 8px;border-radius:999px;font-size:12px}
+  .pill.mount{background:rgba(59,130,246,.18);border:1px solid rgba(59,130,246,.35);color:#bfdbfe}
+  .pill.workshop{background:rgba(234,179,8,.18);border:1px solid rgba(234,179,8,.35);color:#fde68a}
+  .bulkbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0 14px}
+  .smallcheck{display:inline-flex;gap:6px;align-items:center;font-size:12px;color:var(--muted)}
+  .chips{display:flex;gap:6px;flex-wrap:wrap}
+  .chip{padding:4px 8px;border-radius:999px;background:rgba(255,255,255,.08);font-size:12px}
+
+  /* schedule topbar visibility fix */
+  .content{overflow:visible !important; min-width:0;}
+  #appTopbar{display:block; width:100%; overflow:visible !important;}
+  #appTopbar .topbar{overflow:visible !important;}
+  #appTopbar .topbar-right{
+    margin-left:auto !important;
+    display:flex !important;
+    align-items:center !important;
+    justify-content:flex-end !important;
+    flex-wrap:wrap !important;
+    min-width:max-content;
+  }
+  @media (max-width:768px){
+    #appTopbar .topbar-right{
+      min-width:0;
+      width:100% !important;
+      justify-content:space-between !important;
+    }
+  }
+
+
+/* schedule mobile week */
+.mobile-week-toolbar,.mobile-week-wrap{display:none}
+.mobile-week-toolbar{gap:8px;align-items:center;justify-content:space-between;margin:8px 0 12px;flex-wrap:wrap}
+.mobile-week-title{font-size:13px;font-weight:700}
+.mobile-day-card{border:1px solid rgba(255,255,255,.08);border-radius:14px;background:#1f1f1f;margin-bottom:10px;overflow:hidden}
+.mobile-day-head{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;background:#252525;border-bottom:1px solid rgba(255,255,255,.08)}
+.mobile-day-title{font-size:13px;font-weight:700}
+.mobile-day-list{padding:6px 8px}
+.mobile-entry{display:grid;grid-template-columns:74px 1fr auto;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+.mobile-entry:last-child{border-bottom:0}
+.mobile-entry-user{font-size:11px;color:#d1d5db;font-weight:700;line-height:1.15}
+.mobile-entry-client{font-size:11px;line-height:1.2;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mobile-entry-mode{font-size:10px;color:var(--muted)}
+.mobile-empty{font-size:11px;color:var(--muted);padding:8px 2px}
+@media (max-width:768px){
+  .bulkbar{display:none}
+  .sched-wrap{display:none}
+  .mobile-week-toolbar{display:flex}
+  .mobile-week-wrap{display:block}
+}
+
+  /* weekend highlight */
+  .sched-table th.weekend-col{
+    background:rgba(249,115,22,.18) !important;
+  }
+  .sched-table td.weekend-col{
+    background:rgba(249,115,22,.10) !important;
+  }
+  .sched-table td.weekend-col .cell{
+    background:rgba(249,115,22,.08) !important;
+  }
+  .sched-table td.weekend-col .cell.has-base{
+    background:rgba(249,115,22,.12) !important;
+  }
+  .sched-table td.weekend-col .cell.has-manual{
+    background:rgba(34,197,94,.10) !important;
+    box-shadow:inset 0 0 0 9999px rgba(249,115,22,.06);
+  }
+
+
+  /* weekend highlight */
+  .sched-table th.weekend-col{background:rgba(249,115,22,.18) !important;}
+  .sched-table td.weekend-col{background:rgba(249,115,22,.10) !important;}
+  .sched-table td.weekend-col .cell{background:rgba(249,115,22,.08) !important;}
+  .sched-table td.weekend-col .cell.has-base{background:rgba(249,115,22,.12) !important;}
+  .sched-table td.weekend-col .cell.has-manual{box-shadow:inset 0 0 0 9999px rgba(249,115,22,.06);}
+
+  /* special work modes */
+  .pill.custom{background:rgba(234,179,8,.18);border:1px solid rgba(234,179,8,.35);color:#fde68a}
+  .pill.leave{background:rgba(34,197,94,.18);border:1px solid rgba(34,197,94,.35);color:#bbf7d0}
+  .pill.day_off{background:rgba(59,130,246,.18);border:1px solid rgba(59,130,246,.35);color:#bfdbfe}
+  .pill.sick{background:rgba(239,68,68,.18);border:1px solid rgba(239,68,68,.35);color:#fecaca}
+  .cell.has-custom{background:rgba(234,179,8,.10)}
+  .cell.has-leave{background:rgba(34,197,94,.12)}
+  .cell.has-day-off{background:rgba(59,130,246,.12)}
+  .cell.has-sick{background:rgba(239,68,68,.13)}
+
+
+  .entry-percent{font-size:11px;font-weight:800;color:#d9ff5c;margin-left:4px}
+  .multi-entry-row{display:grid;grid-template-columns:1.2fr 140px 95px 1fr 34px;gap:8px;align-items:end;margin-top:8px}
+  .multi-entry-row .input{width:100%}
+  .multi-box{margin-top:12px;padding:12px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:rgba(255,255,255,.02)}
+  @media(max-width:900px){.multi-entry-row{grid-template-columns:1fr}.multi-entry-row button{width:max-content}}
+
+</style>
+
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand"><img src="assets/img/logo_smartmeble.png" style="height:28px"/><div>PANEL</div></div>
+    <nav>
+      <a href="orders.html">Zamówienia aktualne</a>
+      <a href="orders_finished.html">Zamówienia zakończone</a>
+      <a data-super-only href="orders_deleted.html">Zamówienia usunięte</a>
+      <a data-finance-only href="payments.html">Rozliczenia</a>
+      <a class="active" href="schedule.html">Grafik</a>
+      <a data-admin-only href="users.html">Użytkownicy</a>
+      <a data-admin-only href="statuses.html">Statusy</a><a data-admin-only href="notifications.html">Powiadomienia</a>
+      <a data-admin-only href="settings.html">Ustawienia</a>
+    </nav>
+  </aside>
+
+  <div class="content">
+    <div id="appTopbar" data-title="Grafik" data-subtitle="Panel zamówień"></div>
+
+    <main class="main">
+      <div id="err" class="err" style="margin-bottom:10px"></div>
+
+      <div class="card">
+        <div class="toolbar">
+          <button class="btn" id="prevMonth">◀</button>
+          <input class="input" id="monthPicker" type="month">
+          <button class="btn" id="nextMonth">▶</button>
+          <button class="btn" id="reloadBtn">Odśwież</button>
+          <div id="whoInfo" class="muted" style="margin-left:auto"></div>
+        </div>
+
+        <div class="legend">
+          <span class="badge-base">Szare: automatyczna podpowiedź z daty montażu</span>
+          <span class="badge-manual">Zielone: ręcznie ustawiony grafik</span>
+          <span class="badge-sel">Niebieskie: zaznaczone komórki</span>
+        </div>
+
+        <div class="bulkbar">
+          <button class="btn" id="bulkAssignBtn" type="button">Przypisz do zaznaczonych</button>
+          <button class="btn" id="bulkClearBtn" type="button" style="background:#404040;color:#fff">Wyczyść zaznaczenie</button>
+          <span class="muted" id="selInfo">Zaznaczonych pól: 0</span>
+          <label class="smallcheck"><input type="checkbox" id="toggleSelectMode"> Tryb wielokrotnego zaznaczania</label>
+          <span class="muted">W trybie zaznaczania kliknięcie komórki dodaje/usuwa ją z zaznaczenia.</span>
+        </div>
+
+        <div class="muted" style="font-size:12px;margin-bottom:12px">
+          Podpowiedź bazowa bierze zamówienia przypisane do montera i pokazuje je w dniu <b>nowej daty montażu</b>, a jeśli jej nie ma — w dniu <b>daty montażu</b>.
+          Przy ręcznym wyborze klienta lista obejmuje <b>wszystkie aktywne zamówienia przypisane do montera</b>, niezależnie od miesiąca montażu. Dodatkowo na końcu listy są wpisy specjalne: <b>Inne prace</b>, <b>Urlop</b>, <b>Wolne</b>, <b>L4 / Zwolnienie</b>. Ręcznie zapisany wpis nadpisuje podpowiedź. Z poziomu edycji jednego pola możesz też powielić wpis na kolejne dni albo na wybrane dni tego samego montera.
+        </div>
+
+        <div class="sched-wrap">
+          <table class="sched-table" id="schedTable">
+            <thead id="schedHead"></thead>
+            <tbody id="schedBody"></tbody>
+          </table>
+        </div>
+        <div class="mobile-week-toolbar">
+          <button class="btn" id="mobileWeekPrev" type="button">◀ tydzień</button>
+          <div class="mobile-week-title" id="mobileWeekTitle"></div>
+          <button class="btn" id="mobileWeekNext" type="button">tydzień ▶</button>
+        </div>
+        <div id="mobileWeekWrap" class="mobile-week-wrap"></div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<dialog id="editor">
+  <form method="dialog" style="padding:18px">
+    <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:12px">
+      <div>
+        <div style="font-size:18px;font-weight:700" id="edTitle">Edycja wpisu</div>
+        <div class="muted" id="edSub"></div>
+      </div>
+      <button class="btn" value="cancel" type="submit">Zamknij</button>
+    </div>
+
+    <div id="edCurrent" style="margin-bottom:12px"></div>
+
+    <div class="editor-grid">
+      <div>
+        <label>Zamówienie z przypisanych do montera</label>
+        <select class="input" id="edOrder"></select>
+      </div>
+      <div>
+        <label>Tryb pracy</label>
+        <select class="input" id="edMode">
+          <option value="install">Montaż</option>
+          <option value="workshop">Warsztat</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="margin-top:10px">
+      <label>Notatka (opcjonalnie)</label>
+      <input class="input" id="edNote" maxlength="255" placeholder="np. montaż kuchni etap 1">
+    </div>
+
+    <div class="multi-box">
+      <label class="smallcheck" style="font-weight:700;color:#e5e7eb">
+        <input type="checkbox" id="edMultiToggle"> Dodaj drugi montaż / podziel dzień procentowo
+      </label>
+      <div class="muted" style="font-size:12px;margin-top:6px">Użyj tego, gdy jeden pracownik ma tego samego dnia 2–4 montaże lub warsztat + montaż. Suma procentów nie może przekroczyć 100%.</div>
+      <div id="edMultiRows" style="display:none;margin-top:10px"></div>
+      <button class="btn" id="edAddMultiRow" type="button" style="display:none;margin-top:8px">+ Dodaj pozycję</button>
+    </div>
+
+    <div style="margin-top:12px;padding:12px;border:1px solid rgba(255,255,255,.08);border-radius:12px">
+      <div style="font-weight:700;margin-bottom:8px">Powielanie wpisu</div>
+      <label class="smallcheck" style="margin-bottom:8px"><input type="checkbox" id="edDuplicate"> Powiel po zapisie</label>
+      <div class="editor-grid">
+        <div>
+          <label>Tryb powielenia</label>
+          <select class="input" id="edDupMode">
+            <option value="next_days">Na kolejne dni</option>
+            <option value="selected_days">Na wybrane dni miesiąca</option>
+          </select>
+        </div>
+        <div>
+          <label>Liczba kolejnych dni</label>
+          <input class="input" id="edDupCount" type="number" min="1" max="31" value="1">
+        </div>
+      </div>
+      <div style="margin-top:10px">
+        <label>Wybrane dni miesiąca (np. 12,13,14)</label>
+        <input class="input" id="edDupDays" placeholder="12,13,14">
+      </div>
+      <div class="muted" style="font-size:12px;margin-top:6px">Powielenie działa dla tego samego montera.</div>
+    </div>
+
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap">
+      <button class="btn" id="edClear" type="button" style="background:#404040;color:#fff">Wyczyść ręczny wpis</button>
+      <button class="btn" id="edSave" type="button">Zapisz</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="bulkEditor">
+  <form method="dialog" style="padding:18px">
+    <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:12px">
+      <div>
+        <div style="font-size:18px;font-weight:700">Przypisanie do zaznaczonych pól</div>
+        <div class="muted" id="bulkSub"></div>
+      </div>
+      <button class="btn" value="cancel" type="submit">Zamknij</button>
+    </div>
+
+    <div id="bulkSummary" class="chips" style="margin-bottom:10px"></div>
+
+    <div class="editor-grid">
+      <div>
+        <label>Zamówienie</label>
+        <select class="input" id="bulkOrder"></select>
+      </div>
+      <div>
+        <label>Tryb pracy</label>
+        <select class="input" id="bulkMode">
+          <option value="install">Montaż</option>
+          <option value="workshop">Warsztat</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="margin-top:10px">
+      <label>Notatka (opcjonalnie)</label>
+      <input class="input" id="bulkNote" maxlength="255">
+    </div>
+    <div style="margin-top:10px">
+      <label>Procent dnia</label>
+      <input class="input" id="bulkPercent" type="number" min="1" max="100" step="1" value="100">
+    </div>
+
+    <div style="margin-top:10px">
+      <label class="smallcheck"><input type="checkbox" id="bulkOverwrite"> Nadpisz istniejące ręczne wpisy</label>
+    </div>
+
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap">
+      <button class="btn" id="bulkSave" type="button">Zapisz zaznaczone</button>
+    </div>
+  </form>
+</dialog>
+
+<script src="config.js"></script>
+<script src="assets/js/helpers_ext.js"></script>
+<script src="assets/js/menu.js"></script>
+<script src="assets/js/topbar.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const monthPicker = $('monthPicker');
+const err = $('err');
+const editor = $('editor');
+const bulkEditor = $('bulkEditor');
+let state = {
+  month: null,
+  session: null,
+  users: [],
+  orders: [],
+  manual: [],
+  visibleUsers: [],
+  currentEdit: null,
+  selectMode: false,
+  selectedCells: [],
+  mobileWeekStart: 1
+};
+
+
+function esc(s){ return (s==null?'':String(s)).replace(/[&<>"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
+function norm(s){ return String(s||'').trim().toLowerCase().replace(/\s+/g,' '); }
+function fmtDate(d){
+  const dt = new Date(d + 'T00:00:00');
+  return dt.toLocaleDateString('pl-PL', { day:'2-digit', month:'2-digit', year:'numeric' });
+}
+function pad2(n){ return String(n).padStart(2,'0'); }
+function monthParts(v){
+  const [y,m] = String(v).split('-').map(Number);
+  return {year:y, month:m};
+}
+function daysInMonth(y,m){ return new Date(y, m, 0).getDate(); }
+function weekdayShort(y,m,d){
+  return ['nd','pn','wt','śr','cz','pt','sb'][new Date(y, m-1, d).getDay()];
+}
+function displayUser(u){
+  return [u.first_name,u.last_name].filter(Boolean).join(' ').trim() || u.full_name || u.name || u.login || u.email || ('Użytkownik #' + u.id);
+}
+function isAdminCaps(caps){ return !!(caps && (caps.is_admin || caps.is_superadmin)); }
+function isMounterUser(u){
+  const rn = String(u.role_name || '').toLowerCase();
+  return rn.includes('monter') || Number(u.role_id)===3;
+}
+function orderLabel(o){ return (o.client || ('Zamówienie #' + o.id)) + (o.item_description ? ' — ' + o.item_description : ''); }
+function modeLabel(mode){
+  const m = String(mode||'install');
+  if(m==='workshop') return 'Warsztat';
+  if(m==='custom') return 'Inne prace';
+  if(m==='leave') return 'Urlop';
+  if(m==='day_off') return 'Wolne';
+  if(m==='sick') return 'L4 / Zwolnienie';
+  return 'Montaż';
+}
+function modeIcon(mode){
+  const m = String(mode||'install');
+  if(m==='workshop') return '🏭';
+  if(m==='custom') return '🟡';
+  if(m==='leave') return '🟢';
+  if(m==='day_off') return '🔵';
+  if(m==='sick') return '🔴';
+  return '🛠️';
+}
+function modeClass(mode){
+  const m = String(mode||'install');
+  if(m==='workshop') return 'workshop';
+  if(['custom','leave','day_off','sick'].includes(m)) return m;
+  return 'mount';
+}
+function isSpecialMode(mode){ return ['custom','leave','day_off','sick'].includes(String(mode||'')); }
+function badge(mode){
+  return '<span class="pill ' + modeClass(mode) + '">' + modeIcon(mode) + ' ' + esc(modeLabel(mode)) + '</span>';
+}
+function percentText(v){
+  const p = Number(v == null ? 100 : v);
+  if(!isFinite(p) || Math.abs(p-100) < 0.001) return '';
+  return '<span class="entry-percent">' + p + '%</span>';
+}
+function manualEntries(userId, dateStr){
+  return state.manual.filter(x => Number(x.user_id)===Number(userId) && String(x.work_date)===String(dateStr));
+}
+function entryLabel(entry){
+  return isSpecialMode(entry.work_mode) ? modeLabel(entry.work_mode) + (entry.note ? ' — ' + entry.note : '') : (entry.client_name || ('Zamówienie #' + entry.order_id));
+}
+function manualEntryCard(entry){
+  return '<div class="badge-manual" style="margin-top:6px;padding:6px 8px;border-radius:10px">'
+    + '<div style="font-weight:700">' + esc(entryLabel(entry)) + '</div>'
+    + '<div style="font-size:11px;margin-top:3px">' + badge(entry.work_mode || 'install') + percentText(entry.work_percent) + ' <span style="color:#e5e7eb;margin-left:4px">'+esc(modeLabel(entry.work_mode || 'install'))+'</span></div>'
+    + (entry.note ? '<div style="font-size:11px;margin-top:4px;color:#e5e7eb">' + esc(entry.note) + '</div>' : '')
+    + '</div>';
+}
+function keyForCell(userId, dateStr){ return String(userId)+'|'+String(dateStr); }
+function isSelected(userId, dateStr){ return state.selectedCells.some(x => Number(x.user_id)===Number(userId) && String(x.work_date)===String(dateStr)); }
+function toggleSelectedCell(userId, dateStr){
+  const idx = state.selectedCells.findIndex(x => Number(x.user_id)===Number(userId) && String(x.work_date)===String(dateStr));
+  if(idx >= 0) state.selectedCells.splice(idx,1);
+  else state.selectedCells.push({ user_id:Number(userId), work_date:String(dateStr) });
+  updateSelectionInfo();
+}
+function clearSelection(){
+  state.selectedCells = [];
+  updateSelectionInfo();
+  render();
+}
+function updateSelectionInfo(){
+  $('selInfo').textContent = 'Zaznaczonych pól: ' + state.selectedCells.length;
+}
+function resolveVisibleUsers(){
+  const caps = (state.session||{}).caps || {};
+  const sessionUser = (state.session||{}).user || state.session || {};
+  if(isAdminCaps(caps)){
+    state.visibleUsers = state.users.slice().sort((a,b)=>displayUser(a).localeCompare(displayUser(b), 'pl'));
+    $('whoInfo').textContent = 'Widok administratora – wszyscy monterzy';
+    return;
+  }
+  const sessionId = Number(sessionUser.id || sessionUser.user_id || sessionUser.uid || 0);
+  let me = state.users.find(u => Number(u.id)===sessionId);
+  if(!me){
+    const candidates = [sessionUser.full_name, sessionUser.name, sessionUser.login, sessionUser.username, sessionUser.email].filter(Boolean).map(norm);
+    me = state.users.find(u => candidates.includes(norm(displayUser(u))) || candidates.includes(norm(u.email || '')) || candidates.includes(norm(u.login || '')));
+  }
+  if(me){
+    state.visibleUsers = [me];
+    $('whoInfo').textContent = 'Widok montera – tylko Twój grafik';
+  }else{
+    state.visibleUsers = state.users.slice().sort((a,b)=>displayUser(a).localeCompare(displayUser(b), 'pl'));
+    $('whoInfo').textContent = 'Nie udało się jednoznacznie rozpoznać użytkownika – pokazano wszystkich monterów';
+  }
+}
+async function loadSession(){ try{ state.session = await apiGet('session_check.php'); }catch(e){ state.session = {caps:{}}; } }
+async function loadUsers(){
+  const r = await apiGet('users_list.php');
+  const items = (r.items||[]).slice();
+  const seen = new Set();
+  state.users = items.filter(u=>{ const id = Number(u.id||0); if(!id||seen.has(id)) return false; seen.add(id); return true; }).filter(isMounterUser);
+}
+async function loadOrders(){
+  const r = await apiGet('orders.php');
+  state.orders = (r.items||[]).map(o=>{
+    const client = [o.client_first_name, o.client_last_name].filter(Boolean).join(' ').trim();
+    const assignedNames = Array.isArray(o.mounters) ? o.mounters : [];
+    return {
+      id: Number(o.id),
+      client,
+      item_description: o.item_description || '',
+      install_date: (o.install_date || '').substring(0,10),
+      install_date_new: (o.install_date_new || '').substring(0,10),
+      assignedNames
+    };
+  });
+}
+async function loadManual(){
+  const {year, month} = monthParts(state.month);
+  const r = await apiGet('schedule_entries.php?year='+encodeURIComponent(year)+'&month='+encodeURIComponent(month));
+  state.manual = r.items || [];
+}
+function baseEntriesForUserDate(user, dateStr){
+  const uname = norm(displayUser(user));
+  return state.orders.filter(o=>{
+    const when = o.install_date_new || o.install_date;
+    if(!when || when !== dateStr) return false;
+    return (o.assignedNames||[]).map(norm).includes(uname);
+  });
+}
+function assignedOrdersForUser(user, dateStr){
+  const uname = norm(displayUser(user));
+  return state.orders.filter(o => (o.assignedNames||[]).map(norm).includes(uname));
+}
+function manualEntry(userId, dateStr){
+  return manualEntries(userId, dateStr)[0] || null;
+}
+
+function initMobileWeek(){
+  const {year, month} = monthParts(state.month);
+  const today = new Date();
+  if(today.getFullYear() === year && (today.getMonth()+1) === month){
+    state.mobileWeekStart = Math.floor((today.getDate()-1)/7)*7 + 1;
+  }else{
+    state.mobileWeekStart = 1;
+  }
+}
+function mobileWeekBounds(){
+  const {year, month} = monthParts(state.month);
+  const total = daysInMonth(year, month);
+  let start = Number(state.mobileWeekStart || 1);
+  if(start < 1) start = 1;
+  if(start > total) start = Math.max(1, total - 6);
+  return {year, month, start, end: Math.min(total, start+6), total};
+}
+function renderMobileWeek(){
+  const wrap = $('mobileWeekWrap');
+  const title = $('mobileWeekTitle');
+  if(!wrap || !title) return;
+  const {year, month, start, end, total} = mobileWeekBounds();
+  title.textContent = `${pad2(start)}-${pad2(end)}.${pad2(month)}.${year}`;
+  wrap.innerHTML = '';
+  for(let d=start; d<=end; d++){
+    const dateStr = `${year}-${pad2(month)}-${pad2(d)}`;
+    const card = document.createElement('div');
+    card.className = 'mobile-day-card';
+    const rows = [];
+    state.visibleUsers.forEach(user=>{
+      const mans = manualEntries(user.id, dateStr);
+      const man = mans[0] || null;
+      const base = baseEntriesForUserDate(user, dateStr);
+      let client = '';
+      let manual = false;
+      if(mans.length){ client = mans.map(entryLabel).join(' / '); manual = true; }
+      else if(base.length){ client = base.map(o => o.client || ('#'+o.id)).join(', '); }
+      if(!client) return;
+      rows.push('<div class="mobile-entry"><div class="mobile-entry-user">'+esc(displayUser(user))+'</div><div><div class="mobile-entry-client" title="'+esc(client)+'">'+esc(client)+'</div><div class="mobile-entry-mode">'+(manual && man ? esc(modeLabel(man.work_mode || 'install')) + (mans.length>1 ? ' • '+mans.length+' wpisy' : '') : 'Podpowiedź z montażu')+'</div></div><div class="mobile-entry-mode">'+(manual ? 'ręcznie' : 'auto')+'</div></div>');
+    });
+    card.innerHTML = '<div class="mobile-day-head"><div class="mobile-day-title">'+pad2(d)+' '+weekdayShort(year,month,d)+'</div><div class="muted">'+fmtDate(dateStr)+'</div></div><div class="mobile-day-list">'+(rows.length ? rows.join('') : '<div class="mobile-empty">Brak wpisów</div>')+'</div>';
+    wrap.appendChild(card);
+  }
+  $('mobileWeekPrev').disabled = start <= 1;
+  $('mobileWeekNext').disabled = end >= total;
+}
+function render(){
+  if(window.innerWidth <= 768){ renderMobileWeek(); } else { renderDesktop(); }
+}
+function renderDesktop(){
+
+  const {year, month} = monthParts(state.month);
+  const count = daysInMonth(year, month);
+  const head = $('schedHead');
+  const body = $('schedBody');
+  head.innerHTML = '';
+  body.innerHTML = '';
+
+  const trh = document.createElement('tr');
+  trh.innerHTML = '<th class="sticky-left user-col">Monter</th>' + Array.from({length:count}, (_,i)=>{
+    const d = i+1;
+    const wd = new Date(year, month-1, d).getDay();
+    const weekend = (wd === 0 || wd === 6) ? ' weekend-col' : '';
+    return '<th class="day-col'+weekend+'"><div class="day-head"><div>'+pad2(d)+'</div><div class="muted">'+weekdayShort(year,month,d)+'</div></div></th>';
+  }).join('');
+  head.appendChild(trh);
+
+  state.visibleUsers.forEach(user=>{
+    const tr = document.createElement('tr');
+    const tdu = document.createElement('td');
+    tdu.className = 'sticky-left user-col';
+    tdu.innerHTML = '<div style="font-weight:700">'+esc(displayUser(user))+'</div><div class="muted" style="font-size:12px">'+esc(user.role_name || 'Monter')+'</div>';
+    tr.appendChild(tdu);
+
+    for(let d=1; d<=count; d++){
+      const dateStr = `${year}-${pad2(month)}-${pad2(d)}`;
+      const mans = manualEntries(user.id, dateStr);
+      const base = baseEntriesForUserDate(user, dateStr);
+      const man = mans[0] || null;
+      const td = document.createElement('td');
+      const wd = new Date(year, month-1, d).getDay();
+      td.className = 'day-col' + ((wd === 0 || wd === 6) ? ' weekend-col' : '');
+      const cls = ['cell'];
+      if(base.length) cls.push('has-base');
+      if(man) cls.push('has-manual');
+      if(man && man.work_mode==='custom') cls.push('has-custom');
+      if(man && man.work_mode==='leave') cls.push('has-leave');
+      if(man && man.work_mode==='day_off') cls.push('has-day-off');
+      if(man && man.work_mode==='sick') cls.push('has-sick');
+      if(isSelected(user.id, dateStr)) cls.push('is-selected');
+
+      let title = '<div class="cell-title muted">Brak wpisu</div><div class="cell-meta">' + esc(fmtDate(dateStr)) + '</div>';
+      let bodyHtml = '<div class="badge-empty" style="margin-top:6px;padding:6px 8px;border-radius:10px">Pusto</div>';
+
+      if(base.length){
+        title = '<div class="cell-title">Podpowiedź bazowa</div><div class="cell-meta">' + esc(fmtDate(dateStr)) + '</div>';
+        bodyHtml = base.map(o => (
+          '<div class="badge-base" style="margin-top:6px;padding:6px 8px;border-radius:10px">'
+          + '<div style="font-weight:700">' + esc(o.client || ('Zamówienie #' + o.id)) + '</div>'
+          + '<div style="font-size:11px;margin-top:3px">' + badge('install') + '</div>'
+          + '</div>'
+        )).join('');
+      }
+
+      if(mans.length){
+        title = '<div class="cell-title">Ręczny wpis' + (mans.length>1 ? ' ('+mans.length+')' : '') + '</div><div class="cell-meta">' + esc(fmtDate(dateStr)) + '</div>';
+        bodyHtml = mans.map(manualEntryCard).join('');
+      }
+
+      td.innerHTML =
+        '<div class="'+cls.join(' ')+'">'
+        + '<div class="cell-top"><div>'+title+'</div></div>'
+        + bodyHtml
+        + (isAdminCaps((state.session||{}).caps || {}) ? '<div class="cell-actions"><button class="mini-btn">' + (state.selectMode ? 'Zaznacz' : 'Edytuj') + '</button></div>' : '')
+        + '</div>';
+
+      const btn = td.querySelector('button');
+      if(btn){
+        btn.onclick = (ev)=>{
+          ev.stopPropagation();
+          if(state.selectMode){
+            toggleSelectedCell(user.id, dateStr);
+            render();
+          }else{
+            openEditor(user, dateStr, base, man);
+          }
+        };
+      }
+      td.firstChild.onclick = ()=>{
+        if(isAdminCaps((state.session||{}).caps || {}) && state.selectMode){
+          toggleSelectedCell(user.id, dateStr);
+          render();
+        }
+      };
+      tr.appendChild(td);
+    }
+    body.appendChild(tr);
+  });
+}
+function openEditor(user, dateStr, base, man){
+  const mans = manualEntries(user.id, dateStr);
+  state.currentEdit = { user, dateStr, base, man, mans };
+  $('edTitle').textContent = displayUser(user);
+  $('edSub').textContent = fmtDate(dateStr);
+  const options = assignedOrdersForUser(user, dateStr);
+  $('edOrder').innerHTML = '<option value="">— brak ręcznego wpisu —</option>'
+    + options.map(o => '<option value="'+o.id+'">'+esc(orderLabel(o))+'</option>').join('')
+    + '<option value="__custom__">──────────</option>'
+    + '<option value="special:custom">Inne prace</option>'
+    + '<option value="special:leave">Urlop</option>'
+    + '<option value="special:day_off">Wolne</option>'
+    + '<option value="special:sick">L4 / Zwolnienie</option>';
+  $('edMode').value = man?.work_mode || 'install';
+  $('edNote').value = man?.note || '';
+  $('edDuplicate').checked = false;
+  $('edDupMode').value = 'next_days';
+  $('edDupCount').value = 1;
+  $('edDupDays').value = '';
+  const useMulti = mans.length > 1;
+  if($('edMultiToggle')) $('edMultiToggle').checked = useMulti;
+  setMultiUi(useMulti);
+  renderMultiRows(useMulti ? mans : []);
+  if(man && isSpecialMode(man.work_mode)) $('edOrder').value = 'special:' + man.work_mode;
+  else if(man && man.order_id) $('edOrder').value = String(man.order_id);
+
+  let current = '';
+  if(mans.length){
+    current += '<div class="badge-manual" style="padding:8px 10px;border-radius:10px">'
+      + '<div style="font-weight:700">Aktualny ręczny wpis' + (mans.length>1 ? ' ('+mans.length+')' : '') + '</div>'
+      + mans.map(manualEntryCard).join('')
+      + '</div>';
+  } else if(base.length){
+    current += '<div class="badge-base" style="padding:8px 10px;border-radius:10px">'
+      + '<div style="font-weight:700">Podpowiedź bazowa</div>'
+      + base.map(o=>'<div style="margin-top:4px">'+esc(orderLabel(o))+'</div>').join('')
+      + '</div>';
+  } else {
+    current = '<div class="badge-empty" style="padding:8px 10px;border-radius:10px">Brak podpowiedzi bazowej i brak ręcznego wpisu.</div>';
+  }
+  $('edCurrent').innerHTML = current;
+  syncSpecialModeSelects();
+  editor.showModal();
+}
+
+
+function multiOrderOptions(user, selected){
+  const options = assignedOrdersForUser(user).map(o => '<option value="'+o.id+'" '+(String(selected)===String(o.id)?'selected':'')+'>'+esc(orderLabel(o))+'</option>').join('');
+  return '<option value="">— wybierz —</option>'
+    + options
+    + '<option value="__custom__">──────────</option>'
+    + '<option value="special:custom" '+(selected==='special:custom'?'selected':'')+'>Inne prace</option>'
+    + '<option value="special:leave" '+(selected==='special:leave'?'selected':'')+'>Urlop</option>'
+    + '<option value="special:day_off" '+(selected==='special:day_off'?'selected':'')+'>Wolne</option>'
+    + '<option value="special:sick" '+(selected==='special:sick'?'selected':'')+'>L4 / Zwolnienie</option>';
+}
+function renderMultiRows(entries){
+  const wrap = $('edMultiRows');
+  if(!wrap) return;
+  const c = state.currentEdit;
+  const list = entries && entries.length ? entries : [];
+  wrap.innerHTML = '';
+  list.forEach((entry, idx)=>{
+    const selected = isSpecialMode(entry.work_mode) ? 'special:' + entry.work_mode : (entry.order_id ? String(entry.order_id) : '');
+    const row = document.createElement('div');
+    row.className = 'multi-entry-row';
+    row.innerHTML =
+      '<div><label>Zamówienie</label><select class="input multi-order">'+multiOrderOptions(c.user, selected)+'</select></div>'
+      + '<div><label>Tryb</label><select class="input multi-mode"><option value="install">Montaż</option><option value="workshop">Warsztat</option></select></div>'
+      + '<div><label>% dnia</label><input class="input multi-percent" type="number" min="1" max="100" step="1" value="'+esc(entry.work_percent || 50)+'"></div>'
+      + '<div><label>Notatka</label><input class="input multi-note" maxlength="255" value="'+esc(entry.note || '')+'"></div>'
+      + '<button type="button" class="btn multi-remove" style="background:#404040;color:#fff;padding:8px 10px">×</button>';
+    wrap.appendChild(row);
+    const mode = row.querySelector('.multi-mode');
+    mode.value = entry.work_mode || 'install';
+    const ord = row.querySelector('.multi-order');
+    function sync(){
+      const v = ord.value || '';
+      const special = v.startsWith('special:');
+      mode.disabled = special;
+      if(special) mode.value = v.split(':')[1];
+    }
+    ord.addEventListener('change', sync);
+    row.querySelector('.multi-remove').onclick = ()=>{ row.remove(); };
+    sync();
+  });
+}
+function addMultiRow(entry){
+  const c = state.currentEdit;
+  const existing = Array.from(document.querySelectorAll('#edMultiRows .multi-entry-row')).map(row => ({
+    order_id: row.querySelector('.multi-order').value,
+    work_mode: row.querySelector('.multi-mode').value,
+    work_percent: row.querySelector('.multi-percent').value,
+    note: row.querySelector('.multi-note').value
+  }));
+  existing.push(entry || {order_id:'', work_mode:'install', work_percent:50, note:''});
+  renderMultiRows(existing);
+}
+function collectMultiEntries(){
+  const rows = Array.from(document.querySelectorAll('#edMultiRows .multi-entry-row'));
+  const out = [];
+  let sum = 0;
+  rows.forEach(row=>{
+    const val = row.querySelector('.multi-order').value || '';
+    const special = val.startsWith('special:') ? val.split(':')[1] : '';
+    const order_id = special ? 0 : Number(val || 0);
+    const work_mode = special || row.querySelector('.multi-mode').value || 'install';
+    const work_percent = Number(row.querySelector('.multi-percent').value || 0);
+    const note = row.querySelector('.multi-note').value.trim();
+    if(!order_id && !special) return;
+    if(!work_percent || work_percent <= 0) return;
+    sum += work_percent;
+    out.push({order_id, work_mode, work_percent, note});
+  });
+  if(sum > 100.01) throw new Error('percent_sum');
+  return out;
+}
+function setMultiUi(enabled){
+  if($('edMultiRows')) $('edMultiRows').style.display = enabled ? 'block' : 'none';
+  if($('edAddMultiRow')) $('edAddMultiRow').style.display = enabled ? 'inline-flex' : 'none';
+}
+
+
+function syncSpecialModeSelects(){
+  const edVal = $('edOrder') ? $('edOrder').value : '';
+  if($('edMode')) $('edMode').disabled = edVal.startsWith('special:');
+  const bulkVal = $('bulkOrder') ? $('bulkOrder').value : '';
+  if($('bulkMode')) $('bulkMode').disabled = bulkVal.startsWith('special:');
+}
+document.addEventListener('change', (ev)=>{
+  if(ev.target && (ev.target.id === 'edOrder' || ev.target.id === 'bulkOrder')) syncSpecialModeSelects();
+  if(ev.target && ev.target.id === 'edMultiToggle'){
+    setMultiUi(ev.target.checked);
+    if(ev.target.checked && !document.querySelector('#edMultiRows .multi-entry-row')){
+      const c = state.currentEdit || {};
+      const firstVal = $('edOrder').value || '';
+      const special = firstVal.startsWith('special:') ? firstVal.split(':')[1] : '';
+      const first = {order_id: special ? 0 : Number(firstVal||0), work_mode: special || $('edMode').value || 'install', work_percent:50, note:$('edNote').value.trim()};
+      renderMultiRows([first, {order_id:'', work_mode:'install', work_percent:50, note:''}]);
+    }
+  }
+});
+if($('edAddMultiRow')) $('edAddMultiRow').onclick = ()=>addMultiRow({order_id:'', work_mode:'install', work_percent:25, note:''});
+
+function duplicateTargets(baseDate, userId){
+  const {year, month} = monthParts(state.month);
+  const out = [];
+  if(!$('edDuplicate').checked) return out;
+  const mode = $('edDupMode').value;
+  if(mode === 'next_days'){
+    const count = Math.max(1, Number($('edDupCount').value || 0));
+    const dt = new Date(baseDate + 'T00:00:00');
+    for(let i=1;i<=count;i++){
+      const x = new Date(dt);
+      x.setDate(dt.getDate()+i);
+      if(x.getMonth()+1 !== month || x.getFullYear() !== year) continue;
+      out.push({ user_id:Number(userId), work_date:x.toISOString().slice(0,10) });
+    }
+  }else{
+    const raw = $('edDupDays').value || '';
+    const days = raw.split(',').map(x=>parseInt(x.trim(),10)).filter(x=>x>=1 && x<=31);
+    for(const d of days){
+      const ds = `${year}-${pad2(month)}-${pad2(d)}`;
+      if(ds === baseDate) continue;
+      out.push({ user_id:Number(userId), work_date:ds });
+    }
+  }
+  return out;
+}
+edSave.onclick = async ()=>{
+  const c = state.currentEdit;
+  if(!c) return;
+  const selectedValue = $('edOrder').value || '';
+  const specialMatch = selectedValue.startsWith('special:') ? selectedValue.split(':')[1] : '';
+  const orderId = specialMatch ? 0 : Number(selectedValue || 0);
+  if(!orderId && !specialMatch){
+    alert('Wybierz zamówienie, wpis specjalny albo użyj "Wyczyść ręczny wpis".');
+    return;
+  }
+  try{
+    const cells = [{ user_id:Number(c.user.id), work_date:c.dateStr }].concat(duplicateTargets(c.dateStr, c.user.id));
+    if($('edMultiToggle') && $('edMultiToggle').checked){
+      let entries;
+      try{ entries = collectMultiEntries(); }
+      catch(e){ alert('Suma procentów nie może przekraczać 100%.'); return; }
+      if(!entries.length){ alert('Dodaj minimum jedną pozycję podziału dnia.'); return; }
+      for(const cell of cells){
+        await apiPost('schedule_save.php', {
+          work_date: cell.work_date,
+          user_id: Number(cell.user_id),
+          entries
+        });
+      }
+    }else{
+      await apiPost('schedule_bulk_save.php', {
+        cells,
+        order_id: orderId,
+        work_mode: specialMatch || $('edMode').value,
+        note: $('edNote').value.trim(),
+        work_percent: 100,
+        overwrite: 1
+      });
+    }
+    editor.close();
+    await loadAll();
+  }catch(e){
+    console.error(e);
+    alert('Nie udało się zapisać grafiku.');
+  }
+};
+edClear.onclick = async ()=>{
+  const c = state.currentEdit;
+  if(!c) return;
+  if(!confirm('Usunąć ręczny wpis dla tego dnia i montera?')) return;
+  try{
+    await apiPost('schedule_save.php', { work_date: c.dateStr, user_id: Number(c.user.id), clear: 1 });
+    editor.close();
+    await loadAll();
+  }catch(e){
+    console.error(e);
+    alert('Nie udało się usunąć ręcznego wpisu.');
+  }
+};
+
+toggleSelectMode.onchange = ()=>{
+  state.selectMode = !!toggleSelectMode.checked;
+  if(!state.selectMode) clearSelection();
+  else render();
+};
+bulkClearBtn.onclick = ()=>clearSelection();
+
+function commonAssignedOrdersForSelection(){
+  const groups = new Map();
+  for(const cell of state.selectedCells){
+    const user = state.visibleUsers.find(u=>Number(u.id)===Number(cell.user_id)) || state.users.find(u=>Number(u.id)===Number(cell.user_id));
+    if(!user) continue;
+    const ids = assignedOrdersForUser(user).map(o=>Number(o.id));
+    groups.set(cell.user_id, new Set(ids));
+  }
+  const userIds = Array.from(groups.keys());
+  if(!userIds.length) return [];
+  let common = null;
+  for(const uid of userIds){
+    const set = groups.get(uid);
+    if(common === null) common = new Set(set);
+    else common = new Set([...common].filter(x => set.has(x)));
+  }
+  const ids = [...(common || new Set())];
+  return state.orders.filter(o=>ids.includes(Number(o.id))).sort((a,b)=>orderLabel(a).localeCompare(orderLabel(b),'pl'));
+}
+bulkAssignBtn.onclick = ()=>{
+  if(!state.selectedCells.length){ alert('Najpierw zaznacz pola w grafiku.'); return; }
+  const summary = {};
+  state.selectedCells.forEach(c=>{
+    const user = state.users.find(u=>Number(u.id)===Number(c.user_id));
+    const label = user ? displayUser(user) : ('Użytkownik #' + c.user_id);
+    summary[label] = (summary[label] || 0) + 1;
+  });
+  $('bulkSummary').innerHTML = Object.entries(summary).map(([k,v])=>'<span class="chip">'+esc(k)+': '+v+' pól</span>').join('');
+  $('bulkSub').textContent = 'Wybranych pól: ' + state.selectedCells.length;
+  const common = commonAssignedOrdersForSelection();
+  $('bulkOrder').innerHTML = (common.length
+    ? common.map(o=>'<option value="'+o.id+'">'+esc(orderLabel(o))+'</option>').join('')
+    : '<option value="">Brak wspólnego zamówienia dla całego zaznaczenia</option>')
+    + '<option value="__custom__">──────────</option>'
+    + '<option value="special:custom">Inne prace</option>'
+    + '<option value="special:leave">Urlop</option>'
+    + '<option value="special:day_off">Wolne</option>'
+    + '<option value="special:sick">L4 / Zwolnienie</option>';
+  $('bulkMode').value = 'install';
+  $('bulkNote').value = '';
+  if($('bulkPercent')) $('bulkPercent').value = 100;
+  $('bulkOverwrite').checked = false;
+  syncSpecialModeSelects();
+  bulkEditor.showModal();
+};
+bulkSave.onclick = async ()=>{
+  const selectedValue = $('bulkOrder').value || '';
+  const specialMatch = selectedValue.startsWith('special:') ? selectedValue.split(':')[1] : '';
+  const orderId = specialMatch ? 0 : Number(selectedValue || 0);
+  if(!orderId && !specialMatch){ alert('Dla zaznaczenia wybierz zamówienie albo wpis specjalny.'); return; }
+  try{
+    await apiPost('schedule_bulk_save.php', {
+      cells: state.selectedCells.slice(),
+      order_id: orderId,
+      work_mode: specialMatch || $('bulkMode').value,
+      note: $('bulkNote').value.trim(),
+      work_percent: Number(($('bulkPercent') && $('bulkPercent').value) || 100),
+      overwrite: $('bulkOverwrite').checked ? 1 : 0
+    });
+    bulkEditor.close();
+    clearSelection();
+    await loadAll();
+  }catch(e){
+    console.error(e);
+    alert('Nie udało się zapisać zaznaczonych pól.');
+  }
+};
+
+async function loadAll(){
+  err.textContent = '';
+  try{
+    await loadSession();
+    await loadUsers();
+    await loadOrders();
+    await loadManual();
+    resolveVisibleUsers();
+    const canEditSchedule = isAdminCaps((state.session||{}).caps || {});
+    const bulk = document.querySelector('.bulkbar'); if(bulk) bulk.style.display = canEditSchedule ? 'flex' : 'none';
+    initMobileWeek();
+    render();
+    updateSelectionInfo();
+  }catch(e){
+    console.error(e);
+    err.textContent = 'Nie udało się wczytać grafiku.';
+  }
+}
+prevMonth.onclick = ()=>shiftMonth(-1);
+nextMonth.onclick = ()=>shiftMonth(1);
+reloadBtn.onclick = ()=>loadAll();
+mobileWeekPrev.onclick = ()=>{ state.mobileWeekStart = Math.max(1, (state.mobileWeekStart||1) - 7); render(); };
+mobileWeekNext.onclick = ()=>{ state.mobileWeekStart = (state.mobileWeekStart||1) + 7; render(); };
+monthPicker.onchange = async ()=>{ state.month = monthPicker.value; clearSelection(); await loadAll(); };
+function shiftMonth(delta){
+  const [y,m] = state.month.split('-').map(Number);
+  const dt = new Date(y, m-1 + delta, 1);
+  state.month = dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0');
+  monthPicker.value = state.month;
+  clearSelection();
+  loadAll();
+}
+window.addEventListener('resize', render);
+document.addEventListener('DOMContentLoaded', async ()=>{
+  const now = new Date();
+  state.month = now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0');
+  monthPicker.value = state.month;
+  await loadAll();
+});
+</script>
+</body>
+</html>

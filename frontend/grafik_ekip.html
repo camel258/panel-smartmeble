@@ -1,0 +1,467 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Smart Meble – Grafik testowy</title>
+<link rel="icon" href="assets/img/favicon.ico">
+<link rel="stylesheet" href="assets/css/theme_v17.css"/>
+<style>
+  .content{overflow:visible !important;min-width:0}
+  #appTopbar{display:block;width:100%}
+  .main{min-width:0}
+  .muted{color:var(--muted)}
+  .btn.alt{background:#404040;color:#fff;box-shadow:none}
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+  .toolbar .input{width:auto}
+  .month-title{font-size:18px;font-weight:700;margin:0 6px;min-width:150px;text-transform:capitalize}
+
+  .brush{display:flex;flex-wrap:wrap;gap:6px;align-items:stretch;margin-bottom:10px}
+  .brush-lbl{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);align-self:center;margin-right:4px}
+  .tb{display:flex;align-items:center;gap:8px;border:1px solid var(--border);background:#232323;color:var(--text);border-radius:10px;padding:5px 10px 5px 5px;cursor:pointer;font:inherit;font-size:12.5px;text-align:left}
+  .tb .num{width:26px;height:26px;border-radius:7px;display:grid;place-items:center;font-weight:800;font-size:13px;flex:none}
+  .tb small{display:block;color:var(--muted);font-size:11px}
+  .tb[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent),0 6px 18px rgba(183,211,49,.15)}
+  .tb.erase .num{background:#404040;color:#fff}
+  .tb:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+  .legend{display:flex;gap:14px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--muted);margin-bottom:10px}
+  .legend i{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-3px;margin-right:5px}
+  .lg-m{box-shadow:inset 0 0 0 2px var(--accent);background:rgba(183,211,49,.12)}
+  .lg-p{background:#202020;border:1px solid rgba(255,255,255,.15);position:relative}
+  .lg-p::after{content:"";position:absolute;right:2px;top:2px;width:5px;height:5px;border-radius:50%;background:#60a5fa}
+  .lg-c{background:#202020;box-shadow:inset 0 0 0 2px #ef4444}
+  .lg-w{background:rgba(249,115,22,.18)}
+
+  .sched-wrap{overflow:auto;border:1px solid var(--border);border-radius:14px;max-height:calc(100vh - 290px);min-height:360px}
+  .gt{border-collapse:separate;border-spacing:0;font-variant-numeric:tabular-nums}
+  .gt th,.gt td{border-right:1px solid rgba(255,255,255,.06);border-bottom:1px solid rgba(255,255,255,.07);padding:0}
+  .gt thead th{position:sticky;top:0;z-index:3;background:#252525}
+  .dh{width:38px;min-width:38px;height:44px;text-align:center;font-size:11px;line-height:1.1;color:var(--muted);font-weight:500}
+  .dh b{display:block;font-size:13px;color:var(--text)}
+  .c0{position:sticky;left:0;z-index:2;background:#232323;width:270px;min-width:270px;max-width:270px;text-align:left;padding:6px 10px !important;border-right:1px solid rgba(255,255,255,.14) !important}
+  thead .c0{z-index:4;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);vertical-align:bottom;font-weight:600}
+  .cl{display:flex;align-items:center;gap:6px;font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden}
+  .cl span{overflow:hidden;text-overflow:ellipsis}
+  .cl a{color:var(--muted);font-size:12px;flex:none;padding:0 2px}
+  .cl a:hover{color:var(--accent)}
+  .meta{display:flex;gap:6px;align-items:center;font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;margin-top:2px}
+  .meta .desc{overflow:hidden;text-overflow:ellipsis}
+  .pill{font-size:10.5px;padding:1px 7px;border-radius:999px;font-weight:700;flex:none;color:#111}
+  .mdate{color:var(--accent);font-weight:700;flex:none}
+
+  td.d{height:38px;text-align:center;vertical-align:middle;background:#202020;position:relative}
+  td.d.edit{cursor:pointer}
+  td.d.edit:hover{box-shadow:inset 0 0 0 2px rgba(255,255,255,.22)}
+  td.d:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+  .we{background:rgba(249,115,22,.10) !important}
+  th.we{background:#3a2e24 !important}
+  .ho{background:rgba(239,68,68,.12) !important}
+  th.ho{background:#3d2626 !important}
+  .today{box-shadow:inset 0 0 0 9999px rgba(183,211,49,.08)}
+  th.today b{color:var(--accent)}
+  td.mo{box-shadow:inset 0 0 0 2px var(--accent);background:rgba(183,211,49,.12) !important}
+  td.mo::before{content:"M";position:absolute;left:2px;top:1px;font-size:8.5px;font-weight:800;color:var(--accent)}
+  td.pm::after{content:"";position:absolute;right:3px;top:3px;width:6px;height:6px;border-radius:50%;background:#60a5fa}
+  .marks{display:flex;flex-direction:column;align-items:center;gap:2px;padding:2px 0}
+  .x{display:inline-grid;place-items:center;min-width:26px;height:20px;padding:0 3px;border-radius:5px;font-weight:800;font-size:11.5px;line-height:1}
+  .x.cf{box-shadow:0 0 0 2px #ef4444}
+  td.d.saving{opacity:.55}
+
+  tr.shop .c0{background:#2b2b22}
+  tr.shop td.d:not(.we):not(.ho){background:#25251e}
+  tr.shop .cl{font-size:14.5px}
+  tr.grp td{background:#2a2a2a;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:8px 0 !important;font-weight:700}
+  tr.grp .gl{position:sticky;left:10px;display:inline-block}
+  tr.grp button{all:unset;cursor:pointer;color:var(--text)}
+  tr.grp button:focus-visible{outline:2px solid var(--accent)}
+  tr.crew td.d{font-size:10.5px;line-height:1.15;padding:2px 1px}
+  .ab{display:block;font-weight:700;white-space:nowrap;overflow:hidden;max-width:36px;margin:0 auto}
+  .ab.w{color:#e5e7eb}
+  .ab.cf{color:#f87171}
+  tr.free td.d{font-weight:700;font-size:12px;color:#86efac}
+  tr.free td.d.low{color:#f87171}
+  .cnum{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:5px;font-weight:800;font-size:11.5px;flex:none}
+  .empty{padding:28px;text-align:center;border:1px dashed rgba(255,255,255,.15);border-radius:14px}
+  .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#111;border:1px solid var(--border);color:#fff;padding:9px 14px;border-radius:10px;font-size:13px;z-index:3000}
+  .toast.err{border-color:#ef4444}
+  @media(max-width:768px){
+    .c0{width:160px;min-width:160px;max-width:160px}
+    .tb small{display:none}
+    .sched-wrap{max-height:none}
+  }
+  .from{font-size:10.5px;padding:1px 6px;border-radius:999px;border:1px dashed rgba(255,255,255,.3);color:#e5e7eb;flex:none}
+  .unpin{all:unset;cursor:pointer;color:var(--muted);font-size:13px;padding:0 3px;flex:none}
+  .unpin:hover{color:#f87171}
+  .unpin:focus-visible{outline:2px solid var(--accent)}
+  tr.add td{background:#202020;padding:6px 0 !important}
+  .add-btn{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:var(--accent);padding:6px 10px;border:1px dashed rgba(183,211,49,.45);border-radius:10px}
+  .add-btn:hover{background:rgba(183,211,49,.08)}
+  .add-btn:focus-visible{outline:2px solid var(--accent)}
+  .add-btn b{font-size:18px;line-height:1}
+  #addDlg{max-width:760px;width:calc(100vw - 32px);border:1px solid rgba(255,255,255,.1);border-radius:16px;background:#232323;color:#fff;padding:18px}
+  #addDlg::backdrop{background:rgba(0,0,0,.55)}
+  .add-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:12px}
+  .add-head h3{margin:0;font-size:18px}
+  .add-close{background:transparent;border:1px solid rgba(255,255,255,.1);color:#fff;width:36px;height:36px;border-radius:10px;cursor:pointer;flex:none}
+  .range{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0}
+  .range .lbl{font-size:13px;font-weight:700;padding:0 4px}
+  .range .btn{padding:6px 10px;font-size:12.5px}
+  .add-list{max-height:min(52vh,520px);overflow:auto;border:1px solid var(--border);border-radius:12px}
+  .add-month{position:sticky;top:0;background:#2a2a2a;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:700;padding:7px 12px;border-bottom:1px solid var(--border)}
+  .add-item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 12px;border-bottom:1px solid rgba(255,255,255,.05)}
+  .add-item .t{font-weight:700;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .add-item .meta{margin-top:2px}
+  .add-item .btn{padding:6px 12px;font-size:12.5px}
+  .add-item .in{font-size:12px;color:var(--muted);padding:6px 4px}
+  .add-empty{padding:20px;text-align:center;color:var(--muted);font-size:13px}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar"><nav></nav></aside>
+  <div class="content">
+    <div id="appTopbar" data-title="Grafik testowy (ekipy)" data-subtitle="Panel zamówień"></div>
+    <main class="main">
+      <div id="err" class="err" style="margin-bottom:10px"></div>
+      <div class="card">
+        <div class="toolbar">
+          <button class="btn" id="prevMonth" type="button" aria-label="Poprzedni miesiąc">◀</button>
+          <div class="month-title" id="monthTitle">—</div>
+          <button class="btn" id="nextMonth" type="button" aria-label="Następny miesiąc">▶</button>
+          <button class="btn alt" id="todayBtn" type="button">Dziś</button>
+          <button class="btn alt" id="reloadBtn" type="button">Odśwież</button>
+          <a class="btn alt" href="ekipy.html" id="crewsLink" style="margin-left:auto">Zarządzaj ekipami</a>
+        </div>
+
+        <div class="brush" id="brush"></div>
+
+        <div class="legend">
+          <span><i class="lg-m"></i>planowana data montażu (M)</span>
+          <span><i class="lg-p"></i>termin pomiaru</span>
+          <span><i class="lg-c"></i>ta sama ekipa w 2 miejscach</span>
+          <span><i class="lg-w"></i>weekend / święto</span>
+          <span id="hint" class="muted"></span>
+        </div>
+
+        <div id="gridBox"><div class="muted" style="padding:20px">Ładowanie grafiku…</div></div>
+      </div>
+    </main>
+  </div>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<dialog id="addDlg" aria-labelledby="addTitle">
+  <div class="add-head">
+    <div><h3 id="addTitle">Dodaj zamówienie do grafiku</h3>
+      <div class="muted" style="font-size:12.5px;margin-top:4px">Zamówienie pojawi się na liście tego miesiąca, nawet jeśli jest z innego okresu.</div></div>
+    <button type="button" class="add-close" id="addClose" aria-label="Zamknij">✕</button>
+  </div>
+  <input class="input" id="addSearch" placeholder="Szukaj: nazwisko klienta, przedmiot lub nr zamówienia" autocomplete="off">
+  <div class="range">
+    <button type="button" class="btn alt" id="addEarlier">◀ 2 mies. wcześniej</button>
+    <span class="lbl" id="addRange">—</span>
+    <button type="button" class="btn alt" id="addLater">2 mies. później ▶</button>
+    <button type="button" class="btn alt" id="addAll">Cały okres</button>
+    <label class="muted" style="display:inline-flex;gap:6px;align-items:center;margin:0 0 0 auto;font-size:12.5px"><input type="checkbox" id="addFinished"> także zakończone</label>
+  </div>
+  <div class="add-list" id="addList"><div class="add-empty">Ładowanie…</div></div>
+</dialog>
+
+<script src="config.js"></script>
+<script src="assets/js/helpers_ext.js"></script>
+<script src="assets/js/menu.js"></script>
+<script src="assets/js/topbar.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const MONTHS = ['styczeń','luty','marzec','kwiecień','maj','czerwiec','lipiec','sierpień','wrzesień','październik','listopad','grudzień'];
+const WD = ['nd','pn','wt','śr','cz','pt','so'];
+const pad = n => String(n).padStart(2,'0');
+const ymd = (y,m,d) => `${y}-${pad(m)}-${pad(d)}`;
+const todayStr = (()=>{ const t=new Date(); return ymd(t.getFullYear(), t.getMonth()+1, t.getDate()); })();
+function esc(s){ return String(s ?? '').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function errText(e){ try{ const j=JSON.parse(e.message); return j.details || j.error || e.message; }catch(_){ return e.message || 'Błąd połączenia'; } }
+function textOn(hex){ const h=String(hex||'#888888').replace('#',''); if(h.length!==6) return '#111'; const r=parseInt(h.substr(0,2),16),g=parseInt(h.substr(2,2),16),b=parseInt(h.substr(4,2),16); return (r*299+g*587+b*114)/1000 > 140 ? '#111' : '#fff'; }
+const ls = { get(k,d){ try{ const v=localStorage.getItem(k); return v==null?d:JSON.parse(v); }catch(e){ return d; } }, set(k,v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} } };
+
+function polishHolidays(y){
+  // Wielkanoc (algorytm Meeusa/Jonesa/Butchera)
+  const a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),
+        h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),
+        mo=Math.floor((h+l-7*m+114)/31),da=((h+l-7*m+114)%31)+1;
+  const easter = new Date(y, mo-1, da);
+  const plus = n => { const t=new Date(easter); t.setDate(t.getDate()+n); return ymd(t.getFullYear(), t.getMonth()+1, t.getDate()); };
+  const H = {};
+  [[1,1,'Nowy Rok'],[1,6,'Trzech Króli'],[5,1,'Święto Pracy'],[5,3,'Święto Konstytucji 3 Maja'],[8,15,'Wniebowzięcie NMP'],
+   [11,1,'Wszystkich Świętych'],[11,11,'Święto Niepodległości'],[12,24,'Wigilia'],[12,25,'Boże Narodzenie'],[12,26,'Drugi dzień świąt']]
+    .forEach(([m,d,n]) => H[ymd(y,m,d)] = n);
+  H[plus(0)]='Wielkanoc'; H[plus(1)]='Poniedziałek Wielkanocny'; H[plus(49)]='Zielone Świątki'; H[plus(60)]='Boże Ciało';
+  return H;
+}
+
+const now = new Date();
+let S = {
+  y: ls.get('gt_y', now.getFullYear()), m: ls.get('gt_m', now.getMonth()+1),
+  brush: ls.get('gt_brush', 0), pinned: new Set(),
+  add: { before: 2, after: 2, all: false, q: '', finished: false, items: [], seq: 0 },
+  crews: [], orders: [], plan: {}, canEdit: false, loading: false, pending: 0
+};
+
+function crewById(id){ return S.crews.find(c=>c.id===id); }
+function effDate(o){ return o.install_date_new || o.install_date || ''; }
+function key(orderId, date){ return orderId + '__' + date; }
+
+function buildPlan(entries){
+  const p = {};
+  (entries||[]).forEach(e => { const k=key(e.order_id, e.work_date); (p[k] = p[k] || []).push(e.crew_id); });
+  Object.values(p).forEach(a => a.sort((x,y)=>(crewOrder(x)-crewOrder(y))));
+  return p;
+}
+function crewOrder(id){ const i=S.crews.findIndex(c=>c.id===id); return i<0?999:i; }
+function crewNum(c){ const m = String(c.name).match(/\d+/); return m ? m[0] : String(c.name).charAt(0).toUpperCase(); }
+
+async function load(){
+  if(S.loading) return;
+  S.loading = true;
+  $('monthTitle').textContent = MONTHS[S.m-1] + ' ' + S.y;
+  try{
+    const r = await apiGet(`crew_schedule.php?year=${S.y}&month=${S.m}`);
+    S.crews = r.crews || []; S.orders = r.orders || []; S.canEdit = !!r.can_edit;
+    S.plan = buildPlan(r.entries);
+    S.pinned = new Set((r.pinned||[]).map(Number));
+    if(S.canEdit && S.brush && !crewById(S.brush)) S.brush = 0;
+    if(S.canEdit && !S.brush && S.crews.length) S.brush = (S.crews.find(c=>c.is_active)||S.crews[0]).id;
+    $('err').textContent = '';
+    renderBrush(); render();
+  }catch(e){
+    $('err').textContent = 'Nie udało się wczytać grafiku: ' + errText(e);
+  }finally{ S.loading = false; }
+}
+
+function renderBrush(){
+  const b = $('brush');
+  $('crewsLink').style.display = S.canEdit ? '' : 'none';
+  if(!S.canEdit){ b.innerHTML = ''; $('hint').textContent = 'Widzisz zamówienia, do których jesteś przypisany, i dni Twojej ekipy.'; return; }
+  $('hint').textContent = 'Wybierz ekipę i klikaj w dni. Drugie kliknięcie zdejmuje krzyżyk.';
+  const act = S.crews.filter(c=>c.is_active);
+  b.innerHTML = '<span class="brush-lbl">Zaznaczam:</span>' + act.map(c => `
+    <button type="button" class="tb" data-b="${c.id}" aria-pressed="${S.brush===c.id}" title="${esc(c.name)}: ${esc(c.members_label)}${c.vehicle?' — '+esc(c.vehicle):''}">
+      <span class="num" style="background:${esc(c.color)};color:${textOn(c.color)}">${esc(crewNum(c))}</span>
+      <span>${esc(c.members_label || c.name)}<small>${esc(c.vehicle || c.name)}</small></span>
+    </button>`).join('') +
+    `<button type="button" class="tb erase" data-b="-1" aria-pressed="${S.brush===-1}" title="Usuwa wszystkie krzyżyki z klikniętej komórki"><span class="num">⌫</span><span>Gumka<small>czyści komórkę</small></span></button>`;
+}
+
+function render(){
+  const box = $('gridBox');
+  if(!S.crews.length && S.canEdit){
+    box.innerHTML = `<div class="empty"><p>Nie ma jeszcze żadnej ekipy.</p>${S.canEdit?'<a class="btn" href="ekipy.html">Dodaj ekipy</a>':''}</div>`;
+    return;
+  }
+  const H = polishHolidays(S.y);
+  const nDays = new Date(S.y, S.m, 0).getDate();
+  const D = Array.from({length:nDays}, (_,i)=>{ const d=i+1, dt=new Date(S.y,S.m-1,d), date=ymd(S.y,S.m,d); return {d, date, wd:dt.getDay(), hol:H[date]||''}; });
+  const dayCls = x => (x.hol ? 'ho' : (x.wd===0||x.wd===6 ? 'we' : '')) + (x.date===todayStr ? ' today' : '');
+  const curKey = `${S.y}-${pad(S.m)}`;
+  const first = ymd(S.y,S.m,1), last = ymd(S.y,S.m,nDays);
+  const hasEntries = o => D.some(x => (S.plan[key(o.id,x.date)]||[]).length);
+  const sortFn = (a,b) => (effDate(a)||'9999').localeCompare(effDate(b)||'9999') || a.id-b.id;
+  const inMonth = o => o.group_month===curKey || (effDate(o)>=first && effDate(o)<=last);
+  // zamówienia z innych miesięcy (dodane przez "+" lub z krzyżykami) idą na koniec listy, nad przyciskiem "+"
+  const main = [
+    ...S.orders.filter(o => inMonth(o)).sort(sortFn),
+    ...S.orders.filter(o => !inMonth(o) && (S.pinned.has(o.id) || hasEntries(o))).sort(sortFn)
+  ];
+  const mainIds = new Set(main.map(o=>o.id));
+  S.mainIds = mainIds;
+
+  // obsada: date -> crewId -> [rowIds]
+  const occ = {};
+  D.forEach(x => {
+    occ[x.date] = {};
+    [0, ...S.orders.map(o=>o.id)].forEach(rid => (S.plan[key(rid,x.date)]||[]).forEach(cid => (occ[x.date][cid] = occ[x.date][cid] || []).push(rid)));
+  });
+  const orderMap = {}; S.orders.forEach(o=>orderMap[o.id]=o);
+
+  const cell = (rid, o, x) => {
+    const t = S.plan[key(rid, x.date)] || [];
+    let c = dayCls(x);
+    if(o){ if(effDate(o)===x.date) c += ' mo'; if(o.measure_due_date===x.date && !o.measure_done) c += ' pm'; }
+    if(S.canEdit) c += ' edit';
+    const marks = t.length ? '<div class="marks">' + t.map(cid => { const cr=crewById(cid)||{color:'#888',name:'?'}; const cf=(occ[x.date][cid]||[]).length>1;
+      return `<span class="x${cf?' cf':''}" style="background:${esc(cr.color)};color:${textOn(cr.color)}" title="${esc(cr.name)}${cr.members_label?': '+esc(cr.members_label):''}${cf?' — w 2 miejscach tego dnia':''}">${t.length===1?'✕':''}${esc(crewNum(cr))}</span>`; }).join('') + '</div>' : '';
+    const label = `${o?o.client:'Warsztat'}, ${x.d}.${pad(S.m)}: ${t.length ? t.map(cid=>(crewById(cid)||{}).name).join(', ') : 'brak ekipy'}`;
+    return `<td class="d ${c}" data-r="${rid}" data-dt="${x.date}" ${S.canEdit?'tabindex="0"':''} aria-label="${esc(label)}" title="${x.hol?esc(x.hol):''}">${marks}</td>`;
+  };
+  const orderRow = o => {
+    const ed = effDate(o);
+    const md = o.measure_done ? 'po pomiarach' : (o.measure_due_date ? 'pomiar ' + o.measure_due_date.slice(8)+'.'+o.measure_due_date.slice(5,7) : '');
+    const tip = [o.client, o.item_description, o.install_city, 'Status: '+o.status_name, 'Data montażu: '+(o.install_date||'—'), o.install_date_new?'Nowa data: '+o.install_date_new:'', md, o.client_notes?'Uwagi: '+o.client_notes:''].filter(Boolean).join('\n');
+    return `<tr><th class="c0" scope="row" title="${esc(tip)}">
+      <div class="cl"><span>${esc(o.client)}</span><a href="order_details.html?id=${o.id}" target="_blank" rel="noopener" title="Otwórz zamówienie" aria-label="Otwórz zamówienie">↗</a>
+        ${o.group_month && o.group_month!==curKey ? `<span class="from" title="Zamówienie z innego miesiąca">${esc(monthShort(o.group_month))}</span>` : ''}
+        ${S.canEdit && S.pinned.has(o.id) ? `<button type="button" class="unpin" data-unpin="${o.id}" title="${hasEntries(o)?'Najpierw usuń krzyżyki, potem zdejmij z grafiku':'Usuń z grafiku tego miesiąca'}" aria-label="Usuń z grafiku tego miesiąca">✕</button>` : ''}</div>
+      <div class="meta">${o.status_name?`<span class="pill" style="background:${esc(o.status_color||'#888')};color:${textOn(o.status_color||'#888888')}">${esc(o.status_name)}</span>`:''}
+        ${ed?`<span class="mdate">${ed.slice(8)}.${ed.slice(5,7)}</span>`:''}<span class="desc">${esc(o.item_description)}</span></div>
+    </th>${D.map(x=>cell(o.id,o,x)).join('')}</tr>`;
+  };
+
+  const cols = D.length + 1;
+  let h = `<table class="gt"><thead><tr><th class="c0">Zlecenie / termin montażu</th>${D.map(x=>`<th class="dh ${dayCls(x)}" title="${esc(x.hol)}"><b>${x.d}</b>${WD[x.wd]}</th>`).join('')}</tr></thead><tbody>`;
+  h += `<tr class="shop"><th class="c0" scope="row"><div class="cl"><span>Warsztat</span></div><div class="meta">produkcja w hali</div></th>${D.map(x=>cell(0,null,x)).join('')}</tr>`;
+  h += `<tr class="grp"><td colspan="${cols}"><span class="gl">Zamówienia – ${MONTHS[S.m-1]} ${S.y} (${main.length})</span></td></tr>`;
+  h += main.length ? main.map(orderRow).join('') : `<tr class="grp"><td colspan="${cols}"><span class="gl" style="text-transform:none;letter-spacing:0;font-weight:500">${S.canEdit ? 'Brak zamówień z terminem w tym miesiącu.' : 'Brak Twoich zamówień w tym miesiącu.'}</span></td></tr>`;
+  if(S.canEdit) h += `<tr class="add"><td colspan="${cols}"><span class="gl"><button type="button" class="add-btn" id="addOrderBtn"><b>+</b> Dodaj zamówienie z innego miesiąca</button></span></td></tr>`;
+  if(S.crews.length) h += `<tr class="grp"><td colspan="${cols}"><span class="gl">${S.canEdit ? 'Obsada ekip' : 'Ekipy na Twoich zleceniach'}</span></td></tr>`;
+  h += S.crews.map(c => `<tr class="crew"><th class="c0" scope="row" title="${esc(c.members_label)}">
+      <div class="cl"><span class="cnum" style="background:${esc(c.color)};color:${textOn(c.color)}">${esc(crewNum(c))}</span><span>${esc(c.members_label||c.name)}</span></div>
+      <div class="meta">${esc(c.name)}${c.vehicle?' · '+esc(c.vehicle):''}${c.is_active?'':' · wyłączona'}</div></th>${D.map(x => {
+        const rs = occ[x.date][c.id] || []; const cf = rs.length>1;
+        const tip = rs.map(rid => rid===0 ? 'Warsztat' : (orderMap[rid]||{}).client || ('#'+rid)).join(' + ');
+        const body = cf ? `<span class="ab cf">${rs.length}×!</span>` : rs.map(rid => rid===0 ? '<span class="ab w">W</span>' : `<span class="ab" style="color:${esc(c.color)}">${esc(shortName((orderMap[rid]||{}).client||'#'+rid))}</span>`).join('');
+        return `<td class="d ${dayCls(x)}" title="${esc(tip)}">${body}</td>`; }).join('')}</tr>`).join('');
+  const active = S.crews.filter(c=>c.is_active).length;
+  if(S.canEdit) h += `<tr class="free"><th class="c0" scope="row"><div class="cl"><span>Wolne ekipy</span></div><div class="meta">bez przydziału tego dnia</div></th>${D.map(x => {
+      const used = S.crews.filter(c=>c.is_active && (occ[x.date][c.id]||[]).length).length; const free = active - used; const off = x.wd===0||x.wd===6||x.hol;
+      return `<td class="d ${dayCls(x)}${!off&&free===0?' low':''}">${off&&used===0?'':free}</td>`; }).join('')}</tr>`;
+  h += '</tbody></table>';
+
+  const old = box.querySelector('.sched-wrap');
+  const sl = old ? old.scrollLeft : null, st = old ? old.scrollTop : 0;
+  box.innerHTML = `<div class="sched-wrap">${h}</div>`;
+  const wrap = box.querySelector('.sched-wrap');
+  if(sl !== null){ wrap.scrollLeft = sl; wrap.scrollTop = st; }
+  else if(S.y===now.getFullYear() && S.m===now.getMonth()+1){ wrap.scrollLeft = Math.max(0, (now.getDate()-4) * 38); }
+}
+function shortName(name){ const p = String(name).replace(/\(.*$/,'').trim().split(/\s+/); return p[p.length-1].slice(0,4); }
+
+function toast(t, isErr){ const el=$('toast'); el.textContent=t; el.className='toast'+(isErr?' err':''); el.hidden=false; clearTimeout(toast.t); toast.t=setTimeout(()=>el.hidden=true, 3200); }
+
+async function toggle(rid, date, td){
+  if(!S.canEdit) return;
+  if(!S.brush){ toast('Najpierw wybierz ekipę u góry.', true); return; }
+  const k = key(rid, date); const cur = (S.plan[k]||[]).slice();
+  let req;
+  if(S.brush === -1){
+    if(!cur.length) return;
+    S.plan[k] = []; req = {action:'clear', work_date:date, order_id:rid};
+  } else {
+    const on = !cur.includes(S.brush);
+    S.plan[k] = on ? [...cur, S.brush].sort((a,b)=>crewOrder(a)-crewOrder(b)) : cur.filter(c=>c!==S.brush);
+    req = {action:'set', work_date:date, order_id:rid, crew_id:S.brush, on};
+  }
+  S.pending++; render();
+  try{
+    const r = await apiPost('crew_schedule.php', req);
+    // podmień wszystkie komórki z tego dnia na stan z serwera
+    Object.keys(S.plan).forEach(kk => { if(kk.endsWith('__'+date)) delete S.plan[kk]; });
+    (r.entries||[]).forEach(e => { const kk=key(e.order_id,e.work_date); (S.plan[kk]=S.plan[kk]||[]).push(e.crew_id); });
+    Object.values(S.plan).forEach(a=>a.sort((x,y)=>crewOrder(x)-crewOrder(y)));
+  }catch(e){
+    S.plan[k] = cur;
+    toast('Nie zapisano zmiany: ' + errText(e), true);
+  }finally{ S.pending--; render(); }
+}
+
+$('brush').addEventListener('click', e => { const b=e.target.closest('[data-b]'); if(!b) return; S.brush=+b.dataset.b; ls.set('gt_brush', S.brush); renderBrush(); });
+$('gridBox').addEventListener('click', e => {
+  if(e.target.closest('#addOrderBtn')){ openAdd(); return; }
+  const un = e.target.closest('[data-unpin]'); if(un){ unpin(+un.dataset.unpin); return; }
+  if(e.target.closest('a')) return;
+  const td = e.target.closest('td.d[data-r]'); if(td) toggle(+td.dataset.r, td.dataset.dt, td);
+});
+$('gridBox').addEventListener('keydown', e => {
+  if(e.key!=='Enter' && e.key!==' ') return;
+  const td = e.target.closest('td.d[data-r]'); if(!td) return;
+  e.preventDefault(); e.stopPropagation(); toggle(+td.dataset.r, td.dataset.dt, td);
+}, true);
+function shift(n){ let m=S.m+n, y=S.y; if(m<1){m=12;y--;} if(m>12){m=1;y++;} S.y=y; S.m=m; ls.set('gt_y',y); ls.set('gt_m',m); $('gridBox').innerHTML='<div class="muted" style="padding:20px">Ładowanie grafiku…</div>'; load(); }
+$('prevMonth').onclick = ()=>shift(-1);
+$('nextMonth').onclick = ()=>shift(1);
+$('todayBtn').onclick = ()=>{ S.y=now.getFullYear(); S.m=now.getMonth()+1; shift(0); };
+$('reloadBtn').onclick = load;
+
+/* ===== dodawanie zamówienia z innego miesiąca ===== */
+function ymShift(y, m, n){ const d = new Date(y, m-1+n, 1); return {y:d.getFullYear(), m:d.getMonth()+1, k:`${d.getFullYear()}-${pad(d.getMonth()+1)}`}; }
+function monthShort(k){ const [y,m] = String(k).split('-'); return MONTHS[+m-1] ? (MONTHS[+m-1].slice(0,3) + ' ' + String(y).slice(2)) : k; }
+function monthLong(k){ const [y,m] = String(k).split('-'); return MONTHS[+m-1] ? MONTHS[+m-1] + ' ' + y : 'bez daty'; }
+function openAdd(){
+  const A = S.add; A.before = 2; A.after = 2; A.all = false; A.q = ''; A.items = [];
+  $('addSearch').value = ''; $('addFinished').checked = A.finished;
+  $('addTitle').textContent = 'Dodaj zamówienie do grafiku – ' + MONTHS[S.m-1] + ' ' + S.y;
+  $('addDlg').showModal(); setTimeout(()=>$('addSearch').focus(), 30);
+  searchAdd();
+}
+async function searchAdd(){
+  const A = S.add; const seq = ++A.seq;
+  const f = ymShift(S.y, S.m, -A.before), t = ymShift(S.y, S.m, A.after);
+  $('addRange').textContent = A.all ? 'cały okres' : `${monthLong(f.k)} – ${monthLong(t.k)}`;
+  $('addAll').hidden = A.all; $('addEarlier').hidden = A.all; $('addLater').hidden = A.all;
+  $('addList').innerHTML = '<div class="add-empty">Szukam…</div>';
+  const qs = new URLSearchParams({action:'search', from:f.k, to:t.k, q:A.q, finished:A.finished?1:0});
+  if(A.all) qs.set('all','1');
+  try{
+    const r = await apiGet('crew_schedule.php?' + qs.toString());
+    if(seq !== A.seq) return;
+    A.items = r.items || []; A.limited = !!r.limited;
+    renderAdd();
+  }catch(e){ if(seq===A.seq) $('addList').innerHTML = `<div class="add-empty">Nie udało się wczytać zamówień: ${esc(errText(e))}</div>`; }
+}
+function renderAdd(){
+  const A = S.add;
+  const inGrid = S.mainIds || new Set();
+  if(!A.items.length){
+    $('addList').innerHTML = `<div class="add-empty">${A.q ? 'Brak zamówień pasujących do „'+esc(A.q)+'” w tym okresie.' : 'Brak zamówień w tym okresie.'}${A.all ? '' : ' Rozszerz zakres przyciskami powyżej albo wybierz „Cały okres”.'}</div>`;
+    return;
+  }
+  const groups = {};
+  A.items.forEach(o => (groups[o.group_month||''] = groups[o.group_month||''] || []).push(o));
+  const keys = Object.keys(groups).sort().reverse();
+  $('addList').innerHTML = keys.map(k => `<div class="add-month">${esc(monthLong(k))} (${groups[k].length})</div>` + groups[k].map(o => {
+    const ed = effDate(o);
+    return `<div class="add-item"><div style="min-width:0">
+        <div class="t">${esc(o.client)} <span class="muted" style="font-weight:500">#${o.id}</span></div>
+        <div class="meta">${o.status_name?`<span class="pill" style="background:${esc(o.status_color||'#888')};color:${textOn(o.status_color||'#888888')}">${esc(o.status_name)}</span>`:''}
+          ${o.is_finished?'<span class="from">zakończone</span>':''}
+          ${ed?`<span class="mdate">${ed.slice(8)}.${ed.slice(5,7)}.${ed.slice(2,4)}</span>`:''}<span class="desc">${esc(o.item_description)}</span></div>
+      </div>${inGrid.has(o.id) ? '<span class="in">już w grafiku</span>' : `<button type="button" class="btn" data-pin="${o.id}">Dodaj</button>`}</div>`;
+  }).join('')).join('') + (A.limited ? '<div class="add-empty">Pokazano pierwsze 400 wyników. Zawęź wyszukiwanie.</div>' : '');
+}
+async function pin(id, btn){
+  btn.disabled = true;
+  try{
+    await apiPost('crew_schedule.php', {action:'pin', ym:`${S.y}-${pad(S.m)}`, order_id:id});
+    S.pinned.add(id);
+    const o = S.add.items.find(x=>x.id===id);
+    if(o && !S.orders.some(x=>x.id===id)) S.orders.push(o);
+    render(); renderAdd();
+    toast('Dodano: ' + (o ? o.client : '#'+id));
+  }catch(e){ btn.disabled = false; toast('Nie dodano zamówienia: ' + errText(e), true); }
+}
+async function unpin(id){
+  const o = S.orders.find(x=>x.id===id);
+  const D = new Date(S.y, S.m, 0).getDate();
+  const used = Array.from({length:D},(_,i)=>ymd(S.y,S.m,i+1)).some(d => (S.plan[key(id,d)]||[]).length);
+  if(used){ toast('To zamówienie ma krzyżyki w tym miesiącu. Usuń je gumką, potem zdejmij zamówienie z grafiku.', true); return; }
+  try{
+    await apiPost('crew_schedule.php', {action:'unpin', ym:`${S.y}-${pad(S.m)}`, order_id:id});
+    S.pinned.delete(id); render();
+    toast('Zdjęto z grafiku: ' + (o ? o.client : '#'+id));
+  }catch(e){ toast('Nie udało się zdjąć zamówienia: ' + errText(e), true); }
+}
+let addTimer = null;
+$('addSearch').addEventListener('input', () => { clearTimeout(addTimer); addTimer = setTimeout(()=>{ S.add.q = $('addSearch').value.trim(); searchAdd(); }, 300); });
+// Enter w wyszukiwarce nie może kliknąć pierwszego "Dodaj" (globalna obsługa Enter w topbar.js)
+window.addEventListener('keydown', e => { if(e.key==='Enter' && e.target && e.target.id==='addSearch'){ e.preventDefault(); clearTimeout(addTimer); S.add.q=$('addSearch').value.trim(); searchAdd(); } }, true);
+$('addEarlier').onclick = () => { S.add.before += 2; searchAdd(); };
+$('addLater').onclick = () => { S.add.after += 2; searchAdd(); };
+$('addAll').onclick = () => { S.add.all = true; searchAdd(); };
+$('addFinished').onchange = () => { S.add.finished = $('addFinished').checked; searchAdd(); };
+$('addClose').onclick = () => $('addDlg').close();
+$('addDlg').addEventListener('click', e => { if(e.target === $('addDlg')) $('addDlg').close(); const b = e.target.closest('[data-pin]'); if(b) pin(+b.dataset.pin, b); });
+// odświeżanie co minutę (zmiany innych osób), tylko gdy karta jest widoczna
+setInterval(()=>{ if(document.visibilityState==='visible' && !S.pending) load(); }, 60000);
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible' && !S.pending) load(); });
+document.addEventListener('DOMContentLoaded', load);
+</script>
+</body>
+</html>

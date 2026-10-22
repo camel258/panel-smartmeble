@@ -1,0 +1,198 @@
+<!doctype html><html lang="pl"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Smart Meble – Logowanie</title>
+<link rel="icon" href="assets/img/favicon.ico">
+<meta name="theme-color" content="#2d2d2d">
+<link rel="stylesheet" href="assets/css/app.css"/>
+<style>
+:root{
+  --bg:#2f2f31;
+  --bg2:#3a3a3d;
+  --card:rgba(22,22,24,.78);
+  --line:rgba(255,255,255,.10);
+  --text:#f4f7fb;
+  --muted:#b8bec8;
+  --accent:#b8d51e;
+  --accent2:#d2ef29;
+  --shadow:0 24px 80px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  min-height:100vh;
+  color:var(--text);
+  font-family:Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(184,213,30,.08), transparent 28%),
+    radial-gradient(circle at 80% 80%, rgba(184,213,30,.06), transparent 26%),
+    linear-gradient(180deg, var(--bg2), var(--bg));
+}
+.login-shell{
+  min-height:100vh;
+  display:grid;
+  place-items:center;
+  padding:20px;
+}
+.login-card{
+  width:min(460px, 100%);
+  background:linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.02));
+  border:1px solid var(--line);
+  border-radius:24px;
+  box-shadow:var(--shadow);
+  backdrop-filter: blur(10px);
+  padding:28px 24px 22px;
+}
+.brand{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  text-align:center;
+  margin-bottom:22px;
+}
+.brand-logo{
+  display:block;
+  max-width:min(420px, 100%);
+  width:100%;
+  height:auto;
+  margin:0 auto 12px;
+}
+.brand-sub{
+  font-size:14px;
+  letter-spacing:.22em;
+  color:#fff;
+  font-weight:700;
+}
+.brand-line{
+  width:72px;
+  height:4px;
+  border-radius:999px;
+  background:linear-gradient(90deg, var(--accent), #fff);
+  margin-top:12px;
+}
+.login-form{
+  display:grid;
+  gap:14px;
+}
+.field label{
+  display:block;
+  margin-bottom:7px;
+  color:var(--muted);
+  font-size:13px;
+  font-weight:600;
+  letter-spacing:.02em;
+}
+.input{
+  width:100%;
+  min-height:50px;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.10);
+  background:rgba(255,255,255,.05);
+  color:var(--text);
+  padding:0 14px;
+  outline:none;
+  transition:border-color .18s ease, box-shadow .18s ease, background .18s ease;
+}
+.input:focus{
+  border-color:rgba(184,213,30,.72);
+  box-shadow:0 0 0 4px rgba(184,213,30,.12);
+  background:rgba(255,255,255,.07);
+}
+.row-inline{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  color:var(--muted);
+  font-size:14px;
+}
+.row-inline input{accent-color:var(--accent); width:18px; height:18px}
+.btn-login{
+  width:100%;
+  min-height:52px;
+  border:0;
+  border-radius:14px;
+  background:linear-gradient(180deg, var(--accent2), var(--accent));
+  color:#111;
+  font-weight:800;
+  font-size:15px;
+  letter-spacing:.04em;
+  cursor:pointer;
+  box-shadow:0 10px 24px rgba(184,213,30,.22);
+  transition:transform .12s ease, box-shadow .18s ease, filter .18s ease;
+}
+.btn-login:hover{filter:brightness(1.03)}
+.btn-login:active{transform:translateY(1px)}
+.err{
+  min-height:20px;
+  color:#ffd5d5;
+  font-size:13px;
+}
+.login-foot{
+  padding-top:14px;
+  text-align:center;
+  color:var(--muted);
+  font-size:12px;
+}
+@media (max-width: 640px){
+  .login-shell{padding:14px}
+  .login-card{padding:22px 16px 18px;border-radius:18px}
+  .brand-logo{max-width:320px}
+  .brand-sub{font-size:12px; letter-spacing:.18em}
+}
+</style></head>
+<body>
+<div class="login-shell">
+  <div class="login-card">
+    <div class="brand">
+      <img src="assets/img/logo_smartmeble.png" alt="Smart Meble" class="brand-logo"/>
+      <div class="brand-sub">PANEL ZAMÓWIEŃ</div>
+      <div class="brand-line"></div>
+    </div>
+
+    <form id="loginForm" class="login-form">
+      <div class="field">
+        <label for="email">E-mail</label>
+        <input class="input" type="email" id="email" autocomplete="username" required>
+      </div>
+
+      <div class="field">
+        <label for="password">Hasło</label>
+        <input class="input" type="password" id="password" autocomplete="current-password" required>
+      </div>
+
+      <div class="row-inline">
+        <input type="checkbox" id="remember" checked>
+        <label for="remember" style="margin:0">Pamiętaj mnie (7 dni)</label>
+      </div>
+
+      <button class="btn-login" type="submit">ZALOGUJ SIĘ</button>
+      <div id="loginMsg" class="err"></div>
+    </form>
+
+    <div class="login-foot">Smart Meble © 2025</div>
+  </div>
+</div>
+
+<script src="config.js"></script><script src="assets/js/helpers.js"></script>
+<script>
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const email = el('email').value.trim();
+  const password = el('password').value;
+  const remember = el('remember').checked;
+  el('loginMsg').textContent = '';
+
+  try {
+    const res = await apiPost('auth_login.php', { email, password, remember });
+    if (res && res.token) {
+      localStorage.setItem('token', res.token);
+    } else {
+      throw new Error('Brak tokena w odpowiedzi');
+    }
+    window.location.href = 'aktualnosci.html';
+  } catch (err) {
+    console.error(err);
+    el('loginMsg').textContent = 'Błąd logowania: nieprawidłowe dane lub problem z serwerem.';
+  }
+});
+</script>
+</body></html>

@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Smart Meble – Ekipy</title>
+<link rel="icon" href="assets/img/favicon.ico">
+<link rel="stylesheet" href="assets/css/theme_v17.css"/>
+<style>
+  .content{overflow:visible !important;min-width:0}
+  #appTopbar{display:block;width:100%}
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+  .muted{color:var(--muted)}
+  .btn.alt{background:#404040;color:#fff;box-shadow:none}
+  .btn.danger{background:#7f1d1d;color:#fff;box-shadow:none}
+  .crew-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+  .crew{display:flex;flex-direction:column;gap:10px;border:1px solid var(--border);border-radius:14px;background:#232323;padding:14px;position:relative}
+  .crew.off{opacity:.55}
+  .crew-head{display:flex;align-items:center;gap:10px}
+  .crew-dot{width:30px;height:30px;border-radius:8px;flex:none;display:grid;place-items:center;font-weight:800;color:#111;font-size:14px}
+  .crew-name{font-size:16px;font-weight:700}
+  .crew-sub{font-size:12px;color:var(--muted)}
+  .chips{display:flex;gap:6px;flex-wrap:wrap}
+  .chip{padding:4px 9px;border-radius:999px;background:rgba(255,255,255,.08);font-size:12px}
+  .chip.extra{background:transparent;border:1px dashed rgba(255,255,255,.22)}
+  .crew-row{display:flex;gap:8px;align-items:center;font-size:13px}
+  .crew-row b{color:var(--muted);font-weight:500;min-width:62px;font-size:12px}
+  .crew-actions{display:flex;gap:8px;margin-top:auto}
+  .tag-off{position:absolute;top:12px;right:12px;font-size:11px;padding:3px 8px;border-radius:999px;background:#404040}
+  .empty{padding:28px;text-align:center;border:1px dashed rgba(255,255,255,.15);border-radius:14px}
+  .empty p{margin:0 0 14px}
+  dialog{border:1px solid rgba(255,255,255,.1);border-radius:16px;background:#232323;color:#fff;max-width:640px;width:calc(100vw - 32px);padding:18px}
+  dialog::backdrop{background:rgba(0,0,0,.55)}
+  .form-grid{display:grid;grid-template-columns:1fr 120px;gap:12px}
+  .form-grid .full{grid-column:1/-1}
+  input[type=color]{width:100%;height:38px;border:1px solid var(--border);border-radius:8px;background:transparent;padding:2px}
+  .people{max-height:240px;overflow:auto;border:1px solid var(--border);border-radius:10px;padding:6px}
+  .person{display:flex;align-items:center;gap:8px;padding:5px 6px;border-radius:8px;font-size:13px;cursor:pointer}
+  .person:hover{background:rgba(255,255,255,.05)}
+  .person small{color:var(--muted);margin-left:auto}
+  .person small.warn{color:#fbbf24}
+  .dlg-actions{display:flex;gap:8px;justify-content:space-between;margin-top:16px;flex-wrap:wrap}
+  .msg{min-height:18px;font-size:13px;margin-top:8px}
+  .msg.err{color:#ffb4b4}
+  .palette{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+  .palette button{width:22px;height:22px;border-radius:6px;border:1px solid rgba(255,255,255,.2);cursor:pointer;padding:0}
+  @media(max-width:560px){.form-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar"><nav></nav></aside>
+  <div class="content">
+    <div id="appTopbar" data-title="Ekipy" data-subtitle="Panel zamówień"></div>
+    <main class="main">
+      <div id="err" class="err" style="margin-bottom:10px"></div>
+      <div class="card">
+        <div class="toolbar">
+          <button class="btn" id="addBtn" type="button">+ Dodaj ekipę</button>
+          <a class="btn alt" href="grafik_ekip.html">Przejdź do grafiku</a>
+          <label class="muted" style="display:inline-flex;gap:6px;align-items:center;margin:0 0 0 auto;font-size:13px">
+            <input type="checkbox" id="showOff"> Pokaż wyłączone
+          </label>
+        </div>
+        <p class="muted" style="margin:0 0 14px;font-size:13px">Ekipa to para (lub grupa) stolarzy z przypisanym samochodem. Zmiany składu działają od razu w „Grafiku testowym”. Wpisy z przeszłości zachowują skład z dnia przypisania.</p>
+        <div id="list"></div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<dialog id="dlg">
+  <form method="dialog" id="frm">
+    <h3 style="margin:0 0 14px" id="dlgTitle">Ekipa</h3>
+    <div class="form-grid">
+      <div><label for="fName">Nazwa ekipy</label><input class="input" id="fName" maxlength="100" placeholder="np. Ekipa 1" required></div>
+      <div><label for="fSort">Kolejność</label><input class="input" id="fSort" type="number" step="1"></div>
+      <div class="full">
+        <label>Pracownicy z panelu</label>
+        <input class="input" id="fSearch" placeholder="Szukaj pracownika…" style="margin-bottom:6px">
+        <div class="people" id="people"></div>
+      </div>
+      <div class="full"><label for="fExtra">Osoby spoza panelu (bez konta)</label><input class="input" id="fExtra" maxlength="255" placeholder="np. Alex, Dominik"></div>
+      <div><label for="fVehicle">Samochód</label><input class="input" id="fVehicle" maxlength="120" list="vehList" placeholder="np. biały Ducato"><datalist id="vehList"></datalist></div>
+      <div><label for="fColor">Kolor</label><input type="color" id="fColor" value="#3b82f6"></div>
+      <div class="full palette" id="palette"></div>
+      <div class="full"><label for="fNote">Notatka</label><input class="input" id="fNote" maxlength="255" placeholder="np. tylko montaże kuchni"></div>
+      <div class="full"><label style="display:inline-flex;gap:8px;align-items:center;font-size:13px;color:var(--text)"><input type="checkbox" id="fActive" checked> Ekipa aktywna (widoczna w grafiku)</label></div>
+    </div>
+    <div class="msg" id="dlgMsg"></div>
+    <div class="dlg-actions">
+      <button class="btn danger" type="button" id="delBtn">Usuń ekipę</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn alt" type="button" id="cancelBtn">Anuluj</button>
+        <button class="btn" type="button" id="saveBtn">Zapisz ekipę</button>
+      </div>
+    </div>
+  </form>
+</dialog>
+
+<script src="config.js"></script>
+<script src="assets/js/helpers_ext.js"></script>
+<script src="assets/js/menu.js"></script>
+<script src="assets/js/topbar.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const PALETTE = ['#64748b','#3b82f6','#f59e0b','#22c55e','#a855f7','#06b6d4','#ec4899','#ef4444','#84cc16','#f97316','#14b8a6','#eab308'];
+let S = { items:[], users:[], vehicles:[], canEdit:false, editId:0 };
+
+function esc(s){ return String(s ?? '').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function errText(e){ try{ const j=JSON.parse(e.message); return j.details || j.error || e.message; }catch(_){ return e.message || 'Błąd połączenia'; } }
+function textOn(hex){ const h=hex.replace('#',''); const r=parseInt(h.substr(0,2),16),g=parseInt(h.substr(2,2),16),b=parseInt(h.substr(4,2),16); return (r*299+g*587+b*114)/1000 > 140 ? '#111' : '#fff'; }
+
+function apply(r){
+  S.items = r.items || []; S.users = r.users || []; S.vehicles = r.vehicles || []; S.canEdit = !!r.can_edit;
+  render();
+}
+async function load(){
+  $('err').textContent='';
+  try{ apply(await apiGet('crews.php')); }catch(e){ $('err').textContent = 'Nie udało się wczytać ekip: ' + errText(e); }
+}
+
+function render(){
+  $('addBtn').style.display = S.canEdit ? '' : 'none';
+  const showOff = $('showOff').checked;
+  const items = S.items.filter(c => showOff || c.is_active);
+  if(!S.items.length){
+    $('list').innerHTML = `<div class="empty"><p>Nie ma jeszcze żadnej ekipy.</p>${S.canEdit ? `<p class="muted" style="font-size:13px">Możesz wczytać 7 ekip z listy testowej (Alex/Dominik, Piotr Tułaza/Sławek…) i potem je poprawić.</p><button class="btn" id="seedBtn" type="button">Wczytaj 7 ekip testowych</button>` : ''}</div>`;
+    const sb = $('seedBtn'); if(sb) sb.onclick = seed;
+    return;
+  }
+  const userName = id => (S.users.find(u=>u.id===id)||{}).full_name || ('#'+id);
+  $('list').innerHTML = '<div class="crew-list">' + items.map((c,i) => `
+    <div class="crew${c.is_active?'':' off'}">
+      ${c.is_active?'':'<span class="tag-off">wyłączona</span>'}
+      <div class="crew-head">
+        <span class="crew-dot" style="background:${esc(c.color)};color:${textOn(c.color)}">${esc((c.name.match(/\d+/)||[c.name.charAt(0)])[0])}</span>
+        <div><div class="crew-name">${esc(c.name)}</div>${c.note?`<div class="crew-sub">${esc(c.note)}</div>`:''}</div>
+      </div>
+      <div class="crew-row"><b>Skład</b><div class="chips">${
+        c.member_ids.map(id=>`<span class="chip">${esc(userName(id))}</span>`).join('') +
+        (c.extra_members?`<span class="chip extra" title="Osoby bez konta w panelu">${esc(c.extra_members)}</span>`:'') ||
+        '<span class="muted">brak przypisanych osób</span>'}</div></div>
+      <div class="crew-row"><b>Samochód</b><span>${c.vehicle?esc(c.vehicle):'<span class="muted">—</span>'}</span></div>
+      ${S.canEdit?`<div class="crew-actions"><button class="btn alt" type="button" data-edit="${c.id}">Edytuj</button></div>`:''}
+    </div>`).join('') + '</div>';
+}
+
+function renderPeople(){
+  const q = $('fSearch').value.trim().toLowerCase();
+  const sel = new Set([...document.querySelectorAll('#people input:checked')].map(i=>+i.value).concat(S._sel||[]));
+  S._sel = [...sel];
+  const inOther = {};
+  S.items.forEach(c=>{ if(c.is_active && c.id!==S.editId) c.member_ids.forEach(id=>inOther[id]=c.name); });
+  const list = S.users.slice().sort((a,b)=> (b.is_mounter-a.is_mounter) || a.full_name.localeCompare(b.full_name,'pl'))
+    .filter(u => !q || u.full_name.toLowerCase().includes(q) || sel.has(u.id));
+  $('people').innerHTML = list.length ? list.map(u=>`
+    <label class="person"><input type="checkbox" value="${u.id}" ${sel.has(u.id)?'checked':''}> ${esc(u.full_name)}
+      ${inOther[u.id]?`<small class="warn">już w: ${esc(inOther[u.id])}</small>`:(u.is_mounter?'<small>monter</small>':'')}</label>`).join('')
+    : '<div class="muted" style="padding:8px;font-size:13px">Brak pracowników pasujących do wyszukiwania.</div>';
+}
+
+function openDlg(c){
+  S.editId = c ? c.id : 0;
+  S._sel = c ? c.member_ids.slice() : [];
+  $('dlgTitle').textContent = c ? 'Edytuj ekipę' : 'Nowa ekipa';
+  $('fName').value = c ? c.name : 'Ekipa ' + (S.items.length + 1);
+  $('fSort').value = c ? c.sort_order : '';
+  $('fExtra').value = c ? c.extra_members : '';
+  $('fVehicle').value = c ? c.vehicle : '';
+  $('fColor').value = c ? c.color : PALETTE[S.items.length % PALETTE.length];
+  $('fNote').value = c ? c.note : '';
+  $('fActive').checked = c ? !!c.is_active : true;
+  $('fSearch').value = '';
+  $('delBtn').style.display = c ? '' : 'none';
+  $('dlgMsg').textContent=''; $('dlgMsg').className='msg';
+  const veh = new Set([...S.vehicles, ...S.items.map(x=>x.vehicle).filter(Boolean)]);
+  $('vehList').innerHTML = [...veh].map(v=>`<option value="${esc(v)}">`).join('');
+  renderPeople();
+  $('dlg').showModal();
+  setTimeout(()=>$('fName').focus(),30);
+}
+
+async function save(){
+  const sel = (S._sel||[]).slice();
+  const body = { action:'save', id:S.editId, name:$('fName').value, sort_order:+$('fSort').value||0,
+    extra_members:$('fExtra').value, vehicle:$('fVehicle').value, color:$('fColor').value,
+    note:$('fNote').value, is_active:$('fActive').checked?1:0, member_ids: sel };
+  if(!body.name.trim()){ $('dlgMsg').className='msg err'; $('dlgMsg').textContent='Podaj nazwę ekipy.'; return; }
+  $('saveBtn').disabled = true;
+  try{ apply(await apiPost('crews.php', body)); $('dlg').close(); }
+  catch(e){ $('dlgMsg').className='msg err'; $('dlgMsg').textContent = errText(e); }
+  finally{ $('saveBtn').disabled = false; }
+}
+async function del(){
+  const btn = $('delBtn');
+  if(btn.dataset.confirm !== '1'){
+    btn.dataset.confirm = '1'; btn.textContent = 'Na pewno usunąć?';
+    $('dlgMsg').className='msg'; $('dlgMsg').textContent='Jeśli ekipa ma wpisy w grafiku, zostanie tylko wyłączona (historia zostaje).';
+    setTimeout(()=>{ btn.dataset.confirm=''; btn.textContent='Usuń ekipę'; }, 4000);
+    return;
+  }
+  try{ apply(await apiPost('crews.php', {action:'delete', id:S.editId})); $('dlg').close(); }
+  catch(e){ $('dlgMsg').className='msg err'; $('dlgMsg').textContent = errText(e); }
+}
+async function seed(){
+  try{ apply(await apiPost('crews.php', {action:'seed_default'})); }catch(e){ $('err').textContent = errText(e); }
+}
+
+$('palette').innerHTML = PALETTE.map(c=>`<button type="button" data-c="${c}" style="background:${c}" title="${c}" aria-label="Kolor ${c}"></button>`).join('');
+$('palette').onclick = e => { const b=e.target.closest('[data-c]'); if(b) $('fColor').value=b.dataset.c; };
+$('people').addEventListener('change', e=>{ const v=+e.target.value; S._sel = e.target.checked ? [...new Set([...(S._sel||[]),v])] : (S._sel||[]).filter(x=>x!==v); });
+$('fSearch').oninput = renderPeople;
+$('addBtn').onclick = ()=>openDlg(null);
+$('list').onclick = e => { const b=e.target.closest('[data-edit]'); if(b) openDlg(S.items.find(c=>c.id===+b.dataset.edit)); };
+$('saveBtn').onclick = save;
+$('delBtn').onclick = del;
+$('cancelBtn').onclick = ()=>$('dlg').close();
+$('showOff').onchange = render;
+document.addEventListener('DOMContentLoaded', load);
+</script>
+</body>
+</html>

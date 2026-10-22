@@ -1,0 +1,205 @@
+<!doctype html><html lang="pl"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Smart Meble – Aktualności</title>
+<link rel="icon" href="assets/img/favicon.ico"><link rel="stylesheet" href="assets/css/theme_v17.css"/>
+<style>
+.grid{display:grid;grid-template-columns:1.2fr .9fr;gap:14px}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:14px}
+.stat{background:linear-gradient(180deg,#2e2e2e,#2a2a2a);border:1px solid rgba(255,255,255,.06);border-radius:18px;padding:16px}
+.stat .label{font-size:13px;color:#cbd5e1;margin-bottom:10px}.stat .val{font-size:22px;font-weight:800}
+.section{background:linear-gradient(180deg,#2e2e2e,#2a2a2a);border:1px solid rgba(255,255,255,.06);border-radius:18px;padding:16px;margin-bottom:14px;box-shadow:0 14px 34px rgba(0,0,0,.18)}
+.section h3{margin:0 0 10px 0}.section h2,.section h3{color:#c7db2a !important}.list{display:flex;flex-direction:column;gap:10px;max-height:360px;overflow:auto}
+.item{background:#353535;border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:12px}.item .top{display:flex;justify-content:space-between;gap:10px;margin-bottom:6px}
+.item .title{font-weight:700}.muted2{color:#cbd5e1;font-size:13px}.searchRow{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.searchRow .input{flex:1 1 520px;background:#fff;color:#111}
+.searchResults .item{background:#fff;color:#111}.searchResults .muted2{color:#475569}.searchHint{font-size:13px;color:#cbd5e1;margin-top:8px}
+.empty{color:#cbd5e1;padding:8px 0}.newsForm{display:none;gap:10px;flex-direction:column;margin-top:12px}.newsForm textarea{min-height:110px;resize:vertical}
+.quickLink{display:inline-block;margin-top:8px;font-size:13px}
+@media (max-width:1100px){.grid{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:640px){.stats{grid-template-columns:1fr}.searchRow{flex-direction:column;align-items:stretch}.searchRow .input{flex:1 1 auto}}
+
+/* Override: titles in same lime color as buttons */
+.page-title,
+.section-title,
+.card-title,
+.panel-title,
+.widget-title,
+.news-box-title,
+.dashboard-card-title,
+.aktualnosci-box-title,
+.aktualnosci-section-title,
+.news-card h2,
+.news-card h3,
+.aktualnosci-card h2,
+.aktualnosci-card h3 {
+  color: #c7db2a !important;
+}
+
+
+/* ===== Compact Aktualności v2 ===== */
+:root{
+  --news-gap: 14px;
+  --news-pad: 16px;
+  --news-radius: 18px;
+  --news-green: #c7db2a;
+}
+body.aktualnosci-page .content,
+body .content{
+  padding-top: 10px !important;
+}
+.hero, .page-hero, .welcome-box, .news-hero, .top-summary-card{
+  padding: 16px 18px !important;
+  margin-bottom: 14px !important;
+}
+.hero h1, .page-hero h1, .welcome-box h1, .news-hero h1, .top-summary-card h1,
+.hero h2, .page-hero h2, .welcome-box h2, .news-hero h2, .top-summary-card h2{
+  font-size: 18px !important;
+  line-height: 1.2 !important;
+  margin: 0 0 6px 0 !important;
+}
+.hero p, .page-hero p, .welcome-box p, .news-hero p, .top-summary-card p,
+.page-subtitle, .intro-text{
+  font-size: 13px !important;
+  line-height: 1.35 !important;
+  margin: 0 !important;
+}
+.stats-grid, .summary-grid, .top-kpis, .kpi-grid{
+  gap: var(--news-gap) !important;
+  margin-bottom: 14px !important;
+}
+.stat-card, .kpi-card, .summary-card, .metric-card{
+  padding: 14px 16px !important;
+  min-height: auto !important;
+}
+.stat-card .label, .kpi-card .label, .summary-card .label, .metric-card .label,
+.stat-card .title, .kpi-card .title{
+  font-size: 13px !important;
+  line-height: 1.2 !important;
+}
+.stat-card .value, .kpi-card .value, .summary-card .value, .metric-card .value{
+  font-size: 17px !important;
+  line-height: 1.1 !important;
+  margin-top: 8px !important;
+}
+.news-layout, .aktualnosci-layout, .two-col-layout, .main-grid{
+  gap: var(--news-gap) !important;
+}
+.news-card, .section-card, .panel-card, .widget-card, .box-card, .content-card{
+  padding: 14px 16px !important;
+}
+.section-title, .card-title, .panel-title, .widget-title,
+.news-card h2, .news-card h3, .section-card h2, .section-card h3{
+  font-size: 15px !important;
+  line-height: 1.2 !important;
+  margin: 0 0 10px 0 !important;
+  color: var(--news-green) !important;
+}
+.search-row, .global-search-row, .search-bar{
+  gap: 10px !important;
+}
+.search-row input, .global-search-row input, .search-bar input, 
+.search-row .form-control, .global-search-row .form-control{
+  min-height: 42px !important;
+  padding: 10px 12px !important;
+  font-size: 14px !important;
+}
+.search-row button, .global-search-row button, .search-bar button{
+  min-height: 42px !important;
+  padding: 0 16px !important;
+  font-size: 14px !important;
+}
+.help-text, .section-desc, .card-desc, .muted{
+  font-size: 12px !important;
+  line-height: 1.3 !important;
+  margin-top: 6px !important;
+}
+.list-scroll, .news-list, .changes-list, .planning-list, .orders-list{
+  max-height: 340px !important;
+}
+.list-item, .news-item, .change-item, .order-item, .planning-item{
+  padding: 12px 14px !important;
+  margin-bottom: 8px !important;
+  border-radius: 14px !important;
+}
+.list-item h4, .news-item h4, .change-item h4, .order-item h4, .planning-item h4,
+.list-item .title, .news-item .title, .change-item .title{
+  font-size: 14px !important;
+  line-height: 1.25 !important;
+  margin: 0 0 4px 0 !important;
+}
+.list-item p, .news-item p, .change-item p, .order-item p, .planning-item p,
+.list-item .meta, .news-item .meta, .change-item .meta{
+  font-size: 12px !important;
+  line-height: 1.3 !important;
+  margin: 0 !important;
+}
+.list-item .date, .news-item .date, .change-item .date, .order-item .date, .planning-item .date{
+  font-size: 12px !important;
+}
+a.small-link, .small-link, .open-order-link{
+  font-size: 12px !important;
+}
+@media (min-width: 1200px){
+  .stats-grid, .summary-grid, .top-kpis, .kpi-grid{
+    grid-template-columns: repeat(3, minmax(0,1fr)) !important;
+  }
+  .stats-grid > :nth-child(4), .summary-grid > :nth-child(4), 
+  .top-kpis > :nth-child(4), .kpi-grid > :nth-child(4){
+    display: none !important;
+  }
+}
+
+</style></head>
+<body><div class="app"><aside class="sidebar"><div class="brand"><img src="assets/img/logo_smartmeble.png" style="height:28px"/><div>PANEL</div></div><nav><a class="active" href="aktualnosci.html">Aktualności</a><a href="orders.html">Zamówienia aktualne</a><a href="orders_finished.html">Zamówienia zakończone</a><a data-super-only href="orders_deleted.html">Zamówienia usunięte</a><a data-finance-only href="payments.html">Rozliczenia</a><a data-admin-only href="import_orders.html">Import zamówień</a><a href="schedule.html">Grafik</a><a data-admin-only href="users.html">Użytkownicy</a><a data-admin-only href="statuses.html">Statusy</a><a data-admin-only href="notifications.html">Powiadomienia</a><a data-admin-only href="settings.html">Ustawienia</a><a href="dashboard.html">Dashboard</a><a href="gps.html">Monitoring GPS</a><a data-super-only href="permissions.html">Uprawnienia grup</a></nav></aside>
+<div class="content"><div id="appTopbar" data-title="Aktualności" data-subtitle="Panel zamówień"></div>
+<main class="main"><div id="err" class="err" style="margin-bottom:10px"></div>
+<div class="section"><h2 style="margin:0 0 6px">Centrum pracy</h2><div class="muted2">Najważniejsze rzeczy po wejściu do panelu: zmiany, planowanie, wyszukiwanie.</div></div>
+<div class="stats">
+  <div class="stat"><div class="label">Do zaplanowania</div><div class="val" id="countToPlan">0</div></div>
+  <div class="stat"><div class="label">Nowe zamówienia 14 dni</div><div class="val" id="countRecentOrders">0</div></div>
+  <div class="stat"><div class="label">Ostatnie zmiany</div><div class="val" id="countChanges">0</div></div>
+  <div class="stat"><div class="label">Aktualności ręczne</div><div class="val" id="countNews">0</div></div>
+</div>
+<div class="grid">
+  <div>
+    <div class="section"><h3>Globalna wyszukiwarka</h3>
+      <div class="searchRow"><input id="q" class="input" placeholder="Klient, telefon, e-mail, adres, numer zamówienia, opis"><button class="btn" id="go">Szukaj</button></div>
+      <div class="searchHint">Wpisz frazę i naciśnij Enter lub „Szukaj”.</div>
+      <div id="searchResults" class="searchResults list" style="margin-top:12px;max-height:430px"></div>
+    </div>
+    <div class="section"><h3>Do zaplanowania</h3><div class="muted2" style="margin-bottom:10px">Zamówienia wymagające planowania.</div><div id="toPlan" class="list"></div></div>
+    <div class="section"><h3>Ostatnio dodane zamówienia</h3><div id="recentOrders" class="list"></div></div>
+  </div>
+  <div>
+    <div class="section"><h3>Ostatnie zmiany w zamówieniach</h3><div id="recentChanges" class="list"></div></div>
+    <div class="section"><div style="display:flex;justify-content:space-between;gap:10px;align-items:center"><h3 style="margin:0">Aktualności ręczne</h3><button class="btn" id="showNewsFormBtn" style="display:none">+ Dodaj aktualność</button></div><div id="manualNews" class="list" style="margin-top:10px"></div>
+      <div id="newsForm" class="newsForm"><input id="newsTitle" class="input" placeholder="Tytuł aktualności"><textarea id="newsContent" class="input" placeholder="Treść aktualności"></textarea><div style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn" id="saveNewsBtn">Zapisz aktualność</button><button class="btn" id="cancelNewsBtn" style="background:#404040;color:#fff;box-shadow:none">Anuluj</button></div></div>
+    </div>
+  </div>
+</div></main></div></div>
+<script src="config.js"></script><script src="assets/js/menu.js"></script><script src="assets/js/topbar.js"></script>
+<script>
+function esc(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function badgeDate(v){ return '<span class="muted2">'+esc(v||'—')+'</span>'; }
+function orderLink(id,label){ return '<a class="quickLink" href="order_details.html?id='+encodeURIComponent(id)+'">Otwórz zamówienie #'+id+(label?(' — '+esc(label)):'')+'</a>'; }
+let sessionData = null;
+async function loadSession(){ try{ sessionData = await apiGet('session_check.php'); }catch(e){ sessionData = null; } const isAdmin = !!(sessionData && sessionData.caps && sessionData.caps.is_admin); document.getElementById('showNewsFormBtn').style.display = isAdmin ? '' : 'none'; }
+function renderSearch(items){ const box=document.getElementById('searchResults'); if(!items || !items.length){ box.innerHTML='<div class="empty">Brak wyników.</div>'; return; } box.innerHTML = items.map(r => '<div class="item"><div class="top"><div class="title">#'+r.id+' — '+esc((r.client_name||'').trim() || 'Bez nazwy klienta')+'</div>'+badgeDate(r.contract_date)+'</div><div class="muted2">'+esc(r.item_description || '—')+'</div><div class="muted2">Telefon: '+esc(r.client_phone || '—')+' • E-mail: '+esc(r.client_email || '—')+'</div><div class="muted2">Adres: '+esc(r.install_address || '—')+' • Status: '+esc(r.status_name || '—')+'</div>'+orderLink(r.id,'szczegóły')+'</div>').join(''); }
+async function doSearch(){ const q=(document.getElementById('q').value||'').trim(); if(!q){ renderSearch([]); return; } try{ const r = await apiGet('search_global.php?q='+encodeURIComponent(q)); renderSearch(r.items||[]); }catch(e){ document.getElementById('err').textContent='Błąd wyszukiwania'; } }
+function renderSimpleOrders(el, items){ if(!items || !items.length){ el.innerHTML='<div class="empty">Brak danych.</div>'; return; } el.innerHTML = items.map(r => '<div class="item"><div class="top"><div class="title">#'+r.id+' — '+esc((r.client_name||'').trim()||'Bez nazwy klienta')+'</div>'+badgeDate(r.created_at || r.contract_date)+'</div><div class="muted2">'+esc(r.item_description||'—')+'</div><div class="muted2">Status: '+esc(r.status_name||'—')+' • Montaż: '+esc(r.install_date_new || r.install_date || '—')+'</div>'+orderLink(r.id,'karta zamówienia')+'</div>').join(''); }
+function renderChanges(el, items){
+  if(!items || !items.length){ el.innerHTML='<div class="empty">Brak ostatnich zmian.</div>'; return; }
+  el.innerHTML = items.map(r => {
+    const title = '#'+r.order_id+' — '+esc((r.client_name||'').trim() || (r.message||r.action_code||'Zmiana'));
+    const line2 = esc(r.message||r.action_code||'Zmiana');
+    const detail = (r.detail||'').trim() ? '<div class="muted2">'+esc(r.detail)+'</div>' : '';
+    return '<div class="item"><div class="top"><div class="title">'+title+'</div>'+badgeDate(r.created_at)+'</div><div class="muted2">'+line2+'</div>'+detail+'<div class="muted2">Użytkownik: '+esc(r.user_name||'—')+'</div>'+orderLink(r.order_id,'historia zmian')+'</div>';
+  }).join('');
+}
+function renderNews(el, items){ if(!items || !items.length){ el.innerHTML='<div class="empty">Brak ręcznych aktualności.</div>'; return; } el.innerHTML = items.map(r => '<div class="item"><div class="top"><div class="title">'+esc(r.title||'Aktualność')+'</div>'+badgeDate(r.created_at)+'</div><div class="muted2" style="white-space:pre-wrap">'+esc(r.content||'')+'</div><div class="muted2" style="margin-top:6px">Dodał: '+esc(r.created_by_name||'—')+'</div></div>').join(''); }
+async function loadFeed(){ try{ const r = await apiGet('aktualnosci_feed.php'); document.getElementById('countToPlan').textContent = r.counters?.to_plan ?? 0; document.getElementById('countRecentOrders').textContent = r.counters?.recent_orders ?? 0; document.getElementById('countChanges').textContent = r.counters?.recent_changes ?? 0; document.getElementById('countNews').textContent = r.counters?.manual_news ?? 0; renderSimpleOrders(document.getElementById('toPlan'), r.to_plan||[]); renderSimpleOrders(document.getElementById('recentOrders'), r.recent_orders||[]); renderChanges(document.getElementById('recentChanges'), r.recent_changes||[]); renderNews(document.getElementById('manualNews'), r.manual_news||[]); }catch(e){ document.getElementById('err').textContent='Nie udało się pobrać danych Aktualności.'; }}
+document.getElementById('go').onclick = doSearch;
+document.getElementById('showNewsFormBtn').onclick = ()=>{ document.getElementById('newsForm').style.display='flex'; document.getElementById('newsTitle').focus(); };
+document.getElementById('cancelNewsBtn').onclick = ()=>{ document.getElementById('newsForm').style.display='none'; document.getElementById('newsTitle').value=''; document.getElementById('newsContent').value=''; };
+document.getElementById('saveNewsBtn').onclick = async ()=>{ const title=(document.getElementById('newsTitle').value||'').trim(); const content=(document.getElementById('newsContent').value||'').trim(); if(!title || !content){ document.getElementById('err').textContent='Uzupełnij tytuł i treść aktualności.'; return; } document.getElementById('err').textContent=''; try{ await apiPost('aktualnosci_add.php',{title,content}); document.getElementById('newsTitle').value=''; document.getElementById('newsContent').value=''; document.getElementById('newsForm').style.display='none'; await loadFeed(); }catch(e){ document.getElementById('err').textContent='Nie udało się zapisać aktualności.'; } };
+document.addEventListener('DOMContentLoaded', async()=>{ await loadSession(); await loadFeed(); });
+</script></body></html>

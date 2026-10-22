@@ -1,0 +1,7 @@
+config/.env
+config/wycena_haslo.php
+backend/api/gps/config.php
+backend/api/gps/cache/
+upload/orders/
+*.log
+*error_log.txt

@@ -1,0 +1,18 @@
+:root{--bg:#0f1115;--sidebar:#141821;--panel:#f6f7fb;--text:#0d0f13;--muted:#6b7280;--green:#00a86b;--blue:#1e3a8a;--card:#ffffff}
+*{box-sizing:border-box}html,body{margin:0;padding:0;font:14px/1.45 Inter,system-ui,Segoe UI,Roboto,Arial;color:var(--text);background:var(--panel)}
+a{text-decoration:none;color:inherit}.btn{border:none;background:#0f1115;color:#fff;padding:10px 14px;border-radius:10px;cursor:pointer}
+.input,select,textarea{border:1px solid #dfe3ee;border-radius:10px;padding:10px 12px;width:100%;background:#fff}
+.card{background:#fff;border:1px solid #e8ecf5;border-radius:16px;padding:16px}
+.app{display:flex;min-height:100vh}.sidebar{width:260px;background:var(--sidebar);color:#e5e7eb;padding:20px;position:sticky;top:0;height:100vh}
+.sidebar .brand{display:flex;align-items:center;gap:10px;margin-bottom:12px}.sidebar .brand img{height:30px}
+.sidebar nav a{display:block;padding:10px 8px;border-radius:10px;color:#c9d3e0}.sidebar nav a.active,.sidebar nav a:hover{background:#1b2130;color:#fff}
+.content{flex:1;display:flex;flex-direction:column;min-width:0}.topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;background:#fff;border-bottom:1px solid #eef0f5}
+.topbar .left{display:flex;align-items:center;gap:14px}.topbar .left img{height:24px}.main{padding:18px}
+.table{width:100%;border-collapse:separate;border-spacing:0 8px}.table th,.table td{text-align:left;padding:10px 12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tr{background:#fff;border:1px solid #e9edf6;border-radius:12px}.tr:hover{box-shadow:0 2px 12px rgba(16,24,40,.06)}
+.status{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;font-size:12px;font-weight:600}
+.status.green{background:#e6fbf3;color:#065f46}.status.orange{background:#fff4e5;color:#92400e}.status.blue{background:#e8f1ff;color:#1e3a8a}
+.splash{position:fixed;inset:0;background:#0f1115;display:grid;place-items:center;z-index:50;transition:opacity .35s ease;color:#d1d5db}
+.loader{width:48px;height:48px;border:4px solid #2b3242;border-top-color:#00a86b;border-radius:50%;animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}.err{color:#b91c1c;font-weight:600}
+.row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}@media(max-width:900px){.row{grid-template-columns:1fr}}

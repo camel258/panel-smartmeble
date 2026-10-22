@@ -1,0 +1,76 @@
+<!doctype html><html lang="pl"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Ustawienia – Smart Meble</title>
+<link rel="icon" href="assets/img/favicon.ico">
+<link rel="stylesheet" href="assets/css/theme_v17.css"/></head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand"><img src="assets/img/logo_smartmeble.png" style="height:28px"/></div>
+    
+    <nav>
+      <a  href="orders.html">Zamówienia aktualne</a>
+      <a  href="orders_finished.html">Zamówienia zakończone</a>
+      <a data-super-only  href="orders_deleted.html">Zamówienia usunięte</a>
+      <a data-finance-only  href="payments.html">Rozliczenia</a>
+      <a  href="schedule.html">Grafik</a>
+      <a data-admin-only  href="users.html">Użytkownicy</a>
+      <a data-admin-only  href="statuses.html">Statusy</a><a data-admin-only href="notifications.html">Powiadomienia</a>
+      <a data-admin-only class="active" href="settings.html">Ustawienia</a>
+    </nav>
+    
+  </aside>
+
+  <div class="content">
+    <div id="appTopbar" data-title="Ustawienia" data-subtitle="Panel zamówień"></div>
+    <main class="main">
+      <div class="card">
+        <form id="settingsForm" class="row">
+          <h3>Dane firmy</h3>
+          <div><label>Nazwa firmy</label><input class="input" id="company_name" required></div>
+          <div><label>Adres</label><input class="input" id="company_address"></div>
+          <div><label>Telefon</label><input class="input" id="company_phone"></div>
+          <div><label>E-mail</label><input class="input" id="company_email"></div>
+
+          <h3>Powiadomienia</h3>
+          <div><label>E-mail powiadomień</label><input class="input" id="notify_email"></div>
+          <div><label>Maks. rozmiar pliku (MB)</label><input class="input" id="max_file_mb" type="number" min="1" max="200"></div>
+
+          <h3>Motyw</h3>
+          <div><label>Kolor główny (szary tła)</label><input class="input" id="theme_gray" type="color"></div>
+          <div><label>Kolor akcentu (zielony)</label><input class="input" id="theme_accent" type="color"></div>
+
+          <div style="grid-column:1/-1;margin-top:15px;display:flex;gap:10px">
+            <button class="btn" type="submit">Zapisz ustawienia</button>
+            <div id="msg" style="color:#888"></div>
+          </div>
+        </form>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="config.js"></script><script src="assets/js/menu.js"></script><script src="assets/js/topbar.js"></script>
+<script>
+function logout(){ localStorage.removeItem('token'); location.href='login.html'; }
+
+async function loadSettings(){
+  const res = await apiGet('settings_get.php');
+  for(const [k,v] of Object.entries(res.settings||{})){
+    const el=document.getElementById(k);
+    if(el) el.value=v;
+  }
+}
+
+document.getElementById('settingsForm').addEventListener('submit',async(e)=>{
+  e.preventDefault();
+  const data={};
+  document.querySelectorAll('#settingsForm input').forEach(i=>data[i.id]=i.value.trim());
+  await apiPost('settings_save.php',data);
+  document.getElementById('msg').textContent='Zapisano pomyślnie ✅';
+  setTimeout(()=>document.getElementById('msg').textContent='',2000);
+});
+
+document.addEventListener('DOMContentLoaded',loadSettings);
+</script>
+</body></html>

@@ -1,0 +1,252 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Dashboard – Smart Meble</title>
+<link rel="icon" href="assets/img/favicon.ico">
+<link rel="stylesheet" href="assets/css/theme_v17.css"/>
+<style>
+  .dash-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-top:4px}
+  .dash-card{background:linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.02));border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 8px 24px rgba(0,0,0,.18)}
+  .dash-title{color:var(--muted);font-size:14px}
+  .dash-value{font-size:30px;font-weight:700;margin-top:8px;line-height:1.15}
+  .dash-sub{margin-top:8px;color:var(--muted);font-size:13px}
+  .dash-section{margin-top:18px}
+  .dash-table{width:100%;border-collapse:collapse}
+  .dash-table th,.dash-table td{padding:10px 8px;border-bottom:1px solid var(--line);text-align:left}
+  .status-pill{display:inline-block;width:12px;height:12px;border-radius:999px;margin-right:8px;vertical-align:middle}
+  .muted-empty{color:var(--muted);padding:10px 0}
+  
+  /* TOPBAR + MOBILE */
+  .mobileMenuBtn{display:none}
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;gap:16px;
+    padding:14px 20px;border-bottom:1px solid var(--border);
+    background:linear-gradient(180deg,#2a2a2a 0%, #262626 100%);
+    box-shadow:0 4px 20px rgba(0,0,0,.30);
+    position:sticky;top:0;z-index:1000
+  }
+  .topbar-left{display:flex;align-items:center;gap:16px;min-width:0}
+  .topbar-logo{height:48px;width:auto;flex:0 0 auto}
+  .topbar-title-wrap{display:flex;flex-direction:column;min-width:0}
+  .topbar-title{font-size:18px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .topbar-sub{font-size:12px;color:#fff;font-weight:700;letter-spacing:.22em;text-transform:uppercase}
+  .topbar-right{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .user-chip{display:flex;align-items:center;gap:10px;padding:6px 12px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.06);box-shadow:0 8px 18px rgba(0,0,0,.14)}
+  .user-chip small{display:block;font-size:10px;color:var(--muted);line-height:1.1}
+  .user-chip strong{display:block;font-size:13px;line-height:1.2}
+  .topbar-link{font-size:13px;color:var(--muted);padding:8px 12px;border:1px solid rgba(183,211,49,.18);background:rgba(183,211,49,.07);border-radius:12px}
+  .topbar-link:hover{color:var(--accent)}
+  @media (max-width:1200px){.dash-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
+  @media (max-width:700px){.dash-grid{grid-template-columns:1fr;}}
+  @media (max-width:768px){
+    .app{display:block}
+    .sidebar{
+      position:fixed;left:0;top:0;bottom:0;width:260px;z-index:1200;
+      transform:translateX(-100%);transition:transform .22s ease;
+      box-shadow:0 20px 60px rgba(0,0,0,.35)
+    }
+    body.menu-open .sidebar{transform:translateX(0)}
+    body.menu-open::before{
+      content:'';position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1100
+    }
+    .content{min-width:0}
+    .main{padding:10px}
+    .mobileMenuBtn{
+      display:inline-flex;align-items:center;justify-content:center;
+      width:42px;height:42px;border-radius:10px;border:1px solid var(--border);
+      background:rgba(255,255,255,.04);color:var(--text);cursor:pointer;
+      font-size:22px;line-height:1;flex:0 0 auto
+    }
+    .topbar{
+      flex-direction:column;align-items:flex-start;gap:10px;padding:12px 14px;
+    }
+    .topbar-left,.topbar-right{width:100%}
+    .topbar-right{justify-content:space-between;gap:10px}
+    .topbar-logo{height:34px}
+    .topbar-title{font-size:16px}
+    .topbar-sub{font-size:11px}
+    .user-chip{padding:6px 10px}
+    .dash-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+    .dash-card{padding:12px;border-radius:16px}
+    .dash-title{font-size:12px}
+    .dash-value{font-size:19px;margin-top:6px}
+    .dash-sub{font-size:11px;margin-top:6px}
+    .dash-section.grid{grid-template-columns:1fr !important;gap:10px !important}
+    .dash-table{font-size:12px}
+    .dash-table th,.dash-table td{padding:8px 6px}
+  }
+  @media (max-width:520px){
+    .dash-grid{grid-template-columns:1fr}
+    .topbar-right{align-items:flex-start;flex-wrap:wrap}
+  }
+
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar"><div class="brand"><img src="assets/img/logo_smartmeble.png" style="height:28px"/></div><nav>
+    <a href="orders.html">Zamówienia aktualne</a>
+    <a href="orders_finished.html">Zamówienia zakończone</a>
+    <a data-super-only href="orders_deleted.html">Zamówienia usunięte</a>
+    <a data-finance-only href="payments.html">Rozliczenia</a>
+    <a href="schedule.html">Grafik</a>
+    <a data-admin-only href="users.html">Użytkownicy</a>
+    <a data-admin-only href="statuses.html">Statusy</a><a data-admin-only href="notifications.html">Powiadomienia</a>
+    <a data-admin-only href="settings.html">Ustawienia</a>
+    <a class="active" href="dashboard.html">Dashboard</a>
+    <a data-super-only href="permissions.html">Uprawnienia grup</a>
+  </nav></aside>
+  <div class="content">
+    <div id="appTopbar" data-title="Dashboard" data-subtitle="Panel zamówień"></div>
+    <main class="main">
+      <div id="dashGrid" class="dash-grid"></div>
+
+      <div class="grid dash-section" style="display:grid;grid-template-columns:1.35fr 1fr;gap:14px">
+        <div class="card" id="secSales6m" style="display:none;box-shadow:0 8px 24px rgba(0,0,0,.16)">
+          <div style="font-weight:700;margin-bottom:12px">Sprzedaż i nowe zamówienia z ostatnich 6 miesięcy</div>
+          <div style="overflow:auto">
+            <table class="dash-table">
+              <thead><tr><th>Miesiąc</th><th>Nowe zamówienia</th><th>Sprzedaż</th></tr></thead>
+              <tbody id="sales6Body"><tr><td colspan="3" class="muted-empty">Ładowanie…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card" id="secPayments6m" style="display:none;box-shadow:0 8px 24px rgba(0,0,0,.16)">
+          <div style="font-weight:700;margin-bottom:12px">Wpłaty z ostatnich 6 miesięcy</div>
+          <div style="overflow:auto">
+            <table class="dash-table">
+              <thead><tr><th>Miesiąc</th><th>Suma wpłat</th></tr></thead>
+              <tbody id="payments6Body"><tr><td colspan="2" class="muted-empty">Ładowanie…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card" id="secStatuses" style="display:none;box-shadow:0 8px 24px rgba(0,0,0,.16)">
+          <div style="font-weight:700;margin-bottom:12px">Statusy aktywnych zamówień</div>
+          <div style="overflow:auto">
+            <table class="dash-table">
+              <thead><tr><th>Status</th><th>Ilość</th></tr></thead>
+              <tbody id="statusBody"><tr><td colspan="2" class="muted-empty">Ładowanie…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="card dash-section" id="secBossTasks" style="display:none;box-shadow:0 8px 24px rgba(0,0,0,.16)">
+        <div style="font-weight:700;margin-bottom:12px">Zadania od szefa</div>
+        <div id="bossTasksBody" class="muted-empty">Brak zadań</div>
+      </div>
+    </main>
+  </div>
+</div>
+<script src="config.js"></script>
+<script src="assets/js/menu.js"></script>
+<script src="assets/js/topbar.js"></script>
+<script>
+function fmtMoney(v){
+  return Number(v||0).toLocaleString('pl-PL',{style:'currency',currency:'PLN'});
+}
+function esc(s){
+  return String(s ?? '').replace(/[&<>"']/g, m => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  }[m]));
+}
+function logout(){ localStorage.removeItem('token'); location.href='login.html'; }
+
+
+function renderKpis(stats, caps){
+  const grid = document.getElementById('dashGrid');
+  const defs = [
+    ['orders_month','Liczba zamówień w tym miesiącu', String(stats.orders_month ?? 0), 'Miesiąc: ' + (stats.month_label || '')],
+    ['orders_week','Liczba zamówień w tym tygodniu', String(stats.orders_week ?? 0), 'Tydzień: ' + (stats.week_label || '')],
+    ['sales_month','Sprzedaż w tym miesiącu', fmtMoney(stats.sales_month || 0), 'Miesiąc: ' + (stats.month_label || '') + ' • data umowy'],
+    ['avg_order_value','Średnia wartość zamówienia', fmtMoney(stats.avg_order_value || 0), 'Bieżący miesiąc'],
+    ['payments_month','Wpłaty w tym miesiącu', fmtMoney(stats.payments_month || 0), 'Według dat wpłat'],
+    ['payments_week','Wpłaty w tym tygodniu', fmtMoney(stats.payments_week || 0), 'Tydzień: ' + (stats.week_label || '')],
+    ['installs_week','Montaże w tym tygodniu', String(stats.installs_week ?? 0), 'Tydzień: ' + (stats.week_label || '')],
+  ];
+  grid.innerHTML = '';
+  defs.filter(w => caps[w[0]] !== 0 && caps[w[0]] !== false).forEach(w => {
+    const el = document.createElement('div');
+    el.className = 'dash-card';
+    el.innerHTML = '<div class="dash-title">'+esc(w[1])+'</div><div class="dash-value">'+esc(w[2])+'</div><div class="dash-sub">'+esc(w[3])+'</div>';
+    grid.appendChild(el);
+  });
+}
+
+function renderSales6m(stats, caps){
+  const sec = document.getElementById('secSales6m');
+  if(caps.sales_6m === 0 || caps.sales_6m === false){
+    sec.style.display = 'none';
+    return;
+  }
+  sec.style.display = '';
+  const body = document.getElementById('sales6Body');
+  const rows = Array.isArray(stats.sales_6m) ? stats.sales_6m : [];
+  body.innerHTML = rows.length ? rows.map(row =>
+    '<tr><td>'+esc(row.label || row.month || '')+'</td><td>'+esc(String(row.orders ?? row.orders_count ?? row.new_orders ?? 0))+'</td><td>'+esc(fmtMoney(row.sales ?? row.sales_amount ?? 0))+'</td></tr>'
+  ).join('') : '<tr><td colspan="3" class="muted-empty">Brak danych</td></tr>';
+}
+
+function renderPayments6m(stats, caps){
+  const sec = document.getElementById('secPayments6m');
+  if(caps.payments_6m === 0 || caps.payments_6m === false){
+    sec.style.display = 'none';
+    return;
+  }
+  sec.style.display = '';
+  const body = document.getElementById('payments6Body');
+  const rows = Array.isArray(stats.payments_6m) ? stats.payments_6m : [];
+  body.innerHTML = rows.length ? rows.map(row =>
+    '<tr><td>'+esc(row.label || row.month || '')+'</td><td>'+esc(fmtMoney(row.payments ?? row.payments_amount ?? 0))+'</td></tr>'
+  ).join('') : '<tr><td colspan="2" class="muted-empty">Brak danych</td></tr>';
+}
+
+function renderStatuses(stats, caps){
+  const sec = document.getElementById('secStatuses');
+  if(caps.statuses_current === 0 || caps.statuses_current === false){
+    sec.style.display = 'none';
+    return;
+  }
+  sec.style.display = '';
+  const body = document.getElementById('statusBody');
+  const rows = Array.isArray(stats.statuses_current) ? stats.statuses_current : [];
+  body.innerHTML = rows.length ? rows.map(row =>
+    '<tr><td><span class="status-pill" style="background:'+esc(row.color || row.status_color || '#999')+'"></span>'+esc(row.name || row.status || row.label || '')+'</td><td>'+esc(String(row.count ?? row.cnt ?? row.orders_count ?? 0))+'</td></tr>'
+  ).join('') : '<tr><td colspan="2" class="muted-empty">Brak danych</td></tr>';
+}
+
+function renderBossTasks(stats, caps){
+  const sec = document.getElementById('secBossTasks');
+  if(caps.boss_tasks === 0 || caps.boss_tasks === false){
+    sec.style.display = 'none';
+    return;
+  }
+  sec.style.display = '';
+  const body = document.getElementById('bossTasksBody');
+  const rows = Array.isArray(stats.boss_tasks) ? stats.boss_tasks : [];
+  body.innerHTML = rows.length ? rows.map(r =>
+    '<div style="padding:8px 0;border-bottom:1px solid var(--line)"><div>'+esc(r.task_text || '')+'</div><div class="muted-empty">'+esc(r.created_at || '')+'</div></div>'
+  ).join('') : 'Brak zadań';
+}
+
+(async()=>{
+  const r = await apiGet('dashboard_stats.php');
+  const s = r.stats || {};
+  const caps = r.caps || {};
+  renderKpis(s, caps);
+  renderSales6m(s, caps);
+  renderPayments6m(s, caps);
+  renderStatuses(s, caps);
+  renderBossTasks(s, caps);
+})().catch(err=>{
+  console.error(err);
+  document.getElementById('dashGrid').innerHTML = '<div class="dash-card"><div class="dash-title">Błąd</div><div class="dash-sub">Nie udało się wczytać danych dashboardu.</div></div>';
+  document.getElementById('sales6Body').innerHTML = '<tr><td colspan="3" class="muted-empty">Nie udało się wczytać danych dashboardu</td></tr>';
+  document.getElementById('payments6Body').innerHTML = '<tr><td colspan="2" class="muted-empty">Nie udało się wczytać danych dashboardu</td></tr>';
+  document.getElementById('statusBody').innerHTML = '<tr><td colspan="2" class="muted-empty">Nie udało się wczytać danych dashboardu</td></tr>';
+});
+</script>
+</body>
+</html>

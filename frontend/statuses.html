@@ -1,0 +1,118 @@
+<!doctype html><html lang="pl"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Statusy – Smart Meble</title>
+<link rel="icon" href="assets/img/favicon.ico">
+<link rel="stylesheet" href="assets/css/theme_v17.css"/></head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand"><img src="assets/img/logo_smartmeble.png" style="height:28px"/></div>
+    
+    <nav>
+      <a  href="orders.html">Zamówienia aktualne</a>
+      <a  href="orders_finished.html">Zamówienia zakończone</a>
+      <a data-super-only  href="orders_deleted.html">Zamówienia usunięte</a>
+      <a data-finance-only  href="payments.html">Rozliczenia</a>
+      <a  href="schedule.html">Grafik</a>
+      <a data-admin-only  href="users.html">Użytkownicy</a>
+      <a data-admin-only class="active" href="statuses.html">Statusy</a>
+      <a data-admin-only href="notifications.html">Powiadomienia</a>
+      <a data-admin-only  href="settings.html">Ustawienia</a>
+    </nav>
+    
+  </aside>
+
+  <div class="content">
+    <div id="appTopbar" data-title="Statusy" data-subtitle="Panel zamówień"></div>
+    <main class="main">
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <input id="search" class="input" placeholder="Szukaj statusu...">
+          <button class="btn" id="addBtn">Dodaj status</button>
+        </div>
+
+        <table class="table">
+          <thead><tr><th>ID</th><th>Nazwa</th><th>Kolor</th><th>Kolejność</th><th>Akcje</th></tr></thead>
+          <tbody id="statusTable"></tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Modal -->
+<div id="modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);place-items:center">
+  <div class="card" style="min-width:320px;width:min(420px,90vw)">
+    <h3 id="modalTitle">Status</h3>
+    <div class="row">
+      <div><label>Nazwa</label><input class="input" id="m_name"></div>
+      <div><label>Kolor</label><input class="input" id="m_color" type="color"></div>
+      <div><label>Kolejność</label><input class="input" id="m_sort" type="number" step="1"></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:10px">
+      <button class="btn" id="saveBtn">Zapisz</button>
+      <button class="btn" style="background:#555;color:#fff" id="cancelBtn">Anuluj</button>
+    </div>
+  </div>
+</div>
+
+<script src="config.js"></script><script src="assets/js/menu.js"></script><script src="assets/js/topbar.js"></script>
+<script>
+const modal=document.getElementById('modal');
+const table=document.getElementById('statusTable');
+let editingId=null;
+
+function logout(){ localStorage.removeItem('token'); location.href='login.html'; }
+document.getElementById('cancelBtn').onclick=()=>modal.style.display='none';
+
+function openModal(title,s){
+  document.getElementById('modalTitle').textContent=title;
+  m_name.value=s?.name||'';
+  m_color.value=s?.color||'#3b82f6';
+  m_sort.value=s?.sort_order||0;
+  modal.style.display='grid';
+}
+
+async function loadStatuses(){
+  const q=document.getElementById('search').value.trim();
+  const res=await apiGet('statuses_list.php'+(q?('?q='+encodeURIComponent(q)):''));
+  table.innerHTML='';
+  (res.items||[]).forEach(s=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${s.id}</td>
+      <td>${s.name}</td>
+      <td><span style="background:${s.color};display:inline-block;width:24px;height:24px;border-radius:4px;border:1px solid #888"></span></td>
+      <td>${s.sort_order??''}</td>
+      <td>
+        <button class="btn" onclick="editStatus(${s.id})">Edytuj</button>
+        <button class="btn" style="background:#8b0000;color:white" onclick="delStatus(${s.id})">Usuń</button>
+      </td>`;
+    table.appendChild(tr);
+  });
+}
+
+document.getElementById('addBtn').onclick=()=>{ editingId=null; openModal('Dodaj status'); };
+
+async function editStatus(id){
+  const r=await apiGet('statuses_get.php?id='+id);
+  editingId=id;
+  openModal('Edytuj status',r.item);
+}
+
+async function delStatus(id){
+  if(!confirm('Na pewno usunąć status?'))return;
+  await apiPost('statuses_delete.php',{id});
+  loadStatuses();
+}
+
+document.getElementById('saveBtn').onclick=async()=>{
+  const data={ name:m_name.value.trim(), color:m_color.value.trim(), sort_order:Number(m_sort.value||0) };
+  if(editingId){ data.id=editingId; await apiPost('statuses_edit.php',data); }
+  else{ await apiPost('statuses_add.php',data); }
+  modal.style.display='none'; loadStatuses();
+};
+
+document.getElementById('search').oninput=loadStatuses;
+document.addEventListener('DOMContentLoaded',loadStatuses);
+</script>
+</body></html>
