@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../../config/config.php';
+require_once __DIR__ . '/../lib/api_helpers.php';
 require_once __DIR__ . '/../lib/order_audit.php';
 require_once __DIR__ . '/../lib/mail.php';
 header('Content-Type: application/json; charset=utf-8');
@@ -99,14 +100,7 @@ function corr_all_done(PDO $pdo, int $orderId): bool {
   $done = (int)($r['done'] ?? 0);
   return $total>0 && $total===$done;
 }
-function corr_private_base(): string {
-  $candidates = [
-    realpath(__DIR__ . '/../../../_private_files'),
-    realpath(__DIR__ . '/../../_private_files'),
-  ];
-  foreach($candidates as $c){ if($c && is_dir($c)) return $c; }
-  return dirname(dirname(dirname(__DIR__))) . '/private_files';
-}
+function corr_private_base(): string { return api_private_files_base(); }   // config/.env PRIVATE_FILES_DIR
 function corr_store_uploaded_file(PDO $pdo, int $orderId, int $itemId, array $fileArr, int $uploaderId): ?array {
   if(empty($fileArr['tmp_name']) || !is_uploaded_file($fileArr['tmp_name'])) return null;
   if((int)($fileArr['error'] ?? 1) !== UPLOAD_ERR_OK) return null;
@@ -365,7 +359,7 @@ try{
     $st->execute([$fileId]);
     $path = $st->fetchColumn();
     if($path === false) json_err('not_found',404);
-    if($path && is_file($path)) @unlink($path);
+    if($path && ($path = api_resolve_storage_path((string)$path)) !== '') @unlink($path);
     $pdo->prepare("DELETE FROM order_files WHERE id=?")->execute([$fileId]);
     json_ok(['ok'=>true]);
   }
@@ -420,7 +414,7 @@ try{
       corr_ensure_files_schema($pdo);
       $fq = $pdo->prepare("SELECT storage_path FROM order_files WHERE correction_item_id=?");
       $fq->execute([$itemId]);
-      foreach($fq->fetchAll(PDO::FETCH_ASSOC) as $fr){ if(!empty($fr['storage_path']) && is_file($fr['storage_path'])) @unlink($fr['storage_path']); }
+      foreach($fq->fetchAll(PDO::FETCH_ASSOC) as $fr){ if(!empty($fr['storage_path']) && ($rp = api_resolve_storage_path((string)$fr['storage_path'])) !== '' && $fr['storage_path'] = $rp) @unlink($fr['storage_path']); }
       $pdo->prepare("DELETE FROM order_files WHERE correction_item_id=?")->execute([$itemId]);
     }catch(Throwable $e){}
 

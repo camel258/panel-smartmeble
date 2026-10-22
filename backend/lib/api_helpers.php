@@ -85,7 +85,13 @@ function api_is_permissions_admin(PDO $pdo, array $user): bool {
     return false;
 }
 
+/**
+ * Katalog plików prywatnych (orders_admin, orders_public, wyceny_www). Na VPS poza katalogiem strony:
+ * PRIVATE_FILES_DIR w config/.env (np. /var/www/panel.smartmeble.pl/_private_files).
+ */
 function api_private_files_base(): string {
+    $env = function_exists('envv') ? (string)envv('PRIVATE_FILES_DIR', '') : '';
+    if ($env !== '' && is_dir($env)) return rtrim($env, '/');
     $candidates = [
         realpath(__DIR__ . '/../../_private_files'),
         realpath(__DIR__ . '/../_private_files'),
@@ -94,6 +100,42 @@ function api_private_files_base(): string {
         if ($candidate && is_dir($candidate)) return $candidate;
     }
     return dirname(__DIR__, 2) . '/private_files';
+}
+
+/**
+ * Ścieżka pliku z bazy (order_files.storage_path) po przeniesieniu serwera: w bazie są ścieżki z home.pl,
+ * np. /_private_files/orders_admin/12/umowa.pdf – szukamy części od „_private_files/” w nowym katalogu.
+ * Zwraca istniejącą ścieżkę w katalogu plików prywatnych albo pusty tekst.
+ */
+function api_resolve_storage_path(string $stored): string {
+    $base = api_private_files_base();
+    $stored = str_replace('\\', '/', $stored);
+    $cands = [$stored];
+    $pos = strpos($stored, '_private_files/');
+    if ($pos !== false) $cands[] = $base . '/' . substr($stored, $pos + strlen('_private_files/'));
+    if (preg_match('#/((?:orders_admin|orders_public|wyceny_www)/.+)$#', $stored, $m)) $cands[] = $base . '/' . $m[1];
+    $rb = realpath($base);
+    foreach ($cands as $c) {
+        $rp = realpath($c);
+        if ($rp && $rb && is_file($rp) && strpos($rp, rtrim($rb, '/') . '/') === 0) return $rp;
+    }
+    return '';
+}
+
+/** Stare pliki z upload/orders/<id> – na VPS przeniesione do katalogu prywatnego (legacy_upload/orders). */
+function api_legacy_orders_dir(int $orderId): string {
+    $priv = api_private_files_base() . '/legacy_upload/orders/' . $orderId;
+    if (is_dir($priv)) return $priv;
+    return dirname(__DIR__, 2) . '/upload/orders/' . $orderId;
+}
+
+/** Typy plików, które wolno pokazać w przeglądarce (inline); reszta zawsze do pobrania. */
+function api_safe_inline_mime(string $path, string $fallback = ''): ?string {
+    $mime = '';
+    try { $fi = new finfo(FILEINFO_MIME_TYPE); $mime = (string)$fi->file($path); } catch (Throwable $e) {}
+    if ($mime === '') $mime = $fallback;
+    $ok = ['application/pdf', 'image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    return in_array($mime, $ok, true) ? $mime : null;
 }
 
 function api_scope_dir(string $scope): string {

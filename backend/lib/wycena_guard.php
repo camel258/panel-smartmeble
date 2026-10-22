@@ -4,11 +4,14 @@
 // potwierdzone tokenem HMAC ważnym dla zalogowanego użytkownika.
 
 function wycena_password(): string {
-  return 'WYcenaSMart258*';
+  // hasło modułu w config/.env (WYCENA_PASSWORD) – nie w kodzie
+  $p = (string)envv('WYCENA_PASSWORD', '');
+  if ($p === '') json_err('server_misconfigured', 500, ['details' => 'wycena_password_missing']);
+  return $p;
 }
 
 function wycena_token_for(int $uid): string {
-  $secret = (string)envv('APP_KEY', 'smartmeble-wycena-secret');
+  $secret = app_key();
   return hash_hmac('sha256', 'wycena-access-v1-'.$uid, $secret);
 }
 

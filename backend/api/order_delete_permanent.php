@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../../config/config.php';
+require_once __DIR__ . '/../lib/api_helpers.php';
 
 $me = auth_user();
 if(!$me) json_err('unauthorized',401);
@@ -32,7 +33,7 @@ try{
   $pdo->prepare("DELETE FROM orders WHERE id=?")->execute([$orderId]);
   $pdo->commit();
 
-  foreach($paths as $p){ if($p && is_file($p)) @unlink($p); }
+  foreach($paths as $p){ if($p && ($p = api_resolve_storage_path((string)$p)) !== '') @unlink($p); }
 
   json_ok(['ok'=>true]);
 }catch(Throwable $e){

@@ -3,7 +3,8 @@ require_once __DIR__ . '/common.php';
 try {
     $cfg = gps_config();
     $incomingToken = $_GET['token'] ?? ($_SERVER['HTTP_X_WEBHOOK_TOKEN'] ?? '');
-    if ($incomingToken !== (string)($cfg['security']['webhook_token'] ?? '')) {
+    $expected = (string)($cfg['security']['webhook_token'] ?? '');
+    if ($expected === '' || !hash_equals($expected, (string)$incomingToken)) {   // brak tokenu w konfiguracji = webhook wyłączony
         gps_json_err('unauthorized', 401);
     }
 

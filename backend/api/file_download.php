@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../../config/config.php';
+require_once __DIR__ . '/../lib/api_helpers.php';
 header('Content-Type: application/octet-stream');
 
 function sm_uid(array $me): int {
@@ -41,16 +42,7 @@ if(!$user) json_err('unauthorized',401);
 
 $uid = (int)($user['uid'] ?? $user['id'] ?? 0);
 
-function private_files_base_local(): string {
-    $candidates = [
-        realpath(__DIR__ . '/../../../_private_files'),
-        realpath(__DIR__ . '/../../_private_files'),
-    ];
-    foreach($candidates as $c){
-        if($c && is_dir($c)) return $c;
-    }
-    return dirname(dirname(dirname(__DIR__))) . '/private_files';
-}
+function private_files_base_local(): string { return api_private_files_base(); }
 
 function path_starts_with_local(string $path, string $base): bool {
     $rp = realpath($path);
@@ -82,6 +74,28 @@ $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 $isExternalTechnologist = sm_is_external_technologist($pdo,$user);
 if($isExternalTechnologist){ $canViewPublicFiles=true; $canViewAdminFiles=false; }
 
+// Stare pliki zamówienia (dawne upload/orders/<id>) – tylko po zalogowaniu, z prawem do plików publicznych.
+if (!empty($_GET['legacy_order']) && isset($_GET['name'])) {
+    if(!$canViewPublicFiles) json_err('forbidden',403);
+    $oid = (int)$_GET['legacy_order'];
+    if($isExternalTechnologist){
+        $stAcc=$pdo->prepare("SELECT scheduler_id FROM orders WHERE id=? LIMIT 1");
+        $stAcc->execute([$oid]);
+        if((int)$stAcc->fetchColumn() !== $uid) json_err('forbidden',403);
+    }
+    $lp = api_legacy_orders_dir($oid) . '/' . basename((string)$_GET['name']);
+    if($oid<=0 || !is_file($lp)) json_err('not_found',404);
+    $safe = api_safe_inline_mime($lp);
+    $inline = isset($_GET['inline']) && $safe;
+    header('Content-Type: '.($inline ? $safe : 'application/octet-stream'));
+    header('Content-Length: '.filesize($lp));
+    header('X-Content-Type-Options: nosniff');
+    header("Content-Security-Policy: sandbox; default-src 'none'");
+    header('Content-Disposition: '.($inline?'inline':'attachment').'; filename="'.basename($lp).'"');
+    readfile($lp);
+    exit;
+}
+
 $file_id = (int)($_GET['file_id'] ?? 0);
 if ($file_id<=0) json_err('bad_request',400);
 
@@ -95,10 +109,10 @@ if($isExternalTechnologist){
     if((int)$stAcc->fetchColumn() !== $uid) json_err('forbidden',403);
 }
 
-$path = (string)($f['storage_path'] ?? '');
-if ($path === '' || !is_file($path)) json_err('not_found',404);
+$path = api_resolve_storage_path((string)($f['storage_path'] ?? ''));
+if ($path === '') json_err('not_found',404);
 
-$scope = detect_scope_from_path_local($path);
+$scope = detect_scope_from_path_local((string)$f['storage_path']);
 
 if($scope === 'admin' && !$canViewAdminFiles){
     json_err('forbidden',403);
@@ -121,12 +135,15 @@ if(!$allowed){
 }
 if(!$allowed) json_err('forbidden',403);
 
-$inline = isset($_GET['inline']);
-$mime = (string)($f['mime_type'] ?: 'application/octet-stream');
+// inline tylko dla PDF i obrazów (typ sprawdzany z zawartości pliku, nie z danych od przeglądarki)
+$safe = api_safe_inline_mime($path, (string)($f['mime_type'] ?? ''));
+$inline = isset($_GET['inline']) && $safe;
+$mime = $inline ? $safe : 'application/octet-stream';
 
 header('Content-Type: '.$mime);
 header('Content-Length: '.filesize($path));
 header('X-Content-Type-Options: nosniff');
+header("Content-Security-Policy: sandbox; default-src 'none'");
 header('Content-Disposition: '.($inline?'inline':'attachment').'; filename="'.basename((string)$f['filename']).'"');
 
 readfile($path);

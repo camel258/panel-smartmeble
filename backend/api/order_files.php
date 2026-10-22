@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/../../config/config.php';
+require_once __DIR__ . '/../lib/api_helpers.php';
 header('Content-Type: application/json; charset=utf-8');
 
 function sm_uid(array $me): int {
@@ -74,16 +75,7 @@ if (!$canViewFiles) {
 $id = (int)($_GET['id'] ?? $_POST['id'] ?? 0);
 if ($id <= 0) json_err('invalid', 422);
 
-function private_files_base_local(): string {
-    $candidates = [
-        realpath(__DIR__ . '/../../../_private_files'),
-        realpath(__DIR__ . '/../../_private_files'),
-    ];
-    foreach($candidates as $c){
-        if($c && is_dir($c)) return $c;
-    }
-    return dirname(dirname(dirname(__DIR__))) . '/private_files';
-}
+function private_files_base_local(): string { return api_private_files_base(); }   // config/.env PRIVATE_FILES_DIR
 function scope_dir_local(string $scope): string {
     return $scope === 'admin' ? 'orders_admin' : 'orders_public';
 }
@@ -197,8 +189,8 @@ if ($method === 'DELETE' || ($method === 'POST' && $action === 'delete')) {
             $scope = detect_scope_from_path_local((string)$row['storage_path']);
             if($scope === 'admin' && !$canViewAdminFiles) continue;
             if($scope !== 'admin' && !$canViewPublicFiles) continue;
-            $path = (string)$row['storage_path'];
-            if (is_file($path) && @unlink($path)) {
+            $path = api_resolve_storage_path((string)$row['storage_path']);
+            if ($path !== '' && @unlink($path)) {
                 $deleted[] = $name;
             }
             $pdo->prepare("DELETE FROM order_files WHERE id = ?")->execute([(int)$row['id']]);
@@ -206,7 +198,7 @@ if ($method === 'DELETE' || ($method === 'POST' && $action === 'delete')) {
     }
 
     // legacy public fallback
-    $legacyDir = __DIR__ . '/../../upload/orders/' . $id;
+    $legacyDir = api_legacy_orders_dir($id);
     foreach ($names as $name) {
         if(in_array($name, $deleted, true)) continue;
         $path = $legacyDir . '/' . $name;
@@ -306,7 +298,7 @@ try{
             'scope' => $scope,
             'is_image' => $kind === 'image',
             'thumb' => $kind === 'image' ? ($url . '&inline=1') : null,
-            'size' => is_file((string)$row['storage_path']) ? (int)@filesize((string)$row['storage_path']) : 0,
+            'size' => ($rp = api_resolve_storage_path((string)$row['storage_path'])) !== '' ? (int)@filesize($rp) : 0,
         ];
     }
 }catch(Throwable $e){
@@ -314,8 +306,9 @@ try{
 }
 
 // legacy public fallback
-$legacyDir = __DIR__ . '/../../upload/orders/' . $id;
-$legacyWeb = '/upload/orders/' . $id;
+// stare pliki (dawne publiczne upload/orders) – na VPS w katalogu prywatnym, pobierane przez file_download.php
+$legacyDir = api_legacy_orders_dir($id);
+$legacyWeb = '../backend/api/file_download.php?legacy_order=' . $id . '&name=';
 if($canViewPublicFiles && is_dir($legacyDir)){
     foreach (glob($legacyDir . '/*') ?: [] as $f) {
         if (is_file($f)) {
@@ -330,11 +323,11 @@ if($canViewPublicFiles && is_dir($legacyDir)){
             $items[] = [
                 'id' => null,
                 'name' => $name,
-                'url' => $legacyWeb . '/' . rawurlencode($name),
+                'url' => $legacyWeb . rawurlencode($name),
                 'kind' => $kind,
                 'scope' => 'public',
                 'is_image' => $kind === 'image',
-                'thumb' => $kind === 'image' ? ($legacyWeb . '/' . rawurlencode($name)) : null,
+                'thumb' => $kind === 'image' ? ($legacyWeb . rawurlencode($name) . '&inline=1') : null,
                 'size' => (int)@filesize($f),
                 'legacy' => true,
             ];

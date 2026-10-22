@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/common.php';
+if (PHP_SAPI !== 'cli') gps_require_access();   // z przeglądarki tylko zalogowany z dostępem do GPS; cron – z wiersza poleceń
 try {
     $cfg = gps_config();
     $pdo = gps_pdo();

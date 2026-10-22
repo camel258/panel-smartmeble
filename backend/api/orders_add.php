@@ -1,9 +1,10 @@
 <?php
 require_once __DIR__ . '/../../config/config.php';
+require_once __DIR__ . '/../lib/api_helpers.php';
 ini_set('display_errors', 1); error_reporting(E_ALL);
 $user = auth_user(); if(!$user) json_err('unauthorized',401);
 $pdo = db(); $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-$PROJECT_ROOT = dirname(__DIR__, 2); $UPLOAD_BASE  = $PROJECT_ROOT . '/uploads/orders'; $ERROR_LOG = $PROJECT_ROOT . '/uploads/error_log.txt';
+$PROJECT_ROOT = dirname(__DIR__, 2); $UPLOAD_BASE  = api_private_files_base() . '/orders_public';   // poza katalogiem strony $ERROR_LOG = $PROJECT_ROOT . '/uploads/error_log.txt';
 if (!is_dir($UPLOAD_BASE)) { @mkdir($UPLOAD_BASE, 0775, true); }
 $pdo->exec("CREATE TABLE IF NOT EXISTS order_files (id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, order_id BIGINT UNSIGNED NOT NULL, filename VARCHAR(255) NOT NULL, storage_path VARCHAR(500) NOT NULL, mime_type VARCHAR(100), size_bytes BIGINT UNSIGNED DEFAULT 0, uploaded_by INT UNSIGNED, uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, INDEX(order_id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
 function post($k){ return trim($_POST[$k] ?? ''); }

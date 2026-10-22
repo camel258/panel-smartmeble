@@ -1,5 +1,5 @@
 <?php
-// SmartMeble Panel FIX – auth_login.php (wersja bez HTTPS, działa na HTTP)
+// SmartMeble Panel – auth_login.php (2026-10-22: podpisany JWT z datą ważności, ciasteczko tylko po HTTPS)
 require_once __DIR__ . '/../../config/config.php';
 header('Content-Type: application/json; charset=utf-8');
 
@@ -7,7 +7,7 @@ try {
     $pdo = db();
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 } catch (Exception $e) {
-    echo json_encode(['error' => 'db_connect_error', 'message' => $e->getMessage()]);
+    echo json_encode(['error' => 'db_connect_error']);
     exit;
 }
 
@@ -45,26 +45,19 @@ $claims = [
     'name'  => $user['full_name']
 ];
 
-// Wystawiamy JWT (jeśli istnieje funkcja jwt_issue)
-if (function_exists('jwt_issue')) {
-    try {
-        $token = jwt_issue($claims);
-    } catch (Throwable $e) {
-        $token = base64_encode(json_encode($claims));
-    }
-} else {
-    $token = base64_encode(json_encode($claims));
-}
+// Podpisany JWT (config.php) – 7 dni z „zapamiętaj mnie”, inaczej 2 godziny
+$ttl = $remember ? 7 * 24 * 60 * 60 : 2 * 60 * 60;
+$token = jwt_issue($claims, $ttl);
 
-// Ustawiamy cookie JWT (bez Secure, żeby działało na HTTP)
+// Cookie JWT – tylko HTTPS, niedostępne dla JavaScriptu
 setcookie(
     'jwt',
     $token,
     [
-        'expires'  => time() + ($remember ? 7 * 24 * 60 * 60 : 2 * 60 * 60),
+        'expires'  => time() + $ttl,
         'path'     => '/',
         'domain'   => 'panel.smartmeble.pl',
-        'secure'   => false,       // ← to kluczowa zmiana
+        'secure'   => true,
         'httponly' => true,
         'samesite' => 'Lax'
     ]
