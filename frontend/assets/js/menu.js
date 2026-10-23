@@ -15,6 +15,7 @@ function buildMenuForRole(role){
     {href:'complaints.html', label:'Reklamacje', code:'complaints', attr:'data-admin-only'},
     {href:'orders_deleted.html', label:'Zamówienia usunięte', code:'orders_deleted', attr:'data-super-only'},
     {href:'payments.html', label:'Rozliczenia', code:'payments', attr:'data-finance-only'},
+    {href:'frontypax.html', label:'FRONTYPAX', code:'frontypax'},
     {href:'import_orders.html', label:'Import zamówień', code:'import_orders', attr:'data-admin-only'},
     {href:'schedule.html', label:'Grafik', code:'schedule'},
     {href:'grafik_ekip.html', label:'Grafik testowy (ekipy)', code:'schedule', attr:'data-admin-only'},
@@ -114,7 +115,8 @@ function drawMenu(role, caps){
     'settings.html':'settings',
     'dashboard.html':'dashboard',
     'gps.html':'gps_monitoring',
-    'permissions.html':'permissions'
+    'permissions.html':'permissions',
+    'frontypax.html':'frontypax'
   }).forEach(([href,code])=>{
     const link = nav.querySelector(`a[href="${href}"]`);
     if(link && Object.prototype.hasOwnProperty.call(modules, code)) {

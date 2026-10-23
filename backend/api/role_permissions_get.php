@@ -50,7 +50,7 @@ if(!is_permissions_admin_local($pdo,$me)) json_err('forbidden',403,['details'=>'
 
 $modules = [
   'news'=>'Aktualności',
-  'dashboard'=>'Dashboard','orders_current'=>'Zamówienia aktualne','orders_finished'=>'Zamówienia zakończone','complaints'=>'Reklamacje','orders_deleted'=>'Zamówienia usunięte','payments'=>'Rozliczenia','import_orders'=>'Import zamówień','schedule'=>'Grafik','users'=>'Użytkownicy','statuses'=>'Statusy','settings'=>'Ustawienia','gps_monitoring'=>'Monitoring GPS','permissions'=>'Uprawnienia grup'
+  'dashboard'=>'Dashboard','orders_current'=>'Zamówienia aktualne','orders_finished'=>'Zamówienia zakończone','complaints'=>'Reklamacje','orders_deleted'=>'Zamówienia usunięte','payments'=>'Rozliczenia','import_orders'=>'Import zamówień','schedule'=>'Grafik','users'=>'Użytkownicy','statuses'=>'Statusy','settings'=>'Ustawienia','gps_monitoring'=>'Monitoring GPS','permissions'=>'Uprawnienia grup','frontypax'=>'FRONTYPAX – zamówienia sklepu'
 ];
 $widgets = [
   'orders_month'=>'Liczba zamówień w tym miesiącu','orders_week'=>'Liczba zamówień w tym tygodniu','sales_month'=>'Sprzedaż w tym miesiącu','avg_order_value'=>'Średnia wartość zamówienia','payments_month'=>'Wpłaty w tym miesiącu','payments_week'=>'Wpłaty w tym tygodniu','installs_week'=>'Montaże w tym tygodniu','sales_6m'=>'Sprzedaż i nowe zamówienia z ostatnich 6 miesięcy','statuses_current'=>'Statusy aktywnych zamówień','boss_tasks'=>'Zadania od szefa'

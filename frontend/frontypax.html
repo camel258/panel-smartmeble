@@ -1,0 +1,193 @@
+<!doctype html><html lang="pl"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Smart Meble – FRONTYPAX</title>
+<link rel="icon" href="assets/img/favicon.ico">
+<link rel="stylesheet" href="assets/css/theme_v17.css"/>
+<style>
+/* Zamówienia sklepu frontypax.pl (backend/api/sklep_zamowienia.php) – układ jak „Wyceny do zrobienia” */
+.fx-tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.fx-tab{background:rgba(255,255,255,.05);border:1px solid var(--border);color:var(--muted);padding:7px 12px;border-radius:999px;cursor:pointer;font-weight:600}
+.fx-tab.on{background:var(--accent);color:var(--accent-contrast);border-color:var(--accent)}
+.fx-tab b{margin-left:4px}
+.fx-bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;align-items:end}
+.fx-bar label{display:block;font-size:12px;color:var(--muted)}
+.fx-table{width:100%;border-collapse:collapse}
+.fx-table th,.fx-table td{padding:10px 12px;border-bottom:1px solid var(--border);text-align:left;vertical-align:middle}
+.fx-table th{font-size:12px;color:#e5e7eb}
+.fx-table tbody tr{cursor:pointer}
+.fx-table tbody tr:hover{background:rgba(255,255,255,.04)}
+.fx-num{font-weight:800;color:#d9ff5c;white-space:nowrap}
+.fx-kw{white-space:nowrap;font-weight:700;text-align:right}
+.fx-pill{display:inline-block;padding:4px 10px;border-radius:999px;color:#fff;font-size:12px;font-weight:700;white-space:nowrap}
+.fx-empty{color:var(--muted);padding:16px 0}
+.fx-muted{color:var(--muted)}
+.fx-pager{display:flex;gap:8px;align-items:center;justify-content:flex-end;margin-top:12px}
+.fx-drawer{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:1000;display:none}
+.fx-drawer.open{display:block}
+.fx-panel{position:absolute;top:0;right:0;bottom:0;width:min(1100px,100%);background:#232323;border-left:1px solid var(--border);overflow-y:auto;padding:18px 20px}
+.fx-head{display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+.fx-head h2{margin:0;flex:1;font-size:20px}
+.fx-grid{display:grid;grid-template-columns:1.35fr 1fr;gap:14px}
+.fx-sec{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px}
+.fx-sec h3{margin:0 0 10px;font-size:15px}
+.fx-kv{display:grid;grid-template-columns:120px 1fr;gap:6px 10px;font-size:14px}
+.fx-kv span{color:var(--muted)}
+.fx-poz{border-bottom:1px solid var(--border);padding:10px 0;display:flex;gap:12px}
+.fx-poz:last-child{border-bottom:0}
+.fx-poz img{width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid var(--border);flex:none}
+.fx-poz .t{flex:1}
+.fx-poz .t b{display:block;margin-bottom:4px}
+.fx-poz dl{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;margin:0;font-size:13px}
+.fx-poz dt{color:var(--muted)}
+.fx-poz dd{margin:0}
+.fx-poz .kw{white-space:nowrap;font-weight:700;text-align:right}
+.fx-sum{display:flex;justify-content:space-between;font-size:14px;padding:4px 0}
+.fx-sum.big{font-size:17px;font-weight:800;border-top:1px solid var(--border);margin-top:6px;padding-top:8px}
+.fx-note{padding:8px 0;border-bottom:1px solid var(--border);font-size:14px;white-space:pre-wrap}
+.fx-note small{color:var(--muted);display:block;margin-bottom:2px;white-space:normal}
+.fx-note.klient small{color:#d9ff5c}
+.fx-actions{display:flex;flex-direction:column;gap:10px}
+.fx-warn{background:rgba(234,179,8,.12);border:1px solid rgba(234,179,8,.35);color:#fde68a;border-radius:8px;padding:8px 10px;font-size:13px}
+.btn-ghost{background:transparent!important;color:var(--text)!important;border:1px solid var(--border)!important}
+@media(max-width:900px){.fx-grid{grid-template-columns:1fr}.fx-table thead{display:none}.fx-table tr,.fx-table td{display:block}.fx-table tr{border:1px solid var(--border);border-radius:12px;margin:8px 0;padding:6px}.fx-table td{border:0;padding:4px 8px}.fx-kw{text-align:left}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand"><img src="assets/img/logo_smartmeble.png" style="height:28px"/><div>PANEL</div></div>
+    <nav id="sideNav"></nav>
+  </aside>
+  <div class="content">
+    <div id="appTopbar" data-title="FRONTYPAX" data-subtitle="Zamówienia ze sklepu frontypax.pl"></div>
+    <main class="main">
+      <div id="err" class="err" style="margin-bottom:10px"></div>
+      <div class="card">
+        <div class="fx-tabs" id="tabs"></div>
+        <div class="fx-bar">
+          <input class="input" id="q" placeholder="Szukaj: numer, klient, e-mail, telefon, miasto, wzór…" style="flex:1;min-width:240px">
+          <div><label for="od">Od</label><input class="input" id="od" type="date"></div>
+          <div><label for="do">Do</label><input class="input" id="do" type="date"></div>
+          <button class="btn" id="qBtn" type="button">Szukaj</button>
+          <button class="btn btn-ghost" id="syncBtn" type="button" title="Pobierz zmiany ze sklepu teraz (automatycznie co 10 minut)">Odśwież ze sklepu</button>
+        </div>
+        <div id="listWrap"><div class="fx-empty">Ładowanie…</div></div>
+        <div class="fx-muted" id="syncInfo" style="font-size:12px;margin-top:8px"></div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div class="fx-drawer" id="drawer" aria-hidden="true"><div class="fx-panel" id="panel" role="dialog" aria-modal="true"></div></div>
+
+<script src="config.js"></script>
+<script src="assets/js/helpers_ext.js"></script>
+<script src="assets/js/menu.js"></script>
+<script src="assets/js/topbar.js"></script>
+<script>
+const SKLEP = 'frontypax';
+const $ = id => document.getElementById(id);
+const esc = v => String(v==null?'':v).replace(/[&<>"']/g, s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[s]));
+const zl = v => Number(v||0).toLocaleString('pl-PL',{minimumFractionDigits:2,maximumFractionDigits:2}) + ' zł';
+const KOLORY = {pending:'#6b7280','on-hold':'#d97706',processing:'#2563eb',completed:'#16a34a',cancelled:'#7f1d1d',refunded:'#7c3aed',failed:'#b91c1c','checkout-draft':'#4b5563'};
+const KOLEJNOSC = ['processing','on-hold','pending','completed','cancelled','refunded','failed'];
+let cur = 'all', STATUSY = {}, strona = 1, detail = null;
+const pill = s => '<span class="fx-pill" style="background:'+(KOLORY[s]||'#4b5563')+'">'+esc(STATUSY[s]||s)+'</span>';
+const api = (akcja, par) => 'sklep_zamowienia.php?sklep='+SKLEP+'&action='+akcja+(par?'&'+par:'');
+function blad(e){ let m = String(e&&e.message||e); try{ const j = JSON.parse(m); m = j.details || j.error || m; }catch(_){} return m==='forbidden' ? 'Brak dostępu do tej zakładki – nadaj go w Uprawnieniach grup (moduł FRONTYPAX).' : m; }
+function showErr(e){ $('err').textContent = 'Błąd: ' + blad(e); }
+
+async function loadList(){
+  $('err').textContent='';
+  const par = 'status='+encodeURIComponent(cur)+'&q='+encodeURIComponent($('q').value.trim())+'&od='+$('od').value+'&do='+$('do').value+'&strona='+strona;
+  try{
+    const r = await apiGet(api('list', par));
+    STATUSY = r.statusy || {};
+    const c = r.liczniki || {}, wszystkie = Object.values(c).reduce((a,b)=>a+b,0);
+    const zak = [['all','Wszystkie',wszystkie]].concat(KOLEJNOSC.filter(s=>STATUSY[s] && (c[s]||s==='processing')).map(s=>[s,STATUSY[s],c[s]||0]))
+      .concat(Object.keys(c).filter(s=>!KOLEJNOSC.includes(s)).map(s=>[s,STATUSY[s]||s,c[s]]));
+    $('tabs').innerHTML = zak.map(t=>'<button class="fx-tab'+(cur===t[0]?' on':'')+'" data-t="'+esc(t[0])+'">'+esc(t[1])+'<b>'+t[2]+'</b></button>').join('');
+    $('tabs').querySelectorAll('[data-t]').forEach(b=>b.onclick=()=>{ cur=b.dataset.t; strona=1; loadList(); });
+    $('syncInfo').textContent = r.ostatnia_synchronizacja ? 'Ostatnia synchronizacja ze sklepem: '+String(r.ostatnia_synchronizacja).replace('T',' ')+' (automatycznie co 10 minut, nowe zamówienia od razu)' : 'Jeszcze nie zsynchronizowano – kliknij „Odśwież ze sklepu”.';
+    const items = r.items || [];
+    if(!items.length){ $('listWrap').innerHTML='<div class="fx-empty">Brak zamówień w tym widoku.</div>'; return; }
+    const stron = Math.max(1, Math.ceil(r.razem / r.na_strone));
+    $('listWrap').innerHTML = '<div style="overflow:auto"><table class="fx-table"><thead><tr><th>Numer</th><th>Data</th><th>Klient</th><th>Telefon</th><th>Dostawa</th><th>Płatność</th><th style="text-align:right">Wartość</th><th>Status</th></tr></thead><tbody>'
+      + items.map(r=>'<tr data-id="'+r.wc_id+'"><td class="fx-num">#'+esc(r.numer)+'</td><td>'+esc(r.data)+'</td><td><b>'+esc(r.klient)+'</b>'+(r.miasto?'<br><span class="fx-muted">'+esc(r.miasto)+'</span>':'')+'</td><td>'+esc(r.telefon)+'</td><td>'+esc(r.dostawa)+'</td><td>'+esc(r.platnosc)+'</td><td class="fx-kw">'+zl(r.wartosc)+'</td><td>'+pill(r.status)+'</td></tr>').join('')
+      + '</tbody></table></div>'
+      + (stron > 1 ? '<div class="fx-pager"><button class="btn btn-ghost" id="prev"'+(strona<=1?' disabled':'')+'>‹ Poprzednie</button><span>Strona '+strona+' z '+stron+' ('+r.razem+' zamówień)</span><button class="btn btn-ghost" id="next"'+(strona>=stron?' disabled':'')+'>Następne ›</button></div>' : '');
+    $('listWrap').querySelectorAll('tr[data-id]').forEach(tr=>tr.onclick=()=>openDetail(tr.dataset.id));
+    if($('prev')) $('prev').onclick=()=>{ strona--; loadList(); };
+    if($('next')) $('next').onclick=()=>{ strona++; loadList(); };
+  }catch(e){ showErr(e); $('listWrap').innerHTML=''; }
+}
+
+async function openDetail(id){
+  try{
+    detail = await apiGet(api('get', 'id='+encodeURIComponent(id)));
+    STATUSY = detail.statusy || STATUSY;
+    renderDetail();
+    $('drawer').classList.add('open'); $('drawer').setAttribute('aria-hidden','false');
+    history.replaceState(null,'','?id='+id);
+  }catch(e){ showErr(e); }
+}
+function closeDetail(){ $('drawer').classList.remove('open'); $('drawer').setAttribute('aria-hidden','true'); history.replaceState(null,'',location.pathname); loadList(); }
+
+function adres(a){ return [a.firma, a.osoba, a.adres, [a.kod, a.miasto].filter(Boolean).join(' '), a.kraj && a.kraj!=='PL' ? a.kraj : ''].filter(Boolean).map(esc).join('<br>'); }
+
+function renderDetail(){
+  const z = detail.item, d = z.dane || {}, f = d.faktura || {}, w = d.wysylka || {};
+  const poz = (d.pozycje||[]).map(p=>'<div class="fx-poz">'+(p.obraz?'<img src="'+esc(p.obraz)+'" alt="" loading="lazy">':'')+'<div class="t"><b>'+esc(p.ilosc)+' × '+esc(p.nazwa)+'</b>'
+      + (p.meta&&p.meta.length ? '<dl>'+p.meta.map(m=>'<dt>'+esc(m.k)+'</dt><dd>'+esc(m.v)+'</dd>').join('')+'</dl>' : '') + '</div><div class="kw">'+zl(p.wartosc)+'</div></div>').join('');
+  const dost = (d.dostawa||[]).map(l=>'<div class="fx-sum"><span>Dostawa: '+esc(l.nazwa)+'</span><span>'+zl(l.wartosc)+'</span></div>').join('');
+  const notatki = (detail.notatki||[]).map(n=>'<div class="fx-note'+(n.dla_klienta?' klient':'')+'"><small>'+esc(n.data||'')+(n.dla_klienta?' · wysłana do klienta':'')+(n.autor&&n.autor!=='system'?' · '+esc(n.autor):'')+'</small>'+esc(n.tresc)+'</div>').join('') || '<div class="fx-muted">Brak notatek.</div>';
+  const hist = (detail.historia||[]).map(h=>'<div class="fx-note"><small>'+esc(h.data)+' · '+esc(h.user_name||'')+'</small>'+esc(h.akcja==='status'?'Status: '+h.opis:(h.akcja==='notatka'?'Notatka: '+h.opis:h.opis))+'</div>').join('');
+  const opcje = Object.keys(STATUSY).map(s=>'<option value="'+esc(s)+'"'+(s===z.status?' selected':'')+'>'+esc(STATUSY[s])+'</option>').join('');
+  $('panel').innerHTML =
+    '<div class="fx-head"><h2>Zamówienie #'+esc(z.numer)+' '+pill(z.status)+'</h2><a class="btn btn-ghost" href="'+esc(detail.link_sklep)+'" target="_blank" rel="noopener">Otwórz w sklepie</a><button class="btn btn-ghost" id="closeBtn" type="button">Zamknij</button></div>'
+    + '<div class="fx-grid"><div>'
+    +   '<div class="fx-sec"><h3>Pozycje</h3>'+(poz||'<div class="fx-muted">Brak pozycji.</div>')
+    +     '<div style="margin-top:8px">'+dost+(d.rabat?'<div class="fx-sum"><span>Rabat</span><span>−'+zl(d.rabat)+'</span></div>':'')+'<div class="fx-sum big"><span>Razem</span><span>'+zl(z.wartosc)+'</span></div></div></div>'
+    +   (d.uwagi_klienta ? '<div class="fx-sec"><h3>Uwagi klienta</h3><div style="white-space:pre-wrap">'+esc(d.uwagi_klienta)+'</div></div>' : '')
+    +   '<div class="fx-sec"><h3>Notatki w sklepie</h3>'+(detail.notatki_blad?'<div class="fx-warn">'+esc(detail.notatki_blad)+'</div>':'')+notatki+'</div>'
+    + '</div><div>'
+    +   '<div class="fx-sec"><h3>Status zamówienia</h3><div class="fx-actions"><select class="input" id="stSel">'+opcje+'</select><button class="btn" id="stBtn" type="button">Zmień status</button>'
+    +     '<div class="fx-warn">Zmiana działa tak samo jak w sklepie – klient dostaje maila ze sklepu (np. przy „Zrealizowane”).</div></div></div>'
+    +   '<div class="fx-sec"><h3>Klient</h3><div class="fx-kv"><span>Imię i nazwisko</span><div>'+esc(z.klient)+'</div><span>E-mail</span><div>'+(z.email?'<a href="mailto:'+esc(z.email)+'">'+esc(z.email)+'</a>':'')+'</div><span>Telefon</span><div>'+(z.telefon?'<a href="tel:'+esc(z.telefon.replace(/\s+/g,''))+'">'+esc(z.telefon)+'</a>':'')+'</div>'
+    +     '<span>Data</span><div>'+esc(String(z.data_utworzenia||'').slice(0,16))+'</div><span>Płatność</span><div>'+esc(z.platnosc)+(d.oplacone?'<br><span class="fx-muted">opłacone '+esc(String(d.oplacone).slice(0,16))+'</span>':'')+'</div></div></div>'
+    +   '<div class="fx-sec"><h3>Dane do faktury</h3><div>'+(adres({firma:f.firma, osoba:z.klient, adres:f.adres, kod:f.kod, miasto:f.miasto, kraj:f.kraj})||'<span class="fx-muted">brak</span>')+(f.nip?'<br>NIP: '+esc(f.nip):'')+'</div></div>'
+    +   '<div class="fx-sec"><h3>Adres dostawy</h3><div>'+(adres(w)||'<span class="fx-muted">jak do faktury</span>')+(w.telefon?'<br>tel. '+esc(w.telefon):'')+'</div></div>'
+    +   '<div class="fx-sec"><h3>Dodaj notatkę</h3><div class="fx-actions"><textarea class="input" id="noteTxt" rows="3" placeholder="Treść notatki"></textarea><label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="noteKl"> wyślij klientowi (mail ze sklepu)</label><button class="btn" id="noteBtn" type="button">Dodaj notatkę</button></div></div>'
+    +   (hist ? '<div class="fx-sec"><h3>Zmiany w panelu</h3>'+hist+'</div>' : '')
+    + '</div></div>';
+  $('closeBtn').onclick = closeDetail;
+  $('stBtn').onclick = async () => {
+    const s = $('stSel').value; if (s === z.status) return;
+    if (!confirm('Zmienić status zamówienia #'+z.numer+' na „'+(STATUSY[s]||s)+'”? Klient może dostać maila ze sklepu.')) return;
+    $('stBtn').disabled = true;
+    try{ await apiPost(api('status'), {id: z.wc_id, status: s}); await openDetail(z.wc_id); }
+    catch(e){ alert('Nie udało się zmienić statusu: '+blad(e)); $('stBtn').disabled = false; }
+  };
+  $('noteBtn').onclick = async () => {
+    const t = $('noteTxt').value.trim(); if (!t) return;
+    if ($('noteKl').checked && !confirm('Wysłać tę notatkę klientowi mailem?')) return;
+    $('noteBtn').disabled = true;
+    try{ await apiPost(api('notatka'), {id: z.wc_id, tresc: t, dla_klienta: $('noteKl').checked}); await openDetail(z.wc_id); }
+    catch(e){ alert('Nie udało się dodać notatki: '+blad(e)); $('noteBtn').disabled = false; }
+  };
+}
+
+$('qBtn').onclick = () => { strona = 1; loadList(); };
+$('q').addEventListener('keydown', e => { if (e.key === 'Enter') { strona = 1; loadList(); } });
+$('syncBtn').onclick = async () => {
+  $('syncBtn').disabled = true; $('syncBtn').textContent = 'Pobieram…';
+  try{ const r = await apiPost(api('sync'), {}); $('syncBtn').textContent = 'Pobrano: '+r.zmian+' zmian'; await loadList(); }
+  catch(e){ showErr(e); $('syncBtn').textContent = 'Odśwież ze sklepu'; }
+  setTimeout(()=>{ $('syncBtn').disabled = false; $('syncBtn').textContent = 'Odśwież ze sklepu'; }, 2500);
+};
+$('drawer').addEventListener('click', e => { if (e.target === $('drawer')) closeDetail(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('drawer').classList.contains('open')) closeDetail(); });
+loadList();
+const startId = new URLSearchParams(location.search).get('id'); if (startId) openDetail(startId);
+</script>
+</body></html>
