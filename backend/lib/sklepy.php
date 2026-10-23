@@ -81,7 +81,44 @@ function sk_schemat(PDO $pdo): void {
     sklep VARCHAR(30) NOT NULL, klucz VARCHAR(60) NOT NULL, wartosc LONGTEXT NULL,
     PRIMARY KEY (sklep, klucz)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+  // wersja 2 (2026-10-23): etapy produkcji, rodzaje pozycji (grupy), status sprzed kosza
+  if ((int)sk_ustawienie($pdo, '_', 'schemat', 1) < 2) {
+    $pdo->exec("CREATE TABLE IF NOT EXISTS sklep_etapy (
+      sklep VARCHAR(30) NOT NULL, wc_id BIGINT UNSIGNED NOT NULL, grupa VARCHAR(20) NOT NULL, etap VARCHAR(30) NOT NULL,
+      user_id INT UNSIGNED NULL, user_name VARCHAR(190) NULL, utworzono TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (sklep, wc_id, grupa, etap)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    $kol = array_column($pdo->query('SHOW COLUMNS FROM sklep_zamowienia')->fetchAll(PDO::FETCH_ASSOC), 'Field');
+    if (!in_array('grupy', $kol, true)) $pdo->exec("ALTER TABLE sklep_zamowienia ADD COLUMN grupy VARCHAR(60) NOT NULL DEFAULT '' AFTER pozycji");
+    if (!in_array('status_przed_koszem', $kol, true)) $pdo->exec("ALTER TABLE sklep_zamowienia ADD COLUMN status_przed_koszem VARCHAR(40) NULL AFTER status");
+    sk_zapisz_ustawienie($pdo, '_', 'schemat', 2);
+    $pdo->exec("UPDATE sklep_ustawienia SET wartosc=NULL WHERE klucz='ostatnia_synchronizacja'");   // pełne przeliczenie grup przy najbliższej synchronizacji
+  }
   $ok = true;
+}
+
+/** Etapy produkcji wg rodzaju (decyzja 2026-10-23: dla rodzaju, nie pozycji; zaznaczane niezależnie). */
+function sk_etapy(): array {
+  return [
+    'plyta' => ['nazwa' => 'Płyta (drewnopodobne, laminowane jednolite)', 'etapy' => [
+      'zamowiono' => 'Zamówiono materiał', 'w_stolarni' => 'Materiał w stolarni', 'rozkroj' => 'Zrobiony rozkrój', 'pociete' => 'Pocięte',
+      'oklejone' => 'Oklejone', 'otwory' => 'Wykonane otwory na zawiasy i inne', 'do_pakowania' => 'Przygotowane do spakowania',
+      'spakowane' => 'Spakowane i gotowe do wysyłki', 'kurier' => 'Zlecony odbiór kuriera', 'wyslane' => 'Wysłane']],
+    'lakier' => ['nazwa' => 'Lakier (lakierowane gładkie i frezowane)', 'etapy' => [
+      'zamowiono' => 'Zamówiono materiał', 'w_stolarni' => 'Materiał w stolarni', 'rozkroj_cnc' => 'Zrobiony rozkrój / plan frezowania CNC',
+      'pociete_frez' => 'Pocięte / wyfrezowane', 'lakiernia' => 'Fronty w lakierni', 'pomalowane' => 'Fronty pomalowane',
+      'otwory' => 'Wykonane otwory na zawiasy i inne', 'do_pakowania' => 'Przygotowane do spakowania', 'spakowane' => 'Spakowane i gotowe do wysyłki',
+      'kurier' => 'Zlecony odbiór kuriera', 'wyslane' => 'Wysłane']],
+  ];
+}
+
+/** Rodzaj pozycji (grupa etapów) z ukrytych pól zamówienia frontypax: _fpx_type (fronty), _fpx_blenda_type (blendy). */
+function sk_grupa_pozycji(array $li): string {
+  $m = [];
+  foreach ((array)($li['meta_data'] ?? []) as $x) $m[(string)($x['key'] ?? '')] = (string)(is_scalar($x['value'] ?? null) ? $x['value'] : '');
+  $typ = $m['_fpx_type'] ?? ($m['_fpx_blenda_type'] ?? '');
+  if ($typ === '') $typ = mb_strtolower((string)($li['name'] ?? ''), 'UTF-8');   // starsze pozycje – po nazwie
+  return (strpos($typ, 'lakier') !== false) ? 'lakier' : 'plyta';
 }
 
 function sk_ustawienie(PDO $pdo, string $sklep, string $klucz, $domyslna = null) {
@@ -149,6 +186,7 @@ function sk_z_api(array $o): array {
       $meta[] = ['k' => sk_tekst($m['display_key'] ?? $m['key']), 'v' => sk_tekst($m['display_value'] ?? $m['value'] ?? '')];
     }
     $pozycje[] = [
+      'grupa' => sk_grupa_pozycji($li),
       'nazwa' => sk_tekst($li['name'] ?? ''), 'ilosc' => (float)($li['quantity'] ?? 0), 'wartosc' => (float)($li['total'] ?? 0) + (float)($li['total_tax'] ?? 0),
       'sku' => (string)($li['sku'] ?? ''), 'meta' => $meta, 'obraz' => (string)($li['image']['src'] ?? ''),
     ];
@@ -175,6 +213,7 @@ function sk_z_api(array $o): array {
     'platnosc' => mb_substr(sk_tekst($o['payment_method_title'] ?? ''), 0, 120),
     'dostawa' => mb_substr(implode(', ', array_column($dostawa, 'nazwa')), 0, 160),
     'pozycji' => count($pozycje),
+    'grupy' => implode(',', array_values(array_intersect(array_keys(sk_etapy()), array_unique(array_column($pozycje, 'grupa'))))),
     'dane' => json_encode([
       'faktura' => ['firma' => (string)($b['company'] ?? ''), 'nip' => $nip, 'adres' => trim(($b['address_1'] ?? '') . ' ' . ($b['address_2'] ?? '')), 'kod' => (string)($b['postcode'] ?? ''), 'miasto' => (string)($b['city'] ?? ''), 'kraj' => (string)($b['country'] ?? '')],
       'wysylka' => ['osoba' => trim(($sh['first_name'] ?? '') . ' ' . ($sh['last_name'] ?? '')), 'firma' => (string)($sh['company'] ?? ''), 'adres' => trim(($sh['address_1'] ?? '') . ' ' . ($sh['address_2'] ?? '')), 'kod' => (string)($sh['postcode'] ?? ''), 'miasto' => (string)($sh['city'] ?? ''), 'kraj' => (string)($sh['country'] ?? ''), 'telefon' => (string)($sh['phone'] ?? '')],
@@ -204,6 +243,12 @@ function sk_zapisz(PDO $pdo, string $sklep, array $o): bool {
   $sql = 'INSERT INTO sklep_zamowienia (sklep,' . implode(',', $kol) . ',zsynchronizowano) VALUES (?,' . implode(',', array_fill(0, count($kol), '?')) . ',NOW())'
     . ' ON DUPLICATE KEY UPDATE ' . implode(',', array_map(fn($k) => "$k=VALUES($k)", $kol)) . ',zsynchronizowano=NOW()';
   $pdo->prepare($sql)->execute(array_merge([$sklep], array_values($d)));
+  // kosz: zapamiętujemy status sprzed usunięcia (do przywrócenia); po przywróceniu – czyścimy
+  if ($d['status'] === 'trash' && $byl && $byl['status'] !== 'trash') {
+    $pdo->prepare('UPDATE sklep_zamowienia SET status_przed_koszem=? WHERE sklep=? AND wc_id=?')->execute([$byl['status'], $sklep, $d['wc_id']]);
+  } elseif ($d['status'] !== 'trash') {
+    $pdo->prepare('UPDATE sklep_zamowienia SET status_przed_koszem=NULL WHERE sklep=? AND wc_id=? AND status_przed_koszem IS NOT NULL')->execute([$sklep, $d['wc_id']]);
+  }
   return !$byl || $byl['status'] !== $d['status'] || $byl['data_zmiany'] !== $d['data_zmiany'] || $byl['dane'] !== $d['dane'];
 }
 
@@ -226,12 +271,14 @@ function sk_synchronizuj(PDO $pdo, string $kod, bool $pelna = false): array {
     foreach ($lista as $o) { $pobrano++; if (sk_zapisz($pdo, $kod, $o)) $zmian++; }
     if ($strona >= (int)($h['x-wp-totalpages'] ?? 1) || count($lista) < 100) break;
   }
-  if ($pelna) {   // zamówienia usunięte w sklepie (np. testowe) – nie pokazujemy ich dalej w panelu
+  if ($pelna) {   // kosz sklepu → zakładka „Kosz”; zamówienia skasowane na stałe znikają z panelu
     $ids = [];
-    for ($strona = 1; $strona <= 500; $strona++) {
-      [, $lista, $h] = sk_api($s, 'GET', 'orders', null, ['per_page' => 100, 'page' => $strona, 'status' => 'any', '_fields' => 'id']);
-      foreach ($lista as $o) $ids[] = (int)$o['id'];
-      if ($strona >= (int)($h['x-wp-totalpages'] ?? 1) || count($lista) < 100) break;
+    foreach (['any', 'trash'] as $st) {
+      for ($strona = 1; $strona <= 500; $strona++) {
+        [, $lista, $h] = sk_api($s, 'GET', 'orders', null, ['per_page' => 100, 'page' => $strona, 'status' => $st]);
+        foreach ($lista as $o) { $ids[] = (int)$o['id']; if ($st === 'trash' && sk_zapisz($pdo, $kod, $o)) $zmian++; }
+        if ($strona >= (int)($h['x-wp-totalpages'] ?? 1) || count($lista) < 100) break;
+      }
     }
     if ($ids) {
       $in = implode(',', array_map('intval', $ids));
@@ -242,8 +289,13 @@ function sk_synchronizuj(PDO $pdo, string $kod, bool $pelna = false): array {
   return [$pobrano, $zmian];
 }
 
-/** Statusy sklepu (slug => nazwa) – z API, pamiętane 1 h. */
+/** Statusy sklepu (slug => nazwa) + „W koszu” dla zakładki Kosz. */
 function sk_statusy(PDO $pdo, string $kod): array {
+  return sk_statusy_sklepu($pdo, $kod) + ['trash' => 'W koszu'];
+}
+
+/** Statusy z API sklepu, pamiętane 1 h. */
+function sk_statusy_sklepu(PDO $pdo, string $kod): array {
   sk_schemat($pdo);
   $zapis = json_decode((string)sk_ustawienie($pdo, $kod, 'statusy', ''), true);
   if (is_array($zapis) && ($zapis['t'] ?? 0) > time() - 3600 && !empty($zapis['s'])) return $zapis['s'];
@@ -265,4 +317,15 @@ function sk_log(PDO $pdo, string $sklep, int $wc_id, string $akcja, string $opis
   $nazwa = trim((string)($me['name'] ?? ($me['full_name'] ?? ($me['email'] ?? ''))));
   $pdo->prepare('INSERT INTO sklep_zamowienia_log(sklep,wc_id,akcja,opis,user_id,user_name) VALUES(?,?,?,?,?,?)')
     ->execute([$sklep, $wc_id, $akcja, mb_substr($opis, 0, 500), (int)($me['uid'] ?? ($me['id'] ?? 0)) ?: null, $nazwa ?: null]);
+}
+
+/** Zaznaczone etapy dla listy zamówień: [wc_id => [grupa => [etap, …]]]. */
+function sk_etapy_zamowien(PDO $pdo, string $sklep, array $ids): array {
+  $ids = array_values(array_filter(array_map('intval', $ids)));
+  if (!$ids) return [];
+  $st = $pdo->prepare('SELECT wc_id, grupa, etap FROM sklep_etapy WHERE sklep=? AND wc_id IN (' . implode(',', $ids) . ')');
+  $st->execute([$sklep]);
+  $w = [];
+  foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $r) $w[(int)$r['wc_id']][$r['grupa']][] = $r['etap'];
+  return $w;
 }

@@ -29,8 +29,9 @@ $zasob = (string)($_SERVER['HTTP_X_WC_WEBHOOK_RESOURCE'] ?? 'order');
 $zdarzenie = (string)($_SERVER['HTTP_X_WC_WEBHOOK_EVENT'] ?? '');
 if ($zasob !== 'order') json_ok(['ok' => true, 'pominieto' => $zasob]);
 if ($zdarzenie === 'deleted') {
-  $pdo->prepare('DELETE FROM sklep_zamowienia WHERE sklep=? AND wc_id=?')->execute([$kod, (int)$o['id']]);
-  json_ok(['ok' => true, 'usunieto' => (int)$o['id']]);
+  // kosz w sklepie (albo skasowanie) → zakładka „Kosz”; skasowane na stałe usunie nocna pełna synchronizacja
+  $pdo->prepare("UPDATE sklep_zamowienia SET status_przed_koszem=IF(status='trash', status_przed_koszem, status), status='trash', zsynchronizowano=NOW() WHERE sklep=? AND wc_id=?")->execute([$kod, (int)$o['id']]);
+  json_ok(['ok' => true, 'kosz' => (int)$o['id']]);
 }
 sk_zapisz($pdo, $kod, $o);
 json_ok(['ok' => true, 'id' => (int)$o['id']]);
