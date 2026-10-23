@@ -15,6 +15,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') json_err('method_not_allowed'
 $raw = (string)file_get_contents('php://input');
 if (strlen($raw) > 5 * 1024 * 1024) json_err('too_large', 413);
 $podpis = (string)($_SERVER['HTTP_X_WC_WEBHOOK_SIGNATURE'] ?? '');
+// ping przy zakładaniu webhooka („webhook_id=…”, bez podpisu) – tylko potwierdzenie, nic nie zapisujemy
+if ($podpis === '' && preg_match('/^webhook_id=\d+$/', $raw)) json_ok(['ok' => true, 'ping' => true]);
 if ($podpis === '' || !hash_equals(base64_encode(hash_hmac('sha256', $raw, $s['secret'], true)), $podpis)) json_err('forbidden', 403);
 
 $o = json_decode($raw, true);
