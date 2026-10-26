@@ -8,7 +8,8 @@
 /** Sklepy: kod => [nazwa, moduł uprawnień]. */
 function sk_sklepy(): array {
   return [
-    'frontypax' => ['nazwa' => 'FRONTYPAX', 'modul' => 'frontypax'],
+    'frontypax'   => ['nazwa' => 'FRONTYPAX', 'modul' => 'frontypax', 'etapy' => 'fronty'],
+    'zbudujmebel' => ['nazwa' => 'ZBUDUJMEBEL', 'modul' => 'zbudujmebel', 'etapy' => 'meble'],   // K.25: + paczki produkcyjne
   ];
 }
 
@@ -21,6 +22,7 @@ function sk_sklep(string $kod): ?array {
   $s['ck'] = (string)envv($p . 'CK', '');
   $s['cs'] = (string)envv($p . 'CS', '');
   $s['secret'] = (string)envv($p . 'WEBHOOK_SECRET', '');
+  $s['paczki'] = rtrim((string)envv($p . 'PACZKI_DIR', ''), '/');   // zbudujmebel: katalog paczek produkcyjnych (ten sam serwer)
   return $s;
 }
 
@@ -98,7 +100,13 @@ function sk_schemat(PDO $pdo): void {
 }
 
 /** Etapy produkcji wg rodzaju (decyzja 2026-10-23: dla rodzaju, nie pozycji; zaznaczane niezależnie). */
-function sk_etapy(): array {
+function sk_etapy(string $kod = 'frontypax'): array {
+  if ((sk_sklepy()[$kod]['etapy'] ?? '') === 'meble') return [   // zbudujmebel (2026-10-26)
+    'mebel' => ['nazwa' => 'Mebel na wymiar', 'etapy' => [
+      'zamowiono' => 'Zamówiono materiał', 'w_stolarni' => 'Materiał w stolarni', 'rozkroj' => 'Rozkrój', 'pociete' => 'Pocięte',
+      'oklejone' => 'Oklejone', 'cnc' => 'Wiercenie CNC', 'okucia' => 'Okucia skompletowane', 'spakowane' => 'Spakowane',
+      'kurier' => 'Zlecony odbiór kuriera', 'wyslane' => 'Wysłane']],
+  ];
   return [
     'plyta' => ['nazwa' => 'Płyta (drewnopodobne, laminowane jednolite)', 'etapy' => [
       'zamowiono' => 'Zamówiono materiał', 'w_stolarni' => 'Materiał w stolarni', 'rozkroj' => 'Zrobiony rozkrój', 'pociete' => 'Pocięte',
@@ -113,7 +121,8 @@ function sk_etapy(): array {
 }
 
 /** Rodzaj pozycji (grupa etapów) z ukrytych pól zamówienia frontypax: _fpx_type (fronty), _fpx_blenda_type (blendy). */
-function sk_grupa_pozycji(array $li): string {
+function sk_grupa_pozycji(array $li, string $kod = 'frontypax'): string {
+  if ((sk_sklepy()[$kod]['etapy'] ?? '') === 'meble') return 'mebel';
   $m = [];
   foreach ((array)($li['meta_data'] ?? []) as $x) $m[(string)($x['key'] ?? '')] = (string)(is_scalar($x['value'] ?? null) ? $x['value'] : '');
   $typ = $m['_fpx_type'] ?? ($m['_fpx_blenda_type'] ?? '');
@@ -175,18 +184,21 @@ function sk_tekst($v): string {
 }
 
 /** Zamówienie z API → dane do zapisania (tylko to, czego panel potrzebuje). */
-function sk_z_api(array $o): array {
+function sk_z_api(array $o, string $kod = 'frontypax'): array {
   $b = (array)($o['billing'] ?? []);
   $sh = (array)($o['shipping'] ?? []);
   $pozycje = [];
   foreach ((array)($o['line_items'] ?? []) as $li) {
-    $meta = [];
+    $meta = []; $paczka = '';
     foreach ((array)($li['meta_data'] ?? []) as $m) {
+      if ((string)($m['key'] ?? '') === '_zbm_paczka') $paczka = basename((string)$m['value']);
       if (str_starts_with((string)($m['key'] ?? ''), '_')) continue;
       $meta[] = ['k' => sk_tekst($m['display_key'] ?? $m['key']), 'v' => sk_tekst($m['display_value'] ?? $m['value'] ?? '')];
     }
     $pozycje[] = [
-      'grupa' => sk_grupa_pozycji($li),
+      'grupa' => sk_grupa_pozycji($li, $kod),
+      'item_id' => (int)($li['id'] ?? 0),
+      'paczka' => $paczka,
       'nazwa' => sk_tekst($li['name'] ?? ''), 'ilosc' => (float)($li['quantity'] ?? 0), 'wartosc' => (float)($li['total'] ?? 0) + (float)($li['total_tax'] ?? 0),
       'sku' => (string)($li['sku'] ?? ''), 'meta' => $meta, 'obraz' => (string)($li['image']['src'] ?? ''),
     ];
@@ -213,7 +225,7 @@ function sk_z_api(array $o): array {
     'platnosc' => mb_substr(sk_tekst($o['payment_method_title'] ?? ''), 0, 120),
     'dostawa' => mb_substr(implode(', ', array_column($dostawa, 'nazwa')), 0, 160),
     'pozycji' => count($pozycje),
-    'grupy' => implode(',', array_values(array_intersect(array_keys(sk_etapy()), array_unique(array_column($pozycje, 'grupa'))))),
+    'grupy' => implode(',', array_values(array_intersect(array_keys(sk_etapy($kod)), array_unique(array_column($pozycje, 'grupa'))))),
     'dane' => json_encode([
       'faktura' => ['firma' => (string)($b['company'] ?? ''), 'nip' => $nip, 'adres' => trim(($b['address_1'] ?? '') . ' ' . ($b['address_2'] ?? '')), 'kod' => (string)($b['postcode'] ?? ''), 'miasto' => (string)($b['city'] ?? ''), 'kraj' => (string)($b['country'] ?? '')],
       'wysylka' => ['osoba' => trim(($sh['first_name'] ?? '') . ' ' . ($sh['last_name'] ?? '')), 'firma' => (string)($sh['company'] ?? ''), 'adres' => trim(($sh['address_1'] ?? '') . ' ' . ($sh['address_2'] ?? '')), 'kod' => (string)($sh['postcode'] ?? ''), 'miasto' => (string)($sh['city'] ?? ''), 'kraj' => (string)($sh['country'] ?? ''), 'telefon' => (string)($sh['phone'] ?? '')],
@@ -235,7 +247,7 @@ function sk_data($v): ?string {
 
 /** Zapis / aktualizacja zamówienia; zwraca true, gdy coś się zmieniło. */
 function sk_zapisz(PDO $pdo, string $sklep, array $o): bool {
-  $d = sk_z_api($o);
+  $d = sk_z_api($o, $sklep);
   $st = $pdo->prepare('SELECT status, data_zmiany, dane FROM sklep_zamowienia WHERE sklep=? AND wc_id=?');
   $st->execute([$sklep, $d['wc_id']]);
   $byl = $st->fetch(PDO::FETCH_ASSOC);

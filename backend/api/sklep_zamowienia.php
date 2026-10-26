@@ -53,7 +53,7 @@ try {
     unset($it);
     $liczniki = [];
     foreach ($pdo->query('SELECT status, COUNT(*) n FROM sklep_zamowienia WHERE sklep=' . $pdo->quote($kod) . ' GROUP BY status')->fetchAll(PDO::FETCH_ASSOC) as $r) $liczniki[$r['status']] = (int)$r['n'];
-    json_ok(['ok' => true, 'items' => $items, 'etapy_def' => sk_etapy(), 'razem' => $razem, 'strona' => $strona, 'na_strone' => $na,
+    json_ok(['ok' => true, 'items' => $items, 'etapy_def' => sk_etapy($kod), 'razem' => $razem, 'strona' => $strona, 'na_strone' => $na,
       'statusy' => $statusy, 'liczniki' => $liczniki, 'ostatnia_synchronizacja' => sk_ustawienie($pdo, $kod, 'ostatnia_synchronizacja'), 'sklep' => ['nazwa' => $s['nazwa'], 'url' => $s['url']]]);
   }
 
@@ -78,7 +78,7 @@ try {
     $st->execute([$kod, $wc_id]);
     $etapy = [];
     foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $e) $etapy[$e['grupa']][$e['etap']] = ['kto' => $e['user_name'], 'kiedy' => $e['data']];
-    json_ok(['ok' => true, 'item' => $z, 'etapy' => (object)$etapy, 'etapy_def' => sk_etapy(), 'notatki' => $notatki, 'notatki_blad' => $blad, 'historia' => $historia, 'statusy' => sk_statusy($pdo, $kod),
+    json_ok(['ok' => true, 'item' => $z, 'etapy' => (object)$etapy, 'etapy_def' => sk_etapy($kod), 'notatki' => $notatki, 'notatki_blad' => $blad, 'historia' => $historia, 'statusy' => sk_statusy($pdo, $kod),
       'link_sklep' => $s['url'] . '/wp-admin/admin.php?page=wc-orders&action=edit&id=' . $wc_id]);
   }
 
@@ -132,7 +132,7 @@ try {
 
   if ($akcja === 'etap') {
     $grupa = (string)($body['grupa'] ?? ''); $etap = (string)($body['etap'] ?? '');
-    $def = sk_etapy();
+    $def = sk_etapy($kod);
     if (!isset($def[$grupa]['etapy'][$etap])) json_err('bad_request', 422, ['details' => 'Nieznany etap.']);
     $st = $pdo->prepare('SELECT status, grupy FROM sklep_zamowienia WHERE sklep=? AND wc_id=?');
     $st->execute([$kod, $wc_id]);
@@ -144,7 +144,7 @@ try {
     } else {
       $pdo->prepare('DELETE FROM sklep_etapy WHERE sklep=? AND wc_id=? AND grupa=? AND etap=?')->execute([$kod, $wc_id, $grupa, $etap]);
     }
-    sk_log($pdo, $kod, $wc_id, 'etap', (empty($body['done']) ? 'odznaczono: ' : '') . $def[$grupa]['etapy'][$etap] . ' (' . ($grupa === 'lakier' ? 'lakier' : 'płyta') . ')', $me);
+    sk_log($pdo, $kod, $wc_id, 'etap', (empty($body['done']) ? 'odznaczono: ' : '') . $def[$grupa]['etapy'][$etap] . ' (' . ($def[$grupa]['nazwa'] ?? $grupa) . ')', $me);
     // „Wysłane” we wszystkich rodzajach zamówienia → panel proponuje status „Zrealizowane”
     $grupy = array_values(array_filter(explode(',', (string)$z['grupy']))) ?: [$grupa];
     $wyslane = $pdo->prepare("SELECT COUNT(DISTINCT grupa) FROM sklep_etapy WHERE sklep=? AND wc_id=? AND etap='wyslane' AND grupa IN (" . implode(',', array_fill(0, count($grupy), '?')) . ')');

@@ -1,0 +1,42 @@
+<!doctype html><html lang="pl"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Smart Meble – ZBUDUJMEBEL</title>
+<link rel="icon" href="assets/img/favicon.ico">
+<link rel="stylesheet" href="assets/css/theme_v17.css"/>
+<link rel="stylesheet" href="assets/css/sklep_zamowienia.css"/>
+</head>
+<body data-sklep="zbudujmebel">
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand"><img src="assets/img/logo_smartmeble.png" style="height:28px"/><div>PANEL</div></div>
+    <nav id="sideNav"></nav>
+  </aside>
+  <div class="content">
+    <div id="appTopbar" data-title="ZBUDUJMEBEL" data-subtitle="Zamówienia ze sklepu zbudujmebel.pl – meble na wymiar"></div>
+    <main class="main">
+      <div id="err" class="err" style="margin-bottom:10px"></div>
+      <div class="card">
+        <div class="fx-tabs" id="tabs"></div>
+        <div class="fx-bar">
+          <input class="input" id="q" placeholder="Szukaj: numer, klient, e-mail, telefon, miasto, wzór…" style="flex:1;min-width:240px">
+          <div><label for="od">Od</label><input class="input" id="od" type="date"></div>
+          <div><label for="do">Do</label><input class="input" id="do" type="date"></div>
+          <button class="btn" id="qBtn" type="button">Szukaj</button>
+          <button class="btn btn-ghost" id="syncBtn" type="button" title="Pobierz zmiany ze sklepu teraz (automatycznie co 10 minut)">Odśwież ze sklepu</button>
+        </div>
+        <div class="fx-bulk" id="bulk"><b id="bulkN"></b><select class="input" id="bulkSt" style="max-width:280px"></select><button class="btn" id="bulkBtn" type="button">Zmień status zaznaczonych</button><button class="btn btn-ghost" id="bulkClr" type="button">Odznacz</button></div>
+        <div id="listWrap"><div class="fx-empty">Ładowanie…</div></div>
+        <div class="fx-muted" id="syncInfo" style="font-size:12px;margin-top:8px"></div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div class="fx-drawer" id="drawer" aria-hidden="true"><div class="fx-panel" id="panel" role="dialog" aria-modal="true"></div></div>
+
+<script src="config.js"></script>
+<script src="assets/js/helpers_ext.js"></script>
+<script src="assets/js/menu.js"></script>
+<script src="assets/js/topbar.js"></script>
+<script src="assets/js/sklep_zamowienia.js"></script>
+</body></html>

@@ -42,7 +42,7 @@ $default = function(string $module) use ($role, $isExternalTechnologist, $isWork
   if($isWorkerRole) return in_array($module,['news','dashboard','orders_current','schedule','gps_monitoring'],true) ? 1 : 0;
   return in_array($module,['news','dashboard','orders_current','schedule','gps_monitoring'],true) ? 1 : 0;
 };
-$modules = ['news','dashboard','orders_current','orders_finished','complaints','orders_deleted','payments','import_orders','schedule','users','statuses','settings','gps_monitoring','permissions','www_quotes','frontypax'];
+$modules = ['news','dashboard','orders_current','orders_finished','complaints','orders_deleted','payments','import_orders','schedule','users','statuses','settings','gps_monitoring','permissions','www_quotes','frontypax','zbudujmebel'];
 $moduleCaps = [];
 try{
   $pdo = db();
