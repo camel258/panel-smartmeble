@@ -169,7 +169,7 @@ function ww_send_mails(PDO $pdo, array $r): void {
 
   if ($r['client_email'] && filter_var($r['client_email'], FILTER_VALIDATE_EMAIL)) {
     $c = '<p>Dzień dobry,</p><p>dziękujemy za przesłanie zapytania o wycenę mebli. Numer zgłoszenia: <b>' . ww_esc($r['number']) . '</b>.</p>'
-      . '<p>Nasz technolog przejrzy projekt i skontaktuje się z Panem/Panią telefonicznie, żeby omówić szczegóły i umówić pomiar.</p>'
+      . '<p>Nasz technolog przejrzy projekt i przygotuje bezpłatną wycenę – zwykle w ciągu 2–3 dni roboczych. Jeśli będzie potrzebował dodatkowych informacji, zadzwoni. Szczegółowy pomiar robimy po złożeniu zamówienia.</p>'
       . '<p>W razie pytań: tel. 531 241 110, e-mail info@smartmeble.pl.</p><p>Zespół Smart Meble<br>SMART MEBLE Sp. z o.o., ul. Gdyńska 111, 80-209 Chwaszczyno</p>';
     send_html_mail($r['client_email'], $from, 'Smart Meble – potwierdzenie zgłoszenia ' . $r['number'], '<html><body>' . $c . '</body></html>');
   }
