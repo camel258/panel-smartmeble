@@ -83,6 +83,21 @@
       name: 'Meble łazienkowe', layouts: ['I', 'L'],
       rows: [{ id: 'low', name: 'Szafki stojące i podumywalkowe' }, { id: 'up', name: 'Szafki wiszące i lustra' }],
       corner: { low: 50, up: 20 }, height: 260
+    },
+    rtv: {
+      name: 'Szafka RTV i salon', layouts: ['I', 'L'],
+      rows: [{ id: 'low', name: 'Szafki stojące i wiszące' }, { id: 'up', name: 'Półki, panele i szafki górne' }],
+      corner: { low: 45, up: 30 }, height: 260
+    },
+    regal: {
+      name: 'Regały i komody', layouts: ['I', 'L'],
+      rows: [{ id: 'low', name: 'Regały, komody i szafki' }],
+      corner: { low: 40, up: 0 }, height: 260
+    },
+    przedpokoj: {
+      name: 'Przedpokój', layouts: ['I', 'L'],
+      rows: [{ id: 'low', name: 'Szafy, szafki i wieszaki' }],
+      corner: { low: 60, up: 0 }, height: 260
     }
   };
   var LAYOUTS = {
@@ -145,7 +160,39 @@
     { id: 'la_slupek', t: 'lazienka', row: 'low', tall: true, name: 'Słupek wiszący', widths: [30, 40, 50], w: 40, cat: 'Szafki dolne', build: function (c) { var d = 33; c.box(0, c.w, 25, 185, 0, d - 2, c.f.body.col, c.f.body.m, { edges: true, uid: c.uid }); frontSet(c, doors(1, 25, 185, c.w), d - 2, d, c.f.low, 'tall'); } },
     { id: 'la_pralka', t: 'lazienka', row: 'low', name: 'Zabudowa pralki', widths: [65, 70], w: 65, cat: 'Szafki dolne', build: function (c) { var d = 62; openBox(c, 0, 95, 0, d, c.f.body, []); c.box(4, c.w - 4, 1.8, 86, 4, d - 3, COL.white, 2, { edges: true }); c.box(c.w / 2 - 15, c.w / 2 + 15, 30, 62, d - 3, d - 2, COL.glass, 4, {}); } },
     { id: 'la_wiszaca', t: 'lazienka', row: 'up', name: 'Szafka wisząca', widths: [40, 60, 80, 100], w: 60, cat: 'Szafki górne', build: function (c) { var d = 18; c.box(0, c.w, 120, 185, 0, d - 2, c.f.body.col, c.f.body.m, { edges: true, uid: c.uid }); frontSet(c, doors(nDoors(c.w), 120, 185, c.w), d - 2, d, c.f.up, 'up'); } },
-    { id: 'la_lustro', t: 'lazienka', row: 'up', name: 'Lustro z oświetleniem', widths: [60, 80, 100, 120, 140], w: 80, cat: 'Szafki górne', build: function (c) { c.box(0, c.w, 105, 180, 0, 3, COL.mirror, 4, { edges: true, uid: c.uid }); if (c.f.led) c.box(2, c.w - 2, 103.5, 105, 1, 3, COL.led, 3, {}); } }
+    { id: 'la_lustro', t: 'lazienka', row: 'up', name: 'Lustro z oświetleniem', widths: [60, 80, 100, 120, 140], w: 80, cat: 'Szafki górne', build: function (c) { c.box(0, c.w, 105, 180, 0, 3, COL.mirror, 4, { edges: true, uid: c.uid }); if (c.f.led) c.box(2, c.w - 2, 103.5, 105, 1, 3, COL.led, 3, {}); } },
+
+    // ---------------- RTV I SALON ----------------
+    { id: 'rtv_stojaca', t: 'rtv', row: 'low', name: 'Szafka RTV z klapami', widths: [100, 120, 150, 180, 200, 240], w: 180, cat: 'Szafki RTV', build: function (c) { plinth(c, 10, 40); cab(c, 10, 52, 42, cols(c.w, 'flap', 10, 52), c.f.low, 'low'); } },
+    { id: 'rtv_wiszaca', t: 'rtv', row: 'low', name: 'Szafka RTV wisząca z szufladami', widths: [120, 150, 180, 200, 240], w: 180, cat: 'Szafki RTV', build: function (c) { cab(c, 30, 68, 40, cols(c.w, 'drawer', 30, 68), c.f.low, 'low'); if (c.f.led) c.box(2, c.w - 2, 29.4, 30, 4, 30, COL.led, 3, {}); } },
+    { id: 'rtv_otwarta', t: 'rtv', row: 'low', name: 'Wnęka otwarta pod sprzęt', widths: [40, 60, 80], w: 60, cat: 'Szafki RTV', build: function (c) { plinth(c, 10, 40); openBox(c, 10, 52, 0, 42, c.f.body, [31]); } },
+    { id: 'rtv_komoda', t: 'rtv', row: 'low', name: 'Komoda z szufladami', widths: [60, 80, 100, 120], w: 100, cat: 'Komody i regały', build: function (c) { plinth(c, 10, 42); cab(c, 10, 90, 45, drawers([1, 1, 1], 10, 90, c.w).reverse(), c.f.low, 'low'); } },
+    { id: 'rtv_regal', t: 'rtv', row: 'low', tall: true, name: 'Regał wysoki z szafką', widths: [40, 50, 60, 80], w: 50, cat: 'Komody i regały', build: function (c) { var t = tallTop(c, 200); plinth(c, 10, 34); cab(c, 10, 80, 38, doors(1, 10, 80, c.w), c.f.low, 'tall'); openBox(c, 80, t, 0, 36, c.f.body, shelfYs(80, t, 36)); } },
+    { id: 'rtv_panel', t: 'rtv', row: 'up', name: 'Panel ścienny za telewizorem', widths: [100, 120, 150, 180, 200, 240], w: 180, cat: 'Panele i półki', build: function (c) { c.box(0, c.w, 60, 210, 0, 2, c.f.up.col, c.f.up.m, { edges: true, uid: c.uid, front: true }); if (c.w >= 110) { var m = c.w / 2, tw = Math.min(c.w - 20, 130); c.box(m - tw / 2, m + tw / 2, 95, 95 + tw * 0.56, 2, 5, COL.glass, 4, { edges: true }); } if (c.f.led) c.box(1, c.w - 1, 59.4, 60, 0, 2, COL.led, 3, {}); } },
+    { id: 'rtv_polka', t: 'rtv', row: 'up', name: 'Półka wisząca', widths: [60, 80, 100, 120, 150, 180], w: 100, cat: 'Panele i półki', build: function (c) { c.box(0, c.w, 150, 153.6, 0, 24, c.f.body.col, c.f.body.m, { edges: true, uid: c.uid }); } },
+    { id: 'rtv_gorna', t: 'rtv', row: 'up', name: 'Szafka wisząca', widths: [60, 80, 100, 120], w: 80, cat: 'Panele i półki', build: function (c) { cab(c, 150, 186, 32, cols(c.w, 'flap', 150, 186), c.f.up, 'up'); } },
+
+    // ---------------- REGAŁY I KOMODY ----------------
+    { id: 'rg_regal', t: 'regal', row: 'low', name: 'Regał otwarty', widths: [40, 50, 60, 80, 100], w: 80, cat: 'Regały', build: function (c) { var t = tallTop(c, 200); plinth(c, 8, 30); openBox(c, 8, t, 0, 35, c.f.body, shelfYs(8, t, 36)); } },
+    { id: 'rg_regal_szafka', t: 'regal', row: 'low', name: 'Regał z szafką na dole', widths: [40, 50, 60, 80, 100], w: 80, cat: 'Regały', build: function (c) { var t = tallTop(c, 200); plinth(c, 8, 32); cab(c, 8, 82, 38, doors(nDoors(c.w), 8, 82, c.w), c.f.low, 'low'); openBox(c, 82, t, 0, 35, c.f.body, shelfYs(82, t, 36)); } },
+    { id: 'rg_regal_drzwi', t: 'regal', row: 'low', name: 'Szafa-regał z drzwiami', widths: [40, 50, 60, 80, 100], w: 80, cat: 'Regały', build: function (c) { var t = tallTop(c, 200); plinth(c, 8, 34); cab(c, 8, t, 40, doors(nDoors(c.w), 8, t, c.w), c.f.low, 'tall'); } },
+    { id: 'rg_komoda', t: 'regal', row: 'low', name: 'Komoda z szufladami', widths: [60, 80, 100, 120, 140, 160], w: 100, cat: 'Komody i szafki', build: function (c) { plinth(c, 8, 40); cab(c, 8, 90, 45, grid(c.w, 4, 8, 90, 'drawer'), c.f.low, 'low'); } },
+    { id: 'rg_szafka', t: 'regal', row: 'low', name: 'Szafka z drzwiami', widths: [40, 60, 80, 100, 120], w: 80, cat: 'Komody i szafki', build: function (c) { plinth(c, 8, 36); cab(c, 8, 90, 42, doors(nDoors(c.w), 8, 90, c.w), c.f.low, 'low'); } },
+    { id: 'rg_niska', t: 'regal', row: 'low', name: 'Szafka niska / ławka z szufladami', widths: [80, 100, 120, 160, 200], w: 120, cat: 'Komody i szafki', build: function (c) { plinth(c, 8, 36); cab(c, 8, 50, 42, cols(c.w, 'drawer', 8, 50), c.f.low, 'low'); } },
+
+    // ---------------- PRZEDPOKÓJ ----------------
+    { id: 'pp_szafa', t: 'przedpokoj', row: 'low', tall: true, name: 'Szafa na ubrania (drzwi uchylne)', widths: [50, 60, 80, 100], w: 100, cat: 'Szafy', build: function (c) { var t = tallTop(c, 0); plinth(c, 8, 54); cab(c, 8, t, 60, doors(nDoors(c.w), 8, t, c.w), c.f.low, 'tall'); } },
+    { id: 'pp_plytka', t: 'przedpokoj', row: 'low', tall: true, name: 'Szafa płytka (35 cm) z półkami', widths: [40, 50, 60, 80], w: 60, cat: 'Szafy', build: function (c) { var t = tallTop(c, 0); plinth(c, 8, 29); cab(c, 8, t, 35, doors(nDoors(c.w), 8, t, c.w), c.f.low, 'tall'); } },
+    { id: 'pp_buty', t: 'przedpokoj', row: 'low', name: 'Szafka na buty z klapami', widths: [60, 80, 100, 120], w: 80, cat: 'Szafki', build: function (c) { plinth(c, 8, 26); cab(c, 8, 100, 32, grid(c.w, 3, 8, 100, 'flap'), c.f.low, 'low'); } },
+    { id: 'pp_komoda', t: 'przedpokoj', row: 'low', name: 'Komoda z szufladami', widths: [60, 80, 100], w: 80, cat: 'Szafki', build: function (c) { plinth(c, 8, 34); cab(c, 8, 90, 40, drawers([1, 1, 1], 8, 90, c.w).reverse(), c.f.low, 'low'); } },
+    { id: 'pp_wieszak', t: 'przedpokoj', row: 'low', name: 'Wieszak otwarty z ławką', widths: [60, 80, 100, 120], w: 100, cat: 'Wieszaki i lustra', build: function (c) {
+      var t = tallTop(c, 0);
+      c.box(0, c.w, 95, Math.min(t, 205), 0, 2, c.f.low.col, c.f.low.m, { edges: true, uid: c.uid, front: true });
+      for (var x = 12; x < c.w - 6; x += 20) c.box(x - 1, x + 1, 165, 172, 2, 8, COL.black, 0, {});
+      c.box(0, c.w, 205, 207, 0, 30, c.f.body.col, c.f.body.m, { edges: true, uid: c.uid });
+      plinth(c, 8, 34); cab(c, 8, 46, 40, cols(c.w, 'drawer', 8, 46), c.f.low, 'low');
+    } },
+    { id: 'pp_lustro', t: 'przedpokoj', row: 'low', name: 'Lustro', widths: [40, 50, 60, 80], w: 50, cat: 'Wieszaki i lustra', build: function (c) { c.box(2, c.w - 2, 50, 200, 0, 2.5, COL.mirror, 4, { edges: true, uid: c.uid }); } }
   ];
   var CAT = {}; CATALOG.forEach(function (m) { CAT[m.id] = m; });
 
@@ -227,6 +274,20 @@
     c.box(c.w / 2 - 1.2, c.w / 2 + 1.2, 121, 124, 2, 14, COL.inox, 2, {});
   }
 
+  /* --- RTV, regały, przedpokój --- */
+  function plinth(c, h, d) { c.box(0.4, c.w - 0.4, 0, h, 0, d, COL.plinth, 0, {}); }
+  function cab(c, y0, y1, d, panels, fin, row) {
+    c.box(0, c.w, y0, y1, 0, d - K.frontT, c.f.body.col, c.f.body.m, { edges: true, uid: c.uid });
+    frontSet(c, panels, d - K.frontT, d, fin, row);
+  }
+  // fronty w kolumnach co ok. 60 cm (szafki RTV, ławki)
+  function cols(w, k, y0, y1) { var n = Math.max(1, Math.round(w / 60)), a = []; for (var i = 0; i < n; i++) a.push({ s0: i * w / n, s1: (i + 1) * w / n, y0: y0, y1: y1, k: k }); return a; }
+  // siatka frontów: rzędy × kolumny (kolumny co ok. 60 cm)
+  function grid(w, rowsN, y0, y1, k) { var a = [], n = Math.max(1, Math.round(w / 60)), dh = (y1 - y0) / rowsN; for (var r = 0; r < rowsN; r++) cols(w, k, y0 + r * dh, y0 + (r + 1) * dh).forEach(function (x) { a.push(x); }); return a; }
+  function shelfYs(y0, y1, step) { var n = Math.max(1, Math.round((y1 - y0) / step)), a = []; for (var i = 1; i < n; i++) a.push(y0 + (y1 - y0) * i / n); return a; }
+  // wysokość wysokich mebli: finish.tallH (0 = pod sufit), domyślnie wartość modułu
+  function tallTop(c, def) { var t = +c.p.finish.tallH; if (!(t >= 0) || c.p.finish.tallH === undefined) t = def; return t > 0 ? Math.min(c.H, t) : c.H; }
+
   /* Fronty + uchwyty */
   function frontSet(c, panels, d0, d1, fin, row) {
     var g = K.gap, hs = c.p.finish.handle || 'gola';
@@ -292,6 +353,19 @@
       p.walls.A = 240; p.finish.low = 'fornir_dab'; p.finish.body = 'bialy'; p.finish.top = 'kamien_jasny'; p.finish.up = 'lak_bialy_mat'; p.finish.handle = 'tip';
       p.runs.A.low = [item('la_slupek', 40), item('la_umywalkowa', 120)];
       p.runs.A.up = [item('la_lustro', 100)];
+    }
+    if (type === 'rtv') {
+      p.walls.A = 360; p.finish.low = 'plyta_dab'; p.finish.up = 'lak_grafit'; p.finish.body = 'grafit'; p.finish.handle = 'tip'; p.finish.led = true;
+      p.runs.A.low = [item('rtv_regal', 50), item('rtv_wiszaca', 200), item('rtv_otwarta', 60), item('rtv_regal', 50)];
+      p.runs.A.up = [item('rtv_panel', 200), item('rtv_polka', 60)];
+    }
+    if (type === 'regal') {
+      p.walls.A = 300; p.finish.low = 'lak_szalwia'; p.finish.body = 'bialy'; p.finish.handle = 'listwa'; p.finish.tallH = 200;
+      p.runs.A.low = [item('rg_regal_szafka', 80), item('rg_komoda', 120), item('rg_regal_szafka', 80)];
+    }
+    if (type === 'przedpokoj') {
+      p.walls.A = 280; p.finish.low = 'plyta_biala'; p.finish.body = 'bialy'; p.finish.handle = 'listwa'; p.finish.tallH = 0;
+      p.runs.A.low = [item('pp_szafa', 100), item('pp_wieszak', 100), item('pp_buty', 80)];
     }
     return p;
   }
@@ -478,6 +552,10 @@
       if (f.doors === 'uchylne') fx.push('Uchwyty: ' + finish('handle', f.handle).name);
     } else if (p.type === 'garderoba') {
       fx.push('Korpus i półki: ' + finish('body', f.body).name, 'Fronty szuflad: ' + finish('front', f.low).name, 'Głębokość: ' + f.depth + ' cm');
+    } else if (p.type === 'rtv') {
+      fx.push('Fronty szafek: ' + finish('front', f.low).name, 'Panel / szafki górne: ' + finish('front', f.up).name, 'Korpusy i półki: ' + finish('body', f.body).name, 'Uchwyty: ' + finish('handle', f.handle).name, 'Oświetlenie LED: ' + (f.led ? 'tak' : 'nie'));
+    } else if (p.type === 'regal' || p.type === 'przedpokoj') {
+      fx.push('Fronty: ' + finish('front', f.low).name, 'Korpusy i półki: ' + finish('body', f.body).name, 'Uchwyty: ' + finish('handle', f.handle).name, 'Wysokość wysokich mebli: ' + (+f.tallH > 0 ? f.tallH + ' cm' : 'pod sufit'));
     } else {
       fx.push('Fronty szafek: ' + finish('front', f.low).name, 'Fronty wiszących: ' + finish('front', f.up).name, 'Korpusy: ' + finish('body', f.body).name, 'Blat: ' + finish('top', f.top).name, 'Uchwyty: ' + finish('handle', f.handle).name, 'Podświetlenie lustra: ' + (f.led ? 'tak' : 'nie'));
     }

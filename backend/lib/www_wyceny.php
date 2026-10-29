@@ -9,7 +9,7 @@ const WW_STATUSES = [
   'zamknieta' => ['Zamknięta', '#4b5563'],
   'odrzucona' => ['Odrzucona', '#991b1b'],
 ];
-const WW_TYPES = ['kuchnia' => 'Kuchnia', 'szafa' => 'Szafa', 'garderoba' => 'Garderoba', 'lazienka' => 'Meble łazienkowe', 'inne' => 'Inne meble'];
+const WW_TYPES = ['kuchnia' => 'Kuchnia', 'szafa' => 'Szafa', 'garderoba' => 'Garderoba', 'lazienka' => 'Meble łazienkowe', 'rtv' => 'Szafka RTV i salon', 'regal' => 'Regały i komody', 'przedpokoj' => 'Przedpokój', 'inne' => 'Inne meble'];
 const WW_EXT = ['pdf','jpg','jpeg','png','heic','webp','dwg','dxf','skp','zip','rar','7z','doc','docx','xls','xlsx','txt','mp4','mov','pro','kit','sat','step','stp'];
 
 function ww_max_total(): int { return (int)envv('WWW_QUOTES_MAX_MB', 50) * 1024 * 1024; }
