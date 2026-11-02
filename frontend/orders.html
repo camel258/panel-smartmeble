@@ -114,7 +114,7 @@ tr.row-fix-ready:hover td{ background:rgba(34,197,94,.22) !important; }
 <body><div class="app"><aside class="sidebar"><div class="brand"><img src="assets/img/logo_smartmeble.png" style="height:28px"/><div>PANEL</div></div><nav><a class="active" href="orders.html">Zamówienia aktualne</a><a href="orders_finished.html">Zamówienia zakończone</a><a data-super-only href="orders_deleted.html">Zamówienia usunięte</a><a data-finance-only href="payments.html">Rozliczenia</a><a data-admin-only href="import_orders.html">Import zamówień</a><a href="schedule.html">Grafik</a><a data-admin-only href="users.html">Użytkownicy</a><a data-admin-only href="statuses.html">Statusy</a><a data-admin-only href="notifications.html">Powiadomienia</a><a data-admin-only href="settings.html">Ustawienia</a></nav></aside>
 <div class="content"><div id="appTopbar" data-title="Zamówienia aktualne" data-subtitle="Panel zamówień"></div>
 <main class="main"><div id="err" class="err" style="margin-bottom:10px"></div><div class="card">
-<div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;align-items:center"><input id="q" class="input" placeholder="Szukaj: klient, przedmiot…"><select id="statusFilter" class="input"><option value="">Wszystkie statusy</option></select><input id="year" class="input" style="width:110px" placeholder="Rok"><input id="month" class="input" style="width:110px" placeholder="Miesiąc"><input id="from" class="input" type="date"><input id="to" class="input" type="date"><button class="btn" id="go">Szukaj</button><button class="btn" id="exportBtn">Eksport XLS</button><button class="btn" id="addOrderBtn" style="margin-left:auto">+ Dodaj zamówienie</button></div>
+<div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;align-items:center"><input id="q" name="orders_search" class="input" type="search" autocomplete="off" placeholder="Szukaj: klient, przedmiot…"><select id="statusFilter" class="input"><option value="">Wszystkie statusy</option></select><input id="year" name="filter_year" class="input" type="text" inputmode="numeric" autocomplete="off" style="width:110px" placeholder="Rok"><input id="month" name="filter_month" class="input" type="text" inputmode="numeric" autocomplete="off" style="width:110px" placeholder="Miesiąc"><input id="from" class="input" type="date"><input id="to" class="input" type="date"><button class="btn" id="go">Szukaj</button><button class="btn" id="exportBtn">Eksport XLS</button><button class="btn" id="addOrderBtn" style="margin-left:auto">+ Dodaj zamówienie</button></div>
 
 <div id="bulkBar" class="card selection-sticky" style="display:none;margin-bottom:12px;padding:12px;background:#fff;border:1px solid var(--line)">
   <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
@@ -126,6 +126,7 @@ tr.row-fix-ready:hover td{ background:rgba(34,197,94,.22) !important; }
     <button class="btn" id="bulkFinishBtn">Zakończ</button>
     <button class="btn" id="bulkMeasureDoneBtn">Oznacz po pomiarach</button>
     <button class="btn" id="bulkDeleteBtn">Przenieś do usuniętych</button>
+    <button class="btn" id="bulkXlsxBtn">Eksportuj do XLS</button>
     <button class="btn" id="bulkClearBtn">Wyczyść zaznaczenie</button>
   </div>
 </div>
@@ -502,6 +503,11 @@ bulkDeleteBtn.onclick = async ()=>{
   await bulkAction({action:'delete', reason}, 'Zaznaczone zamówienia przeniesiono do usuniętych ✅');
 };
 
+bulkXlsxBtn.onclick = async ()=>{
+  if(!selectedIds.size) return;
+  try{ await apiDownload('orders_export_xlsx.php?state=current&ids=' + [...selectedIds].join(','), 'zamowienia.xlsx'); }
+  catch(e){ console.error(e); err.textContent = 'Nie udało się wyeksportować zaznaczonych zamówień.'; }
+};
 bulkClearBtn.onclick = ()=>{ selectedIds.clear(); updateBulkBar(); };
 exportBtn.onclick=()=>{ location.href = API_BASE + 'orders_export.php?state=current&' + buildQs().toString(); };
 go.onclick=load;

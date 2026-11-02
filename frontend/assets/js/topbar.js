@@ -192,26 +192,33 @@
     el.id = 'changePasswordModal';
     el.className = 'cp-backdrop';
     el.innerHTML = `
-      <div class="cp-modal">
+      <form class="cp-modal" id="cpForm" autocomplete="on">
         <div class="cp-head">
           <div>
             <div class="cp-title">Zmień hasło</div>
             <div class="cp-sub">Podaj aktualne hasło i ustaw nowe.</div>
           </div>
-          <button class="cp-close" id="cpCloseBtn">✕</button>
+          <button type="button" class="cp-close" id="cpCloseBtn">✕</button>
         </div>
         <div class="cp-grid">
-          <div><label>Aktualne hasło</label><input class="input" id="cpCurrent" type="password"></div>
-          <div><label>Nowe hasło</label><input class="input" id="cpNew" type="password"></div>
-          <div><label>Powtórz nowe hasło</label><input class="input" id="cpConfirm" type="password"></div>
+          <input id="cpUsername" name="username" type="text" autocomplete="username" readonly tabindex="-1" aria-hidden="true" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none">
+          <div><label>Aktualne hasło</label><input class="input" id="cpCurrent" name="current-password" type="password" autocomplete="current-password"></div>
+          <div><label>Nowe hasło</label><input class="input" id="cpNew" name="new-password" type="password" autocomplete="new-password"></div>
+          <div><label>Powtórz nowe hasło</label><input class="input" id="cpConfirm" name="confirm-password" type="password" autocomplete="new-password"></div>
         </div>
         <div id="cpMsg" class="cp-msg"></div>
         <div class="cp-actions">
-          <button class="btn" id="cpCancelBtn" style="background:#404040;color:#fff;box-shadow:none">Anuluj</button>
-          <button class="btn" id="cpSaveBtn">Zapisz nowe hasło</button>
+          <button type="button" class="btn" id="cpCancelBtn" style="background:#404040;color:#fff;box-shadow:none">Anuluj</button>
+          <button type="button" class="btn" id="cpSaveBtn">Zapisz nowe hasło</button>
         </div>
-      </div>`;
+      </form>`;
     document.body.appendChild(el);
+    // Pole login w formularzu – bez niego Chrome bierze za login ostatnie pole tekstowe strony (np. "Miesiąc") i wkleja tam e-mail
+    document.getElementById('cpForm').addEventListener('submit', e=>e.preventDefault());
+    apiGet('session_check.php').then(me=>{
+      const u = (me && (me.user || me)) || {};
+      const i = document.getElementById('cpUsername'); if(i) i.value = u.email || u.login || '';
+    }).catch(()=>{});
 
     function closeModal(){
       el.classList.remove('is-open');
