@@ -105,6 +105,7 @@ function renderFinishedMobile(groups, canFinance){
         '<div class="mobile-order-top">'+pill(r.status_name||'',r.status_color||'')+'</div>'
         + '<div class="mobile-order-name">'+esc(shortText(full, 18))+'</div>'
         + '<div class="mobile-order-scope" title="'+esc(r.item_description||'')+'">'+esc(shortText(r.item_description||'', 28))+'</div>'
+        + (r.contract_signer_initials ? '<div class="mobile-order-scope" title="'+esc(r.contract_signer_name||'')+'" style="color:var(--muted)">Podpisał: '+esc(r.contract_signer_initials)+'</div>' : '')
         + '<div class="mobile-order-dates">'
           + '<div class="mobile-order-date"><span class="mobile-order-label">Data montażu</span>'+esc(r.install_date||'')+'</div>'
           + '<div class="mobile-order-date"><span class="mobile-order-label">Nowa data</span>'+esc(r.install_date_new||'')+'</div>'
@@ -172,14 +173,14 @@ async function load(){
     groups.forEach(g=>{
       const sec=document.createElement('section');
       const groupKey = String(g.title || '').replace(/[^a-zA-Z0-9_-]+/g,'_');
-      const heads=(canManageBulk?'<th style="width:36px"><input type="checkbox" class="check-all-month" data-group="'+groupKey+'"></th>':'') + (canFinance?'<th>Status</th><th>Klient</th><th>Przedmiot</th><th>Utworzono</th><th>Data umowy</th><th>Data montażu</th><th>Nowa data</th><th>Wartość</th><th>Wpłacona</th><th>Pozostało</th><th>Rozpiska</th><th>Monterzy</th>':'<th>Status</th><th>Klient</th><th>Przedmiot</th><th>Utworzono</th><th>Data umowy</th><th>Data montażu</th><th>Nowa data</th><th>Rozpiska</th><th>Monterzy</th>');
+      const heads=(canManageBulk?'<th style="width:36px"><input type="checkbox" class="check-all-month" data-group="'+groupKey+'"></th>':'') + (canFinance?'<th>Status</th><th>Klient</th><th>Przedmiot</th><th>Utworzono</th><th>Data umowy</th><th>Data montażu</th><th>Nowa data</th><th>Wartość</th><th>Podpisał</th><th>Wpłacona</th><th>Pozostało</th><th>Rozpiska</th><th>Monterzy</th>':'<th>Status</th><th>Klient</th><th>Przedmiot</th><th>Utworzono</th><th>Data umowy</th><th>Data montażu</th><th>Nowa data</th><th>Podpisał</th><th>Rozpiska</th><th>Monterzy</th>');
       const colgroup = canManageBulk
         ? (canFinance
-            ? '<colgroup><col style="width:3%"><col style="width:10%"><col style="width:13%"><col style="width:18%"><col style="width:8%"><col style="width:8%"><col style="width:8%"><col style="width:8%"><col style="width:6%"><col style="width:6%"><col style="width:6%"><col style="width:8%"><col style="width:8%"></colgroup>'
-            : '<colgroup><col style="width:3%"><col style="width:12%"><col style="width:17%"><col style="width:24%"><col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:8%"></colgroup>')
+            ? '<colgroup><col style="width:3%"><col style="width:10%"><col style="width:13%"><col style="width:12%"><col style="width:8%"><col style="width:8%"><col style="width:8%"><col style="width:8%"><col style="width:6%"><col style="width:6%"><col style="width:6%"><col style="width:8%"><col style="width:8%"><col style="width:6%"></colgroup>'
+            : '<colgroup><col style="width:3%"><col style="width:12%"><col style="width:17%"><col style="width:18%"><col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:8%"><col style="width:6%"></colgroup>')
         : (canFinance
-            ? '<colgroup><col style="width:10%"><col style="width:13%"><col style="width:18%"><col style="width:8%"><col style="width:8%"><col style="width:8%"><col style="width:8%"><col style="width:6%"><col style="width:6%"><col style="width:6%"><col style="width:8%"><col style="width:8%"></colgroup>'
-            : '<colgroup><col style="width:12%"><col style="width:17%"><col style="width:24%"><col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:8%"></colgroup>');
+            ? '<colgroup><col style="width:10%"><col style="width:13%"><col style="width:12%"><col style="width:8%"><col style="width:8%"><col style="width:8%"><col style="width:8%"><col style="width:6%"><col style="width:6%"><col style="width:6%"><col style="width:8%"><col style="width:8%"><col style="width:6%"></colgroup>'
+            : '<colgroup><col style="width:12%"><col style="width:17%"><col style="width:18%"><col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:9%"><col style="width:8%"><col style="width:6%"></colgroup>');
       sec.innerHTML='<h3 style="margin:12px 6px">'+esc(g.title)+'</h3><div class="ordersWrap"><table class="table ordersTable">'+colgroup+'<thead><tr>'+heads+'</tr></thead><tbody></tbody></table></div>';
       const tb=sec.querySelector('tbody');
       (g.items||[]).forEach(r=>{
@@ -190,7 +191,8 @@ async function load(){
         let html=''; const clientName=((r.client_first_name||'')+' '+(r.client_last_name||'')).trim();
         if(canManageBulk){ html+='<td><input type="checkbox" class="order-check" data-group="'+groupKey+'" value="'+r.id+'"></td>'; }
         html+='<td title="'+esc(r.status_name||'')+'">'+pill(r.status_name||'',r.status_color||'')+'</td><td title="'+esc(clientName)+'"><span class="cell-ellipsis">'+esc(clientName)+'</span></td><td title="'+esc(r.item_description||'')+'"><span class="cell-ellipsis">'+esc(r.item_description||'')+'</span></td><td title="'+esc(r.created_at||'')+'"><span class="cell-ellipsis">'+esc(r.created_at||'')+'</span></td><td title="'+esc(r.contract_date||'')+'"><span class="cell-ellipsis">'+esc(r.contract_date||'')+'</span></td><td title="'+esc(r.install_date||'')+'"><span class="cell-ellipsis">'+esc(r.install_date||'')+'</span></td><td title="'+esc(r.install_date_new||'')+'"><span class="cell-ellipsis">'+esc(r.install_date_new||'')+'</span></td>';
-        if(canFinance){ html+='<td title="'+esc(fmtMoney(r.total_with_addons ?? r.total_amount))+'"><span class="cell-ellipsis">'+fmtMoney(r.total_with_addons ?? r.total_amount)+'</span></td><td title="'+esc(fmtMoney(r.paid_sum ?? 0))+'"><span class="cell-ellipsis">'+fmtMoney(r.paid_sum ?? 0)+'</span></td><td title="'+esc(fmtMoney(r.remaining ?? 0))+'"><span class="cell-ellipsis">'+fmtMoney(r.remaining ?? 0)+'</span></td>'; }
+        const signerTd='<td title="'+esc(r.contract_signer_name||'')+'"><span class="cell-no-ellipsis" style="font-weight:700">'+esc(r.contract_signer_initials||'')+'</span></td>';
+        if(canFinance){ html+='<td title="'+esc(fmtMoney(r.total_with_addons ?? r.total_amount))+'"><span class="cell-ellipsis">'+fmtMoney(r.total_with_addons ?? r.total_amount)+'</span></td>'+signerTd+'<td title="'+esc(fmtMoney(r.paid_sum ?? 0))+'"><span class="cell-ellipsis">'+fmtMoney(r.paid_sum ?? 0)+'</span></td><td title="'+esc(fmtMoney(r.remaining ?? 0))+'"><span class="cell-ellipsis">'+fmtMoney(r.remaining ?? 0)+'</span></td>'; } else { html+=signerTd; }
         html+='<td title="'+esc(r.scheduler_name||'')+'"><span class="cell-no-ellipsis">'+esc(r.scheduler_name||'')+'</span></td><td title="'+esc((r.mounters||[]).join(', '))+'"><span class="cell-no-ellipsis">'+esc((r.mounters||[]).join(', '))+'</span></td>';
         tr.innerHTML=html; tb.appendChild(tr);
       });
