@@ -3,7 +3,16 @@ function authHeaders(){
   const t = localStorage.getItem('token') || '';
   return t ? {'Authorization':'Bearer '+t} : {};
 }
-async function apiGet(p){
+// session_check.php: jedno zapytanie na stronę (menu, pasek górny i strona pytały o to samo nawet 5 razy)
+let _sesjaObietnica = null;
+function apiGet(p){
+  if(p === 'session_check.php'){
+    if(!_sesjaObietnica) _sesjaObietnica = _apiGet(p).catch(e => { _sesjaObietnica = null; throw e; });
+    return _sesjaObietnica;
+  }
+  return _apiGet(p);
+}
+async function _apiGet(p){
   const r = await fetch(API_BASE+p, {headers: authHeaders()});
   const t = await r.text();
   if(!r.ok) throw new Error(t);

@@ -385,10 +385,19 @@ function bindCheckboxes(){
 }
 
 
-async function load(){
+let ostatnieZamowienia = null;   // ostatnia odpowiedź – do ponownego ułożenia bez pobierania (zmiana szerokości okna)
+async function load(wczesniej){
   try{
     err.textContent='';
-    const res=await apiGet('orders.php?'+buildQs().toString());
+    const res=await (wczesniej || apiGet('orders.php?'+buildQs().toString()));
+    ostatnieZamowienia = res;
+    renderOrders(res);
+  }catch(e){
+    err.textContent='Błąd połączenia z serwerem (orders).';
+  }
+}
+function renderOrders(res){
+  {
     const canFinance=!!res.can_view_finance;
     canFinanceVisible = canFinance;
     currentRowsById.clear();
@@ -433,8 +442,6 @@ async function load(){
       wrap.appendChild(sec);
     });
     bindCheckboxes();
-  }catch(e){
-    err.textContent='Błąd połączenia z serwerem (orders).';
   }
 }
 
@@ -510,7 +517,22 @@ bulkXlsxBtn.onclick = async ()=>{
 };
 bulkClearBtn.onclick = ()=>{ selectedIds.clear(); updateBulkBar(); };
 exportBtn.onclick=()=>{ location.href = API_BASE + 'orders_export.php?state=current&' + buildQs().toString(); };
-go.onclick=load;
-window.addEventListener('resize', load);
-document.addEventListener('DOMContentLoaded', async()=>{ await detectCaps(); await loadStatuses(); await loadUsers(); await load(); });
+go.onclick=()=>load();
+// zmiana szerokości: tylko gdy przechodzimy między widokiem telefonu a komputera, bez ponownego pobierania z serwera
+// (w telefonie „resize” leci przy każdym chowaniu paska adresu podczas przewijania)
+let widokTelefonu = window.innerWidth <= 768, czasResize = null;
+window.addEventListener('resize', ()=>{
+  clearTimeout(czasResize);
+  czasResize = setTimeout(()=>{
+    const teraz = window.innerWidth <= 768;
+    if(teraz !== widokTelefonu && ostatnieZamowienia){ widokTelefonu = teraz; renderOrders(ostatnieZamowienia); }
+  }, 200);
+});
+// start: wszystkie zapytania naraz zamiast po kolei
+document.addEventListener('DOMContentLoaded', async()=>{
+  const zamowienia = apiGet('orders.php?'+buildQs().toString());
+  zamowienia.catch(()=>{});
+  await Promise.all([detectCaps(), loadStatuses(), loadUsers()]);
+  await load(zamowienia);
+});
 </script></body></html>
