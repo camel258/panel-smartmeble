@@ -1149,7 +1149,7 @@ function renderCorrections(items){
       const fd = new FormData();
       fd.append('action','upload_file');
       fd.append('id', inp.dataset.uploadfor);
-      fd.append('file', f);
+      fd.append('file', await zmniejszZdjecie(f));
       try{
         const resp = await fetch(API_BASE+'order_corrections.php', {method:'POST', headers:authHeaders(), body:fd});
         if(!resp.ok) throw new Error('upload_failed');
@@ -1169,7 +1169,7 @@ $('addCorr').onclick = async ()=>{
     fd.append('order_id', String(Number(id)));
     fd.append('name', name);
     fd.append('description', desc);
-    if(file) fd.append('file', file);
+    if(file) fd.append('file', await zmniejszZdjecie(file));
     const resp = await fetch(API_BASE+'order_corrections.php', {method:'POST', headers:authHeaders(), body:fd});
     if(!resp.ok) throw new Error('add_failed');
     $('corrName').value='';
@@ -1408,7 +1408,7 @@ $('uploadBtn').onclick = async ()=>{
   const files=$('fileInput').files;
   if(!files.length) return;
   const fd=new FormData();
-  for(const f of files) fd.append('files[]', f);
+  for(const f of files) fd.append('files[]', await zmniejszZdjecie(f));
   fd.append('file_scope', $('fileScope').value || 'public');
   const r=await fetch(API_BASE+'order_files.php?id='+id,{method:'POST',headers:authHeaders(),body:fd});
   if(!r.ok){ alert('Błąd uploadu'); return; }

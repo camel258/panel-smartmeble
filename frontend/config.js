@@ -34,3 +34,18 @@ async function apiPost(p, body){
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(()=>URL.revokeObjectURL(url), 10000);
 }
+
+// Zdjęcia JPG z telefonu (3–7 MB) zmniejszane w przeglądarce przed wysłaniem: dłuższy bok 2560 px, jakość 85% (~0,5–1 MB).
+// PNG (rysunki, zrzuty), PDF, małe pliki i formaty nieczytelne dla przeglądarki (np. HEIC) idą bez zmian. 2026-11-08
+async function zmniejszZdjecie(f, maks = 2560, jakosc = 0.85){
+  try{
+    if(!f || !/^image\/jpe?g$/i.test(f.type || '') || f.size < 1500000 || typeof createImageBitmap !== 'function') return f;
+    const bmp = await createImageBitmap(f, {imageOrientation: 'from-image'});
+    const s = Math.min(1, maks / Math.max(bmp.width, bmp.height));
+    const c = document.createElement('canvas'); c.width = Math.round(bmp.width * s); c.height = Math.round(bmp.height * s);
+    c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height); if(bmp.close) bmp.close();
+    const blob = await new Promise(r => c.toBlob(r, 'image/jpeg', jakosc));
+    if(!blob || blob.size >= f.size * 0.9) return f;
+    return new File([blob], f.name.replace(/\.(jpe?g)$/i, '') + '.jpg', {type: 'image/jpeg', lastModified: f.lastModified});
+  }catch(e){ return f; }
+}

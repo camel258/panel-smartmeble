@@ -3,9 +3,9 @@
 <title>Monitoring GPS – Smart Meble</title>
 <link rel="icon" href="assets/img/favicon.ico">
 <link rel="stylesheet" href="assets/css/theme_v17.css"/>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
-<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" crossorigin=""/>
-<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" crossorigin=""/>
+<link rel="stylesheet" href="assets/vendor/leaflet-1.9.4/leaflet.css"/>
+<link rel="stylesheet" href="assets/vendor/leaflet.markercluster-1.5.3/MarkerCluster.css"/>
+<link rel="stylesheet" href="assets/vendor/leaflet.markercluster-1.5.3/MarkerCluster.Default.css"/>
 <style>
   .gps-wrap{display:grid;grid-template-columns:minmax(0,1fr) 420px;gap:14px}
   .gps-card{background:var(--panel);border:1px solid var(--line);border-radius:18px;box-shadow:0 8px 24px rgba(0,0,0,.16)}
@@ -148,8 +148,8 @@
 <script src="config.js"></script>
 <script src="assets/js/menu.js"></script>
 <script src="assets/js/topbar.js"></script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js" crossorigin=""></script>
+<script src="assets/vendor/leaflet-1.9.4/leaflet.js"></script>
+<script src="assets/vendor/leaflet.markercluster-1.5.3/leaflet.markercluster.js"></script>
 <script>
 function logout(){ localStorage.removeItem('token'); location.href='login.html'; }
 const gpsState = { map:null, markers:new Map(), markerLayer:null, devices:[], events:[], timer:null, refreshMs:20000, initializedBounds:false };
