@@ -149,3 +149,54 @@ function api_error_log_path(): string {
 function api_log_error(string $context, Throwable $e): void {
     @file_put_contents(api_error_log_path(), date('Y-m-d H:i:s') . ' ' . $context . ' ' . $e->getMessage() . PHP_EOL, FILE_APPEND);
 }
+
+// ---- Pliki: pamięć przeglądarki i miniatury (2026-11-08) ----
+// Nagłówki pamięci podręcznej przeglądarki (tylko u zalogowanego użytkownika – "private"). Gdy przeglądarka ma już
+// aktualną wersję (If-None-Match), odpowiada 304 bez wysyłania pliku i kończy skrypt.
+function api_file_cache_headers(string $path, int $maxAge = 604800): void {
+    $etag = '"' . dechex((int)@filesize($path)) . '-' . dechex((int)@filemtime($path)) . '"';
+    header('Cache-Control: private, max-age=' . $maxAge);
+    header('ETag: ' . $etag);
+    header('Last-Modified: ' . gmdate('D, d M Y H:i:s', (int)@filemtime($path)) . ' GMT');
+    header_remove('Pragma'); header_remove('Expires');
+    $inm = trim((string)($_SERVER['HTTP_IF_NONE_MATCH'] ?? ''));
+    if ($inm !== '' && ($inm === $etag || $inm === 'W/' . $etag)) { http_response_code(304); exit; }
+}
+
+// Miniatura zdjęcia (JPEG, dłuższy bok 320 px) zapisana w <pliki prywatne>/_miniatury. Wysyła ją i zwraca true;
+// zwraca false, gdy plik nie jest zdjęciem albo nie da się go zmniejszyć (wtedy wołający wysyła oryginał).
+function api_send_thumb(string $path, int $max = 320): bool {
+    $mime = api_safe_inline_mime($path);
+    if (!in_array($mime, ['image/jpeg', 'image/png', 'image/gif', 'image/webp'], true) || !function_exists('imagecreatetruecolor')) return false;
+    $dir = api_private_files_base() . '/_miniatury';
+    if (!is_dir($dir) && !@mkdir($dir, 0750, true)) return false;
+    $cache = $dir . '/' . sha1((string)realpath($path) . '|' . (int)@filemtime($path) . '|' . (int)@filesize($path) . '|' . $max) . '.jpg';
+    if (!is_file($cache)) {
+        $info = @getimagesize($path);
+        if (!$info || $info[0] < 1 || $info[1] < 1 || $info[0] * $info[1] > 30000000) return false;   // >30 Mpx – za duże dla pamięci PHP
+        try {
+            $src = @imagecreatefromstring((string)file_get_contents($path));
+            if (!$src) return false;
+            if ($mime === 'image/jpeg' && function_exists('exif_read_data')) {   // zdjęcia z telefonu: obrót wg EXIF
+                $o = (int)(@exif_read_data($path)['Orientation'] ?? 1);
+                if ($o === 3) $src = imagerotate($src, 180, 0); elseif ($o === 6) $src = imagerotate($src, -90, 0); elseif ($o === 8) $src = imagerotate($src, 90, 0);
+            }
+            $w = imagesx($src); $h = imagesy($src); $s = min(1, $max / max($w, $h));
+            $tw = max(1, (int)round($w * $s)); $th = max(1, (int)round($h * $s));
+            $dst = imagecreatetruecolor($tw, $th);
+            imagefill($dst, 0, 0, imagecolorallocate($dst, 255, 255, 255));   // przezroczyste PNG na białym tle
+            imagecopyresampled($dst, $src, 0, 0, 0, 0, $tw, $th, $w, $h);
+            $tmp = $cache . '.' . getmypid() . '.tmp';
+            $ok = imagejpeg($dst, $tmp, 78) && @rename($tmp, $cache);
+            imagedestroy($src); imagedestroy($dst);
+            if (!$ok) { @unlink($tmp); return false; }
+        } catch (Throwable $e) { api_log_error('miniatura', $e); return false; }
+    }
+    header('Content-Type: image/jpeg');
+    header('Content-Disposition: inline; filename="miniatura.jpg"');
+    header('X-Content-Type-Options: nosniff');
+    api_file_cache_headers($cache, 2592000);
+    header('Content-Length: ' . filesize($cache));
+    readfile($cache);
+    return true;
+}

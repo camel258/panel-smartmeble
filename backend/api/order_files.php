@@ -259,7 +259,7 @@ if ($method === 'POST') {
                 'kind' => $kind,
                 'scope' => $scope,
                 'is_image' => $kind === 'image',
-                'thumb' => $kind === 'image' ? ($url . '&inline=1') : null,
+                'thumb' => $kind === 'image' ? ($url . '&inline=1&thumb=1') : null,
                 'size' => (int)@filesize($dst),
             ];
         }
@@ -297,7 +297,7 @@ try{
             'kind' => $kind,
             'scope' => $scope,
             'is_image' => $kind === 'image',
-            'thumb' => $kind === 'image' ? ($url . '&inline=1') : null,
+            'thumb' => $kind === 'image' ? ($url . '&inline=1&thumb=1') : null,
             'size' => ($rp = api_resolve_storage_path((string)$row['storage_path'])) !== '' ? (int)@filesize($rp) : 0,
         ];
     }
@@ -327,7 +327,7 @@ if($canViewPublicFiles && is_dir($legacyDir)){
                 'kind' => $kind,
                 'scope' => 'public',
                 'is_image' => $kind === 'image',
-                'thumb' => $kind === 'image' ? ($legacyWeb . rawurlencode($name) . '&inline=1') : null,
+                'thumb' => $kind === 'image' ? ($legacyWeb . rawurlencode($name) . '&inline=1&thumb=1') : null,
                 'size' => (int)@filesize($f),
                 'legacy' => true,
             ];

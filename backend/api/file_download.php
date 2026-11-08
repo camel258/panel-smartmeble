@@ -85,6 +85,7 @@ if (!empty($_GET['legacy_order']) && isset($_GET['name'])) {
     }
     $lp = api_legacy_orders_dir($oid) . '/' . basename((string)$_GET['name']);
     if($oid<=0 || !is_file($lp)) json_err('not_found',404);
+    if (isset($_GET['thumb']) && api_send_thumb($lp)) exit;
     $safe = api_safe_inline_mime($lp);
     $inline = isset($_GET['inline']) && $safe;
     header('Content-Type: '.($inline ? $safe : 'application/octet-stream'));
@@ -92,6 +93,7 @@ if (!empty($_GET['legacy_order']) && isset($_GET['name'])) {
     header('X-Content-Type-Options: nosniff');
     header("Content-Security-Policy: sandbox; default-src 'none'");
     header('Content-Disposition: '.($inline?'inline':'attachment').'; filename="'.basename($lp).'"');
+    api_file_cache_headers($lp);
     readfile($lp);
     exit;
 }
@@ -135,6 +137,9 @@ if(!$allowed){
 }
 if(!$allowed) json_err('forbidden',403);
 
+// miniatura (podgląd w panelu) – mały JPEG zamiast pełnego zdjęcia
+if (isset($_GET['thumb']) && api_send_thumb($path)) exit;
+
 // inline tylko dla PDF i obrazów (typ sprawdzany z zawartości pliku, nie z danych od przeglądarki)
 $safe = api_safe_inline_mime($path, (string)($f['mime_type'] ?? ''));
 $inline = isset($_GET['inline']) && $safe;
@@ -145,6 +150,7 @@ header('Content-Length: '.filesize($path));
 header('X-Content-Type-Options: nosniff');
 header("Content-Security-Policy: sandbox; default-src 'none'");
 header('Content-Disposition: '.($inline?'inline':'attachment').'; filename="'.basename((string)$f['filename']).'"');
+api_file_cache_headers($path);
 
 readfile($path);
 exit;

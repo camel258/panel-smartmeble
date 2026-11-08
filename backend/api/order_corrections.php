@@ -120,7 +120,7 @@ function corr_store_uploaded_file(PDO $pdo, int $orderId, int $itemId, array $fi
   $fid = (int)$pdo->lastInsertId();
   $isImg = strpos((string)$mime,'image/')===0;
   $url = '../backend/api/file_download.php?file_id='.$fid;
-  return ['id'=>$fid,'name'=>$name,'url'=>$url,'is_image'=>$isImg,'thumb'=>$isImg?($url.'&inline=1'):null];
+  return ['id'=>$fid,'name'=>$name,'url'=>$url,'is_image'=>$isImg,'thumb'=>$isImg?($url.'&inline=1&thumb=1'):null];
 }
 function corr_files_for_items(PDO $pdo, array $itemIds): array {
   if(!$itemIds) return [];
@@ -132,7 +132,7 @@ function corr_files_for_items(PDO $pdo, array $itemIds): array {
     $iid = (int)$r['correction_item_id'];
     $isImg = strpos((string)$r['mime_type'],'image/')===0;
     $url = '../backend/api/file_download.php?file_id='.(int)$r['id'];
-    $map[$iid][] = ['id'=>(int)$r['id'],'name'=>$r['filename'],'url'=>$url,'is_image'=>$isImg,'thumb'=>$isImg?($url.'&inline=1'):null];
+    $map[$iid][] = ['id'=>(int)$r['id'],'name'=>$r['filename'],'url'=>$url,'is_image'=>$isImg,'thumb'=>$isImg?($url.'&inline=1&thumb=1'):null];
   }
   return $map;
 }

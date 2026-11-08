@@ -1104,7 +1104,7 @@ function renderCorrections(items){
     const filesHtml = (item.files||[]).map(f=>{
       const url = authFileUrl(f.url);
       if(f.is_image){
-        return '<a href="'+url+'" target="_blank" style="display:inline-block;margin:4px 6px 0 0"><img src="'+authFileUrl(f.thumb||f.url)+'" style="width:46px;height:46px;object-fit:cover;border-radius:8px;border:1px solid rgba(255,255,255,.12)"></a>';
+        return '<a href="'+url+'" target="_blank" style="display:inline-block;margin:4px 6px 0 0"><img loading="lazy" decoding="async" src="'+authFileUrl(f.thumb||f.url)+'" style="width:46px;height:46px;object-fit:cover;border-radius:8px;border:1px solid rgba(255,255,255,.12)"></a>';
       }
       return '<a href="'+url+'" target="_blank" style="display:inline-block;margin:4px 6px 0 0;padding:6px 8px;border-radius:8px;background:rgba(255,255,255,.06);color:#e5e7eb;text-decoration:none;font-size:12px">'+escHtml(f.name)+'</a>';
     }).join('');
@@ -1342,7 +1342,7 @@ function _fileVisual(filename, url, ext){
   const e = String(ext || (filename||'').split('.').pop() || '').toLowerCase();
   const isImg = ['png','jpg','jpeg','gif','webp','bmp','svg'].includes(e);
   if(isImg){
-    return '<img src="'+url+'" style="width:44px;height:44px;object-fit:cover;border-radius:10px;border:1px solid rgba(255,255,255,0.08)">';
+    return '<img loading="lazy" decoding="async" src="'+url+'" style="width:44px;height:44px;object-fit:cover;border-radius:10px;border:1px solid rgba(255,255,255,0.08)">';
   }
   const map = {
     pdf:['PDF','#b91c1c'],
