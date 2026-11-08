@@ -154,10 +154,19 @@ async function bulkAction(payload, successMsg){
 async function loadStatuses(){ statusFilter.innerHTML='<option value="">Wszystkie statusy</option>'; try{ const r=await apiGet('statuses.php'); (r.items||[]).forEach(s=>{ const o=document.createElement('option'); o.value=s.id; o.textContent=s.name; statusFilter.appendChild(o);}); }catch(e){} }
 function buildQs(){ const qs=new URLSearchParams(); if(q.value.trim()) qs.set('q',q.value.trim()); if(statusFilter.value) qs.set('status',statusFilter.value); if(year.value.trim()) qs.set('year',year.value.trim()); if(month.value.trim()) qs.set('month',month.value.trim()); if(from.value) qs.set('from',from.value); if(to.value) qs.set('to',to.value); return qs; }
 
-async function load(){
+let ostatnieZamowienia = null;   // ostatnia odpowiedź – do ponownego ułożenia bez pobierania (zmiana szerokości okna)
+async function load(wczesniej){
   try{
     err.textContent='';
-    const res=await apiGet('orders_finished.php?'+buildQs().toString());
+    const res=await (wczesniej || apiGet('orders_finished.php?'+buildQs().toString()));
+    ostatnieZamowienia = res;
+    renderOrders(res);
+  }catch(e){
+    err.textContent='Błąd połączenia z serwerem (finished).';
+  }
+}
+function renderOrders(res){
+  {
     const canFinance=!!res.can_view_finance;
     canFinanceVisible = canFinance;
     currentRowsById.clear();
@@ -199,8 +208,6 @@ async function load(){
       wrap.appendChild(sec);
     });
     bindCheckboxes();
-  }catch(e){
-    err.textContent='Błąd połączenia z serwerem (finished).';
   }
 }
 ;
@@ -224,7 +231,21 @@ bulkXlsxBtn.onclick = async ()=>{
 };
 bulkClearBtn.onclick = ()=>{ selectedIds.clear(); updateBulkBar(); };
 exportBtn.onclick=()=>{ location.href = API_BASE + 'orders_export.php?state=finished&' + buildQs().toString(); };
-go.onclick=load;
-window.addEventListener('resize', load);
-document.addEventListener('DOMContentLoaded', async()=>{ await detectCaps(); await loadStatuses(); await load(); });
+go.onclick=()=>load();
+// zmiana szerokości: tylko przejście telefon/komputer, bez ponownego pobierania (w telefonie „resize” leci przy przewijaniu)
+let widokTelefonu = window.innerWidth <= 768, czasResize = null;
+window.addEventListener('resize', ()=>{
+  clearTimeout(czasResize);
+  czasResize = setTimeout(()=>{
+    const teraz = window.innerWidth <= 768;
+    if(teraz !== widokTelefonu && ostatnieZamowienia){ widokTelefonu = teraz; renderOrders(ostatnieZamowienia); }
+  }, 200);
+});
+// start: zapytania naraz zamiast po kolei
+document.addEventListener('DOMContentLoaded', async()=>{
+  const zamowienia = apiGet('orders_finished.php?'+buildQs().toString());
+  zamowienia.catch(()=>{});
+  await Promise.all([detectCaps(), loadStatuses()]);
+  await load(zamowienia);
+});
 </script></body></html>

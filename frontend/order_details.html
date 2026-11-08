@@ -1474,8 +1474,7 @@ $('deleteBtn').onclick = async ()=>{
 document.addEventListener('DOMContentLoaded', async ()=>{
   setErr('');
   try{
-    await showPrivButtons();
-    await loadStatuses();
+    await Promise.all([showPrivButtons(), loadStatuses()]);   // naraz zamiast po kolei
     await loadOrderCore();
   }catch(e){
     setErr('Nie udało się wczytać zamówienia.');

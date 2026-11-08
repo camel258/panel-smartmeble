@@ -201,5 +201,5 @@ document.getElementById('go').onclick = doSearch;
 document.getElementById('showNewsFormBtn').onclick = ()=>{ document.getElementById('newsForm').style.display='flex'; document.getElementById('newsTitle').focus(); };
 document.getElementById('cancelNewsBtn').onclick = ()=>{ document.getElementById('newsForm').style.display='none'; document.getElementById('newsTitle').value=''; document.getElementById('newsContent').value=''; };
 document.getElementById('saveNewsBtn').onclick = async ()=>{ const title=(document.getElementById('newsTitle').value||'').trim(); const content=(document.getElementById('newsContent').value||'').trim(); if(!title || !content){ document.getElementById('err').textContent='Uzupełnij tytuł i treść aktualności.'; return; } document.getElementById('err').textContent=''; try{ await apiPost('aktualnosci_add.php',{title,content}); document.getElementById('newsTitle').value=''; document.getElementById('newsContent').value=''; document.getElementById('newsForm').style.display='none'; await loadFeed(); }catch(e){ document.getElementById('err').textContent='Nie udało się zapisać aktualności.'; } };
-document.addEventListener('DOMContentLoaded', async()=>{ await loadSession(); await loadFeed(); });
+document.addEventListener('DOMContentLoaded', async()=>{ await Promise.all([loadSession(), loadFeed()]); });
 </script></body></html>
