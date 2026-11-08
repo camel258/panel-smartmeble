@@ -294,7 +294,9 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   document.getElementById('filterFrom').addEventListener('change', loadEvents);
   document.getElementById('filterTo').addEventListener('change', loadEvents);
   await refreshAll();
-  gpsState.timer = setInterval(refreshAll, gpsState.refreshMs);
+  // odświeżanie tylko, gdy karta jest widoczna (w tle nie zużywa danych telefonu ani serwera); po powrocie od razu
+  gpsState.timer = setInterval(()=>{ if(document.visibilityState==='visible') refreshAll(); }, gpsState.refreshMs);
+  document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible') refreshAll(); });
 });
 </script>
 </body></html>
