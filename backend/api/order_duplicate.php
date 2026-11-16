@@ -40,9 +40,10 @@ try{
   if($wItem && array_key_exists('item_description', $o)) $put('item_description', $o['item_description']);
   if($wAmount) $put('total_amount', $o['total_amount']);
 
-  // Status: kopiujemy, ale nie statusy poprawek (10/11)
-  $sid = $o['status_id'] ?? null;
-  if($sid !== null && !in_array((int)$sid, [10,11], true)) $put('status_id', $sid);
+  // Kopia zawsze trafia do zamówień aktualnych ze statusem „Do rozpisania” (decyzja Kamila 2026-11-16)
+  $sid = $pdo->query("SELECT id FROM order_statuses WHERE name='Do rozpisania' LIMIT 1")->fetchColumn();
+  $put('status_id', $sid !== false ? (int)$sid : 7);
+  $put('is_finished', 0);
 
   // Osoba rozpisująca: jeśli nie kopiujemy terminów, ustaw bieżącego użytkownika
   if(!$wDates && isset($me['uid'])) $put('scheduler_id', (int)$me['uid']);
