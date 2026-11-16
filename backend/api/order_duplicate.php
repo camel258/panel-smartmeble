@@ -59,6 +59,12 @@ try{
     }
   }
 
+  // CREATE TABLE robi w MySQL niejawny commit – musi być PRZED beginTransaction,
+  // inaczej transakcja się kończy, a commit() rzuca „There is no active transaction”.
+  try{
+    $pdo->exec("CREATE TABLE IF NOT EXISTS order_addons (id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, order_id BIGINT UNSIGNED NOT NULL, description VARCHAR(255) NOT NULL, amount DECIMAL(12,2) NOT NULL DEFAULT 0, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, INDEX(order_id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+  }catch(Throwable $e){}
+
   $pdo->beginTransaction();
   if($cols){
     $sql = "INSERT INTO orders (".implode(',', $cols).") VALUES (".implode(',', array_fill(0, count($cols), '?')).")";
@@ -70,9 +76,6 @@ try{
 
   // Składniki wartości
   $baseAmount = $wAmount ? (float)$o['total_amount'] : 0;
-  try{
-    $pdo->exec("CREATE TABLE IF NOT EXISTS order_addons (id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, order_id BIGINT UNSIGNED NOT NULL, description VARCHAR(255) NOT NULL, amount DECIMAL(12,2) NOT NULL DEFAULT 0, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, INDEX(order_id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
-  }catch(Throwable $e){}
   $pdo->prepare("INSERT INTO order_addons(order_id,description,amount) VALUES(?,?,?)")->execute([$newId,'Zamówienie główne',$baseAmount]);
   if($wAmount){
     $q = $pdo->prepare("SELECT description, amount FROM order_addons WHERE order_id=? AND description<>'Zamówienie główne' ORDER BY id ASC");
