@@ -15,8 +15,11 @@ try{
   if (!api_table_exists($pdo, 'role_field_permissions')) $pdo->exec('CREATE TABLE role_field_permissions (role_id INT UNSIGNED NOT NULL, field_code VARCHAR(64) NOT NULL, allow_view TINYINT(1) NOT NULL DEFAULT 1, allow_edit TINYINT(1) NOT NULL DEFAULT 1, PRIMARY KEY(role_id,field_code)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
 
   if(!empty($body['modules']) && is_array($body['modules'])){
+    // nazwy ról (Super Admin zawsze zachowuje dostęp do Uprawnień); wcześniej wołana tu funkcja role_name_local() istniała tylko w role_permissions_get.php
+    $roleNames = [];
+    foreach($pdo->query('SELECT id, name FROM roles')->fetchAll(PDO::FETCH_ASSOC) as $r) $roleNames[(int)$r['id']] = strtolower(trim((string)$r['name']));
     $st = $pdo->prepare('INSERT INTO role_module_permissions(role_id,module_code,allow_access) VALUES(?,?,?) ON DUPLICATE KEY UPDATE allow_access=VALUES(allow_access)');
-    foreach($body['modules'] as $row){ $rid=(int)($row['role_id']??0); $code=trim((string)($row['module_code']??'')); if($rid<=0||$code==='') continue; $allow=!empty($row['allow_access'])?1:0; if($code==='permissions' && role_name_local($pdo,$rid) && strpos(role_name_local($pdo,$rid),'super')!==false) $allow=1; $st->execute([$rid,$code,$allow]); }
+    foreach($body['modules'] as $row){ $rid=(int)($row['role_id']??0); $code=trim((string)($row['module_code']??'')); if($rid<=0||$code==='') continue; $allow=!empty($row['allow_access'])?1:0; if($code==='permissions' && strpos($roleNames[$rid] ?? '','super')!==false) $allow=1; $st->execute([$rid,$code,$allow]); }
   }
   if(!empty($body['dashboard_widgets']) && is_array($body['dashboard_widgets'])){
     $st = $pdo->prepare('INSERT INTO role_dashboard_permissions(role_id,widget_code,allow_view) VALUES(?,?,?) ON DUPLICATE KEY UPDATE allow_view=VALUES(allow_view)');
