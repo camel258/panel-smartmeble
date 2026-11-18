@@ -34,8 +34,10 @@ $role=(int)($me['role_id'] ?? ($me['role'] ?? 0)); $uid=sm_uid($me); $isExternal
 $limit=max(1,min(1000,(int)($_GET['limit']??300))); $offset=max(0,(int)($_GET['offset']??0));
 $q=trim($_GET['q']??''); $status=trim($_GET['status']??''); $year=trim($_GET['year']??''); $month=trim($_GET['month']??''); $from=trim($_GET['from']??''); $to=trim($_GET['to']??'');
 $where=["COALESCE(o.is_deleted,0)=0","COALESCE(o.is_finished,0)=0","NOT EXISTS (SELECT 1 FROM order_statuses sx WHERE sx.id=o.status_id AND LOWER(COALESCE(sx.name,'')) LIKE '%zakończ%')"]; $params=[]; if($isExternalTechnologist){ $where[]="o.scheduler_id=?"; $params[]=$uid; } $dateExpr="COALESCE(STR_TO_DATE(CONCAT(o.finished_bucket_year,'-',LPAD(o.finished_bucket_month,2,'0'),'-01'),'%Y-%m-%d'),o.install_date_new,o.install_date,o.contract_date)";
+$baseWhere=$where; $baseParams=$params;   // do listy osób rozpisujących (bez filtrów z paska)
 if($q!==''){ $where[]="(CONCAT(o.client_first_name,' ',o.client_last_name) LIKE ? OR o.item_description LIKE ?)"; $params[]="%$q%"; $params[]="%$q%"; }
 if($status!==''){ $where[]="o.status_id=?"; $params[]=(int)$status; }
+$scheduler=trim($_GET['scheduler']??''); if($scheduler==='none'){ $where[]="o.scheduler_id IS NULL"; } elseif($scheduler!==''){ $where[]="o.scheduler_id=?"; $params[]=(int)$scheduler; }
 if($year!==''){ $where[]="YEAR($dateExpr)=?"; $params[]=(int)$year; }
 if($month!==''){ $where[]="MONTH($dateExpr)=?"; $params[]=(int)$month; }
 if($from!==''){ $where[]="$dateExpr >= ?"; $params[]=$from; }
@@ -88,5 +90,8 @@ if($rows){
  }catch(Throwable $e){}
  foreach($rows as &$r){ $oid=(int)$r['id']; $r['mounters']=isset($map[$oid])?explode(', ',$map[$oid]):[]; $sum=isset($addonMap[$oid])?(float)$addonMap[$oid]:(float)($r['total_amount']??0); $paid=isset($payMap[$oid])?(float)$payMap[$oid]:0.0; $r['total_with_addons']=$sum; $r['paid_sum']=$paid; $r['remaining']=$sum-$paid; $r['has_workshop_schedule']=(int)($wmMap[$oid]['has_workshop'] ?? 0); $r['has_install_schedule']=(int)($wmMap[$oid]['has_install'] ?? 0); $r['contract_signer_initials']=cs_initials((string)($r['contract_signer_name'] ?? '')); $r['checklist_done']=(int)($checklistMap[$oid]['done'] ?? 0); $r['checklist_codes']=(string)($checklistMap[$oid]['codes'] ?? ''); if(!$canFinance){ $r['total_amount']=null; $r['deposit_amount']=null; $r['total_with_addons']=null; $r['paid_sum']=null; $r['remaining']=null; } }
 }
-json_ok(['items'=>$rows,'can_view_finance'=>$canFinance]);
+// Filtr „Rozpiska”: osoby rozpisujące w zamówieniach aktualnych (2026-11-18)
+$schedulers=[];
+try{ $sq=$pdo->prepare("SELECT o.scheduler_id AS id, COALESCE(NULLIF(TRIM(u.full_name),''), CONCAT('Użytkownik #',o.scheduler_id)) AS name, COUNT(*) AS n FROM orders o LEFT JOIN users u ON u.id=o.scheduler_id WHERE ".implode(' AND ',$baseWhere)." AND o.scheduler_id IS NOT NULL GROUP BY o.scheduler_id, name ORDER BY name"); $sq->execute($baseParams); $schedulers=$sq->fetchAll(PDO::FETCH_ASSOC); }catch(Throwable $e){}
+json_ok(['items'=>$rows,'can_view_finance'=>$canFinance,'schedulers'=>$schedulers]);
 ?>
