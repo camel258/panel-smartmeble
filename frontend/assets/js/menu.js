@@ -29,7 +29,8 @@ function buildMenuForRole(role){
     {href:'dashboard.html', label:'Dashboard', code:'dashboard'},
     {href:'gps.html', label:'Monitoring GPS', code:'gps_monitoring'},
     {href:'permissions.html', label:'Uprawnienia grup', code:'permissions', attr:'data-super-only'},
-    {href:'wycena.html', label:'Wycena', code:'wycena', attr:'data-super-only'}
+    {href:'wycena.html', label:'Wycena', code:'wycena', attr:'data-super-only'},
+    {href:'wyceny_www.html', label:'Wyceny ze strony', code:'wyceny_www', attr:'data-super-only'}
   ];
 }
 
