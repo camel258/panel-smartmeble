@@ -48,6 +48,7 @@
 <script src="config.js"></script><script src="assets/js/menu.js"></script>
 <script>
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c])); }
+async function wycenaAuto(){ try{ const r = await apiPost('wycena_auth.php', {}); if(r && r.token){ sessionStorage.setItem('wycena_token', r.token); return true; } }catch(e){} return false; }   // wejście bez hasła dla wybranych osób
 function wycenaHeaders(){ return {'Content-Type':'application/json', ...authHeaders(), 'X-Wycena-Token': sessionStorage.getItem('wycena_token')||''}; }
 async function wApiGet(path){ const r=await fetch(API_BASE+path,{headers:wycenaHeaders()}); const t=await r.text(); if(!r.ok) throw new Error(t); return JSON.parse(t); }
 async function wApiPost(path, body){ const r=await fetch(API_BASE+path,{method:'POST',headers:wycenaHeaders(),body:JSON.stringify(body||{})}); const t=await r.text(); if(!r.ok) throw new Error(t); return JSON.parse(t); }
@@ -119,7 +120,7 @@ document.getElementById('logoutBtn').onclick = ()=>{ localStorage.removeItem('to
 document.addEventListener('DOMContentLoaded', async ()=>{
   const ok = await checkRole();
   if(!ok) return;
-  if(!sessionStorage.getItem('wycena_token')){ location.href='wycena.html'; return; }
+  if(!sessionStorage.getItem('wycena_token') && !(await wycenaAuto())){ location.href='wycena.html'; return; }
   loadMaterials();
 });
 </script>

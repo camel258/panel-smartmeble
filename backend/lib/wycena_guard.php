@@ -10,6 +10,10 @@ function wycena_password(): string {
   return $p;
 }
 
+// Użytkownicy wchodzący do Wyceny bez hasła modułu (decyzja Kamila 2026-11-23): Kamil Wiśniewski, Adam Gołuński
+const WYCENA_BEZ_HASLA = [1, 9];
+function wycena_bez_hasla(int $uid): bool { return in_array($uid, WYCENA_BEZ_HASLA, true); }
+
 function wycena_token_for(int $uid): string {
   $secret = app_key();
   return hash_hmac('sha256', 'wycena-access-v1-'.$uid, $secret);
@@ -22,6 +26,7 @@ function wycena_check_access(): array {
   $roleId = (int)($me['role_id'] ?? $me['role'] ?? 0);
   if($roleId !== 999) json_err('forbidden', 403, ['details'=>'super_admin_required']);
   $uid = (int)($me['id'] ?? $me['uid'] ?? 0);
+  if(wycena_bez_hasla($uid)) return $me;
   $token = $_SERVER['HTTP_X_WYCENA_TOKEN'] ?? ($_GET['wtoken'] ?? ($_POST['wtoken'] ?? ''));
   $expected = wycena_token_for($uid);
   if(!is_string($token) || $token === '' || !hash_equals($expected, (string)$token)){

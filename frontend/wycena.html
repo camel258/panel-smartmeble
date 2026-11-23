@@ -83,6 +83,7 @@ async function checkRole(){
   }catch(e){ location.href='login.html'; return false; }
 }
 
+async function wycenaAuto(){ try{ const r = await apiPost('wycena_auth.php', {}); if(r && r.token){ sessionStorage.setItem('wycena_token', r.token); return true; } }catch(e){} return false; }   // wejście bez hasła dla wybranych osób
 function showGate(){ document.getElementById('gate').style.display='flex'; }
 function hideGate(){ document.getElementById('gate').style.display='none'; }
 
@@ -141,7 +142,7 @@ document.getElementById('logoutBtn').onclick = ()=>{ localStorage.removeItem('to
 document.addEventListener('DOMContentLoaded', async ()=>{
   const ok = await checkRole();
   if(!ok) return;
-  if(sessionStorage.getItem('wycena_token')){ loadList(); } else { showGate(); }
+  if(sessionStorage.getItem('wycena_token') || await wycenaAuto()){ loadList(); } else { showGate(); }
 });
 </script>
 </body></html>

@@ -11,10 +11,10 @@ $raw = file_get_contents('php://input');
 $body = json_decode($raw, true);
 if(!is_array($body)) $body = $_POST;
 $password = (string)($body['password'] ?? '');
+$uid = (int)($me['id'] ?? $me['uid'] ?? 0);
 
-if(!hash_equals(wycena_password(), $password)){
+if(!wycena_bez_hasla($uid) && !hash_equals(wycena_password(), $password)){
   json_err('invalid_password', 403, ['details'=>'Nieprawidłowe hasło.']);
 }
 
-$uid = (int)($me['id'] ?? $me['uid'] ?? 0);
 json_ok(['ok'=>true, 'token'=>wycena_token_for($uid)]);

@@ -96,6 +96,7 @@ function wycenaHeaders(){ return {'Content-Type':'application/json', ...authHead
 async function wApiGet(path){ const r=await fetch(API_BASE+path,{headers:wycenaHeaders()}); const t=await r.text(); if(!r.ok) throw new Error(t); return JSON.parse(t); }
 async function wApiPost(path, body){ const r=await fetch(API_BASE+path,{method:'POST',headers:wycenaHeaders(),body:JSON.stringify(body||{})}); const t=await r.text(); if(!r.ok) throw new Error(t); return JSON.parse(t); }
 
+async function wycenaAuto(){ try{ const r = await apiPost('wycena_auth.php', {}); if(r && r.token){ sessionStorage.setItem('wycena_token', r.token); return true; } }catch(e){} return false; }   // wejście bez hasła dla wybranych osób
 function showGate(){ document.getElementById('gate').style.display='flex'; }
 function hideGate(){ document.getElementById('gate').style.display='none'; }
 document.getElementById('gateBtn').onclick = async ()=>{
@@ -421,7 +422,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   const ok = await checkRole();
   if(!ok) return;
   if(!id){ document.getElementById('furnitureList').innerHTML='<div class="card">Brak ID wyceny.</div>'; return; }
-  if(sessionStorage.getItem('wycena_token')){ loadQuote(); } else { showGate(); }
+  if(sessionStorage.getItem('wycena_token') || await wycenaAuto()){ loadQuote(); } else { showGate(); }
 });
 </script>
 </body></html>
