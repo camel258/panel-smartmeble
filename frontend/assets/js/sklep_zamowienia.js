@@ -63,18 +63,39 @@ async function openDetail(id){
     detail = await apiGet(api('get', 'id='+encodeURIComponent(id)));
     STATUSY = detail.statusy || STATUSY; ETAPY = detail.etapy_def || ETAPY;
     renderDetail();
+    paczkiZaladuj(detail.item);
     $('drawer').classList.add('open'); $('drawer').setAttribute('aria-hidden','false');
     history.replaceState(null,'','?id='+id);
   }catch(e){ showErr(e); }
 }
 function closeDetail(){ $('drawer').classList.remove('open'); $('drawer').setAttribute('aria-hidden','true'); history.replaceState(null,'',location.pathname); loadList(); }
 
-// paczka produkcyjna pozycji (zbudujmebel): ZIP z formatkami, DXF, okuciami, etykietami i instrukcją
+// pliki produkcyjne pozycji (zbudujmebel, 2026-11-25): osobno CNC, rozkrój, wiercenie, instrukcja i pełna paczka –
+// lista z API sklepu przez panel (sklep_paczka.php), dorysowywana po otwarciu zamówienia
+const PACZKA_RODZAJE = [['cnc','Pliki CNC'],['rozkroj','Rozkrój (PDF)'],['wiercenie','Wiercenie – wielowrzecionowa (PDF)'],['instrukcja','Instrukcja montażu (PDF)'],['paczka','Pełna paczka (ZIP)']];
+function paczkaUrl(z, item, rodzaj){ return API_BASE + 'sklep_paczka.php?sklep=' + SKLEP + '&id=' + z.wc_id + '&item=' + item + '&rodzaj=' + rodzaj + '&token=' + encodeURIComponent(localStorage.getItem('token')||''); }
 function paczka(z, p){
   if (SKLEP !== 'zbudujmebel') return '';
-  if (!p.paczka) return '<div class="fx-muted" style="margin-top:6px;font-size:13px">Paczka produkcyjna powstanie automatycznie po opłaceniu zamówienia.</div>';
-  const url = API_BASE + 'sklep_paczka.php?sklep=' + SKLEP + '&id=' + z.wc_id + '&item=' + p.item_id + '&token=' + encodeURIComponent(localStorage.getItem('token')||'');
-  return '<a class="btn" style="margin-top:8px;display:inline-block" href="' + esc(url) + '">Pobierz paczkę produkcyjną (ZIP)</a>';
+  return '<div class="fx-paczki" data-item="'+esc(p.item_id)+'" style="margin-top:8px;font-size:13px"><span class="fx-muted">Sprawdzam pliki produkcyjne…</span></div>';
+}
+async function paczkiZaladuj(z){
+  const boxy = document.querySelectorAll('.fx-paczki');
+  if (!boxy.length) return;
+  let poz = null;
+  try { poz = (await apiGet('sklep_paczka.php?sklep=' + SKLEP + '&id=' + z.wc_id + '&lista=1')).pozycje || {}; }
+  catch(e){
+    const brak = String(e && e.message || '').includes('Pliku jeszcze nie ma');
+    boxy.forEach(b=>{ b.innerHTML = '<span class="fx-muted">' + (brak ? 'Pliki produkcyjne powstaną automatycznie po opłaceniu zamówienia.' : 'Nie udało się pobrać listy plików ze sklepu – spróbuj później.') + '</span>'; });
+    return;
+  }
+  boxy.forEach(b=>{
+    const item = b.getAttribute('data-item');
+    const pliki = poz[item] || [];
+    if (!pliki.length){ b.innerHTML = '<span class="fx-muted">Pliki produkcyjne powstaną automatycznie po opłaceniu zamówienia.</span>'; return; }
+    const jest = Object.fromEntries(pliki.map(f=>[f.rodzaj, f]));
+    b.innerHTML = '<div style="display:flex;flex-wrap:wrap;gap:6px">' + PACZKA_RODZAJE.filter(([r])=>jest[r]).map(([r, nazwa])=>
+      '<a class="btn" target="_blank" rel="noopener" href="' + esc(paczkaUrl(z, item, r)) + '" title="' + esc(jest[r].etykieta||nazwa) + '">' + esc(nazwa) + '</a>').join('') + '</div>';
+  });
 }
 function adres(a){ return [a.firma, a.osoba, a.adres, [a.kod, a.miasto].filter(Boolean).join(' '), a.kraj && a.kraj!=='PL' ? a.kraj : ''].filter(Boolean).map(esc).join('<br>'); }
 
