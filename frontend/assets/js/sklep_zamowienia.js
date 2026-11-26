@@ -64,6 +64,7 @@ async function openDetail(id){
     STATUSY = detail.statusy || STATUSY; ETAPY = detail.etapy_def || ETAPY;
     renderDetail();
     paczkiZaladuj(detail.item);
+    zakupyZaladuj(detail.item);
     $('drawer').classList.add('open'); $('drawer').setAttribute('aria-hidden','false');
     history.replaceState(null,'','?id='+id);
   }catch(e){ showErr(e); }
@@ -201,3 +202,82 @@ $('drawer').addEventListener('click', e => { if (e.target === $('drawer')) close
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('drawer').classList.contains('open')) closeDetail(); });
 loadList();
 const startId = new URLSearchParams(location.search).get('id'); if (startId) openDetail(startId);
+
+// ── Lista materiałów do zamówienia (zbudujmebel, 2026-11-27): płyty, obrzeża, okucia + odhaczanie „mamy” ──
+// Liczy sklep (API /zakupy przez backend/api/sklep_zakupy.php). Odhaczanie tylko w zamówieniu; lista zbiorcza
+// dla zaznaczonych zamówień pokazuje „mamy”, gdy pozycja jest odhaczona we wszystkich zamówieniach, w których występuje.
+const ZK_GRUPY = [['plyty','Płyty'],['obrzeza','Obrzeża (z zapasem)'],['okucia','Okucia']];
+function zkIlosc(g, p){
+  if (g==='plyty') return '<b>'+esc(p.arkuszy)+' ark.</b> <span class="fx-muted">'+esc(p.arkusz||'')+(p.formatek?' · '+esc(p.formatek)+' formatek':'')+(p.wykorzystanie?' · wykorzystanie '+esc(p.wykorzystanie)+'%':'')+'</span>';
+  if (g==='obrzeza') return '<b>'+esc(p.mbZZapasem)+' mb</b> <span class="fx-muted">(potrzeba '+esc(p.mb)+' mb)</span>';
+  return '<b>'+esc(p.ilosc)+' '+esc(p.jm||'szt.')+'</b>';
+}
+function zkHtml(r, edycja, wcId){
+  if (r.puste) return '<div class="fx-muted">'+esc(r.komunikat||'Brak mebli do policzenia.')+'</div>';
+  let h = '';
+  ZK_GRUPY.forEach(([g, nazwa])=>{
+    const lista = (r[g]||[]).slice().sort((a,b)=>(a.mamy?1:0)-(b.mamy?1:0));
+    if (!lista.length) return;
+    h += '<h4 style="margin:12px 0 6px">'+nazwa+'</h4><table class="fx-table zk-tab" style="width:100%"><tbody>'
+      + lista.map(p=>'<tr style="'+(p.mamy?'opacity:.5':'')+'"><td style="width:34px">'
+        + (edycja ? '<input type="checkbox" data-zk="'+esc(p.klucz)+'" data-wc="'+esc(wcId)+'"'+(p.mamy?' checked':'')+' title="Mamy na stanie">'
+                  : (p.mamy ? '✓' : (p.mamy_czesc ? '½' : '')))
+        + '</td><td>'+esc(p.nazwa)+(!edycja && p.zamowienia && r.zamowienia.length>1 ? '<br><span class="fx-muted" style="font-size:12px">zam. '+p.zamowienia.map(esc).join(', ')+'</span>' : '')
+        + (edycja && p.mamy && p.kto ? '<br><span class="fx-muted" style="font-size:12px">mamy – '+esc(p.kto)+', '+esc(p.kiedy)+'</span>' : '')
+        + '</td><td style="text-align:right;white-space:nowrap">'+zkIlosc(g,p)+'</td></tr>').join('')
+      + '</tbody></table>';
+  });
+  if ((r.bledy||[]).length) h += '<div class="fx-warn" style="margin-top:8px">Nie policzono: '+r.bledy.map(b=>esc(typeof b==='string'?b:JSON.stringify(b))).join('; ')+'</div>';
+  if (!edycja) h += '<div class="fx-muted" style="font-size:12px;margin-top:8px">✓ – odhaczone „mamy” we wszystkich zamówieniach z tą pozycją, ½ – tylko w części. Odhaczasz w karcie zamówienia. Płyty policzone ze wspólnego rozkroju.</div>';
+  return h || '<div class="fx-muted">Brak pozycji.</div>';
+}
+function zkDrukuj(r, tytul){
+  const w = window.open('', '_blank'); if (!w) { alert('Przeglądarka zablokowała nowe okno – zezwól na wyskakujące okna dla panelu.'); return; }
+  let h = '<!doctype html><html lang="pl"><head><meta charset="utf-8"><title>'+esc(tytul)+'</title><style>body{font:13px Arial,sans-serif;margin:20px;color:#000}h1{font-size:18px}h2{font-size:15px;margin:16px 0 4px}table{width:100%;border-collapse:collapse}td{border-bottom:1px solid #ccc;padding:5px 4px;vertical-align:top}td.k{width:22px;font-size:16px}td.i{text-align:right;white-space:nowrap}.m{color:#666;font-size:11px}</style></head><body><h1>'+esc(tytul)+'</h1><div class="m">Wydruk '+new Date().toLocaleString('pl-PL')+'</div>';
+  ZK_GRUPY.forEach(([g, nazwa])=>{ const l = r[g]||[]; if (!l.length) return;
+    h += '<h2>'+nazwa+'</h2><table>' + l.map(p=>'<tr><td class="k">'+(p.mamy?'☑':'☐')+'</td><td>'+esc(p.nazwa)+(p.zamowienia&&r.zamowienia.length>1?'<div class="m">zam. '+p.zamowienia.map(esc).join(', ')+'</div>':'')+'</td><td class="i">'
+      + (g==='plyty' ? esc(p.arkuszy)+' ark. ('+esc(p.arkusz||'')+')' : g==='obrzeza' ? esc(p.mbZZapasem)+' mb' : esc(p.ilosc)+' '+esc(p.jm||'szt.')) + '</td></tr>').join('') + '</table>'; });
+  w.document.write(h + '<script>window.onload=()=>window.print()<\/script></body></html>'); w.document.close();
+}
+async function zakupyZaladuj(z){
+  if (SKLEP !== 'zbudujmebel') return;
+  const sek = [...$('panel').querySelectorAll('.fx-sec')].find(s=>(s.querySelector('h3')||{}).textContent==='Pozycje');
+  if (!sek) return;
+  sek.insertAdjacentHTML('afterend', '<div class="fx-sec" id="zkSec"><h3 style="display:flex;justify-content:space-between;align-items:center">Do zamówienia <button class="btn btn-ghost" id="zkDruk" type="button" disabled>Drukuj</button></h3><div id="zkBox"><span class="fx-muted">Liczę materiały…</span></div></div>');
+  let r;
+  try { r = await apiGet('sklep_zakupy.php?sklep='+SKLEP+'&zamowienia='+z.wc_id); }
+  catch(e){ $('zkBox').innerHTML = '<span class="fx-muted">Nie udało się policzyć materiałów: '+esc(blad(e))+'</span>'; return; }
+  const rysuj = () => {
+    $('zkBox').innerHTML = zkHtml(r, true, z.wc_id);
+    $('zkBox').querySelectorAll('[data-zk]').forEach(ck=>ck.onchange=async()=>{
+      ck.disabled = true;
+      try {
+        const o = await apiPost('sklep_zakupy.php?sklep='+SKLEP+'&action=mamy', {wc_id: Number(ck.dataset.wc), klucz: ck.dataset.zk, mamy: ck.checked ? 1 : 0});
+        ZK_GRUPY.forEach(([g])=>(r[g]||[]).forEach(p=>{ if (p.klucz===ck.dataset.zk){ p.mamy = ck.checked; p.kto = o.kto; p.kiedy = o.kiedy; } }));
+        rysuj();
+      } catch(e){ ck.checked = !ck.checked; ck.disabled = false; alert('Nie zapisano: '+blad(e)); }
+    });
+  };
+  rysuj();
+  $('zkDruk').disabled = false;
+  $('zkDruk').onclick = () => zkDrukuj(r, 'Do zamówienia – zamówienie #'+(z.numer||z.wc_id));
+}
+// lista zbiorcza dla zaznaczonych zamówień (okienko)
+async function zakupyZbiorcze(){
+  const ids = [...zazn]; if (!ids.length) return;
+  let ok = $('zkModal');
+  if (!ok) { document.body.insertAdjacentHTML('beforeend', '<div class="fx-drawer" id="zkModal"><div class="fx-panel" style="width:min(820px,100%)"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px"><h2 style="margin:0;font-size:18px">Lista zakupów</h2><div><button class="btn" id="zkMDruk" type="button" disabled>Drukuj</button> <button class="btn btn-ghost" id="zkMZamk" type="button">Zamknij</button></div></div><div id="zkMBox"></div></div></div>'); ok = $('zkModal');
+    $('zkMZamk').onclick = () => ok.classList.remove('open'); ok.onclick = e => { if (e.target === ok) ok.classList.remove('open'); }; }
+  ok.classList.add('open');
+  $('zkMBox').innerHTML = '<span class="fx-muted">Liczę materiały dla '+ids.length+' zamówień…</span>'; $('zkMDruk').disabled = true;
+  try {
+    const r = await apiGet('sklep_zakupy.php?sklep='+SKLEP+'&zamowienia='+ids.join(','));
+    const tytul = 'Lista zakupów – zamówienia '+(r.zamowienia||[]).map(x=>'#'+x.numer).join(', ');
+    $('zkMBox').innerHTML = '<div class="fx-muted" style="margin-bottom:6px">'+esc(tytul)+'</div>' + zkHtml(r, false);
+    $('zkMDruk').disabled = false; $('zkMDruk').onclick = () => zkDrukuj(r, tytul);
+  } catch(e){ $('zkMBox').innerHTML = '<div class="fx-warn">Nie udało się policzyć: '+esc(blad(e))+'</div>'; }
+}
+if (SKLEP === 'zbudujmebel' && $('bulkClr')) {
+  $('bulkClr').insertAdjacentHTML('beforebegin', '<button class="btn" id="zkBulk" type="button" title="Płyty, obrzeża i okucia dla zaznaczonych zamówień (wspólny rozkrój)">Lista zakupów dla zaznaczonych</button>');
+  $('zkBulk').onclick = zakupyZbiorcze;
+}
