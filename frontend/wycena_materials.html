@@ -45,7 +45,7 @@
   </div>
 </div>
 
-<script src="config.js"></script><script src="assets/js/menu.js"></script>
+<script src="config.js"></script><script src="assets/js/menu.js"></script><script src="assets/js/topbar.js"></script>
 <script>
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c])); }
 async function wycenaAuto(){ try{ const r = await apiPost('wycena_auth.php', {}); if(r && r.token){ sessionStorage.setItem('wycena_token', r.token); return true; } }catch(e){} return false; }   // wejście bez hasła dla wybranych osób

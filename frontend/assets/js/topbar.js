@@ -1,58 +1,8 @@
 
 (function(){
   const STYLE_ID = 'smartmeble-topbar-module-style';
-  const CSS = `
-.mobileMenuBtn{display:none}
-.topbar{
-  display:flex;align-items:center;justify-content:space-between;gap:16px;
-  padding:14px 20px;border-bottom:1px solid var(--border);
-  background:linear-gradient(180deg,#2a2a2a 0%, #262626 100%);
-  box-shadow:0 4px 20px rgba(0,0,0,.30);
-  position:sticky;top:0;z-index:1000
-}
-.topbar-left{display:flex;align-items:center;gap:16px;min-width:0}
-.topbar-logo{height:48px;width:auto;flex:0 0 auto}
-.topbar-title-wrap{display:flex;flex-direction:column;min-width:0}
-.topbar-title{font-size:18px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.topbar-sub{font-size:12px;color:#fff;font-weight:700;letter-spacing:.22em;text-transform:uppercase}
-.topbar-right{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
-.user-chip{display:flex;align-items:center;gap:10px;padding:6px 12px;border-radius:999px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.06);box-shadow:0 8px 18px rgba(0,0,0,.14)}
-.user-chip small{display:block;font-size:10px;color:var(--muted);line-height:1.1}
-.user-chip strong{display:block;font-size:13px;line-height:1.2}
-.topbar-link{font-size:13px;color:var(--muted);padding:8px 12px;border:1px solid rgba(183,211,49,.18);background:rgba(183,211,49,.07);border-radius:12px}
-.topbar-link:hover{color:var(--accent)}
-@media (max-width:768px){
-  .app{display:block}
-  .sidebar{
-    position:fixed;left:0;top:0;bottom:0;width:260px;z-index:1200;
-    transform:translateX(-100%);transition:transform .22s ease;
-    box-shadow:0 20px 60px rgba(0,0,0,.35)
-  }
-  body.menu-open .sidebar{transform:translateX(0)}
-  body.menu-open::before{
-    content:'';position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1100
-  }
-  .content{min-width:0}
-  .main{padding:10px}
-  .mobileMenuBtn{
-    display:inline-flex;align-items:center;justify-content:center;
-    width:42px;height:42px;border-radius:10px;border:1px solid var(--border);
-    background:rgba(255,255,255,.04);color:var(--text);cursor:pointer;
-    font-size:22px;line-height:1;flex:0 0 auto
-  }
-  .topbar{
-    flex-direction:column;align-items:flex-start;gap:10px;padding:12px 14px;
-  }
-  .topbar-left,.topbar-right{width:100%}
-  .topbar-right{justify-content:space-between;gap:10px}
-  .topbar-logo{height:34px}
-  .topbar-title{font-size:16px}
-  .topbar-sub{font-size:11px}
-  .user-chip{padding:6px 10px}
-}
-@media (max-width:520px){
-  .topbar-right{align-items:flex-start;flex-wrap:wrap}
-}`;
+  // wygląd paska jest w assets/css/theme_v17.css (nowy wygląd 2026-11-27)
+  const CSS = ``;
   function injectStyle(){
     if(document.getElementById(STYLE_ID)) return;
     const style = document.createElement('style');
@@ -60,48 +10,124 @@
     style.textContent = CSS;
     document.head.appendChild(style);
   }
+  const esc = v => String(v==null?'':v).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]));
+  const ik = (d) => '<svg class="smi" viewBox="0 0 24 24" aria-hidden="true">'+d+'</svg>';
+  const IK = {
+    menu:'<path d="M4 6h16M4 12h16M4 18h16"/>', szukaj:'<circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/>', plus:'<path d="M12 5v14M5 12h14"/>',
+    bell:'<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20a2 2 0 0 0 4 0"/>', lock:'<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+    out:'<path d="M15 4h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4M10 17l5-5-5-5M15 12H3"/>', moje:'<path d="M9 4h6l1 2h3v15H5V6h3z"/><path d="m9 13 2 2 4-4"/>',
+    sync:'<path d="M20 11a8 8 0 0 0-14.5-4.5L4 8M4 4v4h4M4 13a8 8 0 0 0 14.5 4.5L20 16M20 20v-4h-4"/>'
+  };
+  const SKLEP = (document.body && document.body.dataset.sklep) || '';
+  const NAZWA_SKLEPU = {frontypax:'FRONTYPAX', zbudujmebel:'ZBUDUJMEBEL'}[SKLEP] || '';
+  // prawa część paska: przyciski strony (extraHtml), „+ Nowe zamówienie” / „Odśwież ze sklepu”, dzwonek, użytkownik
+  function prawaCzesc(extraHtml){
+    return `
+        <div class="tb2-p">
+          ${SKLEP ? '<button type="button" class="btn" id="tb2Sync" title="Pobierz zmiany ze sklepu teraz">'+ik(IK.sync)+'<span class="l">Odśwież ze sklepu</span></button>'
+                  : '<a class="btn" id="tb2Nowe" href="order_add.html" hidden>'+ik(IK.plus)+'<span class="l">Nowe zamówienie</span></a>'}
+          <button type="button" class="tb2-ikb" id="tb2DzwBtn" title="Co nowego" aria-label="Co nowego" hidden>${ik(IK.bell)}<span class="sb-bdg"></span></button>
+          <button type="button" class="tb2-ja" id="tb2JaBtn" aria-haspopup="true"><span class="tb2-av" id="tb2Av">…</span><div><b id="topbarUserName">Ładowanie…</b><small id="tb2Rola"></small></div></button>
+        </div>
+        <div class="tb2-rozw" id="tb2Dzw"><div class="nag">Co nowego</div><div id="tb2DzwLista"></div></div>
+        <div class="tb2-rozw" id="tb2Ja">
+          <div class="pw"><b id="tb2JaNazwa"></b><span id="tb2JaRola"></span></div><hr>
+          <a href="orders.html" id="tb2Moje" hidden>${ik(IK.moje)}Moje zamówienia (rozpisuję)</a>
+          <button type="button" class="poz" id="topbarChangePassword">${ik(IK.lock)}Zmień hasło</button><hr>
+          <button type="button" class="poz" id="logoutBtnTopbar" data-logout>${ik(IK.out)}Wyloguj</button>
+        </div>`;
+  }
+  function szukajHtml(){
+    const ph = SKLEP ? 'Szukaj w zamówieniach '+NAZWA_SKLEPU+': numer, klient, telefon…' : 'Szukaj zamówienia: nazwisko, telefon, przedmiot…';
+    return '<label class="tb2-szukaj" id="tb2Szukaj" hidden>'+ik(IK.szukaj)+'<input id="tb2Q" type="search" autocomplete="off" placeholder="'+esc(ph)+'" aria-label="Szukaj zamówienia"><kbd>Ctrl K</kbd></label>';
+  }
   function renderTopbar(){
     const mount = document.getElementById('appTopbar');
-    if(!mount) return;
-    const title = mount.dataset.title || 'Panel';
-    const subtitle = mount.dataset.subtitle || 'Panel zamówień';
-    const extraHtml = mount.dataset.extraHtml || '';
-    mount.innerHTML = `
+    if(mount){
+      const title = mount.dataset.title || 'Panel';
+      const subtitle = mount.dataset.subtitle || 'Panel zamówień';
+      const extraHtml = mount.dataset.extraHtml || '';
+      mount.innerHTML = `
       <div class="topbar">
-        <div class="topbar-left">
-          <button type="button" id="mobileMenuBtn" class="mobileMenuBtn" aria-label="Menu">☰</button>
-          <img src="assets/img/logo_smartmeble.png" class="topbar-logo" alt="Smart Meble"/>
-          <div class="topbar-title-wrap">
-            <div class="topbar-title">${title}</div>
-            <div class="topbar-sub">${subtitle}</div>
-          </div>
-        </div>
-        <div class="topbar-right">
-          <div class="user-chip">
-            <div>
-              <small>Zalogowany użytkownik</small>
-              <strong id="topbarUserName">Ładowanie…</strong>
-            </div>
-          </div>
-          <span class="topbar-link" id="topbarChangePassword" title="Przygotowane pod kolejny etap">Zmień hasło</span>
-          ${extraHtml}
-          <button class="btn" id="logoutBtnTopbar" style="box-shadow:0 10px 24px rgba(183,211,49,.26)">Wyloguj</button>
-        </div>
-      </div>`;
+        <button type="button" id="mobileMenuBtn" class="mobileMenuBtn" aria-label="Menu">${ik(IK.menu)}</button>
+        <div class="tb2-tyt"><h1>${title}</h1><div>${subtitle}</div></div>
+        ${szukajHtml()}<div class="tb2-pusty" id="tb2Pusty"></div>
+        ${prawaCzesc('')}
+      </div>${extraHtml ? '<div class="tb2-akcje">'+extraHtml+'</div>' : ''}`;
+      return;
+    }
+    // strony z własnym paskiem (Wycena, Nowe zamówienie): zostawiamy ich przyciski, dokładamy resztę
+    const stary = document.querySelector('.content > .topbar');
+    if(!stary || stary.dataset.tb2) return;
+    stary.dataset.tb2 = '1';
+    const wyl = stary.querySelector('#logoutBtn'); if(wyl) wyl.style.display = 'none';
+    stary.insertAdjacentHTML('afterbegin', `<button type="button" id="mobileMenuBtn" class="mobileMenuBtn" aria-label="Menu">${ik(IK.menu)}</button>`);
+    const prawy = stary.children[2];
+    if(prawy){ prawy.classList.add('tb2-extra'); prawy.style.marginLeft = 'auto'; }
+    stary.insertAdjacentHTML('beforeend', prawaCzesc(''));
+    const nowe = stary.querySelector('#tb2Nowe'); if(nowe) nowe.remove();
   }
+  function inicjaly(n){ const c = String(n||'').trim().split(/\s+/).filter(Boolean); return ((c[0]||'?')[0] + (c.length>1 ? c[c.length-1][0] : '')).toUpperCase(); }
   async function fillTopbarUser(){
-    const setName = (v) => {
-      const el = document.getElementById('topbarUserName');
-      if(el) el.textContent = v || 'Użytkownik';
-    };
-    try{
-      let me = null;
-      try { me = await apiGet('session_check.php'); } catch(e) {}
-      const u = (me && (me.user || me)) || {};
-      const name = u.full_name || u.name || [u.first_name,u.last_name].filter(Boolean).join(' ').trim() || u.email || u.login || 'Użytkownik';
-      setName(name);
-    }catch(e){
-      setName('Użytkownik');
+    let me = null;
+    try { me = await apiGet('session_check.php'); } catch(e) {}
+    const u = (me && (me.user || me)) || {};
+    const caps = (me && me.caps) || {}, mod = caps.modules || {};
+    const name = u.full_name || u.name || [u.first_name,u.last_name].filter(Boolean).join(' ').trim() || u.email || u.login || 'Użytkownik';
+    const rola = u.role_name || '';
+    const rid = Number(u.role_id ?? u.role ?? 0);
+    const set = (id, v) => { const el = document.getElementById(id); if(el) el.textContent = v; };
+    set('topbarUserName', name); set('tb2JaNazwa', name); set('tb2Rola', rola); set('tb2JaRola', rola); set('tb2Av', inicjaly(name));
+    if(!me) return;
+    const uid = Number(u.uid || u.id || 0);
+    const zamowienia = rid !== 3 && mod.orders_current !== 0;
+    const nowe = document.getElementById('tb2Nowe'); if(nowe) nowe.hidden = !zamowienia || /zewn/.test(rola.toLowerCase());
+    const moje = document.getElementById('tb2Moje'); if(moje && zamowienia && uid){ moje.href = 'orders.html?scheduler=' + uid; moje.hidden = false; }
+    const sz = document.getElementById('tb2Szukaj'), pusty = document.getElementById('tb2Pusty');
+    if(sz && (SKLEP || zamowienia)){ sz.hidden = false; if(pusty) pusty.hidden = true; }
+    dzwonek(caps);
+  }
+  async function dzwonek(caps){
+    if(typeof window.smLiczniki !== 'function') return;
+    const l = await window.smLiczniki();
+    const poz = [];
+    const sk = (k, nazwa) => { const v = l[k]; if(v && v.nowe > 0) poz.push(['frontypax.html'.replace('frontypax',k), v.nowe+' '+(v.nowe===1?'nowe zamówienie':(v.nowe%10>=2&&v.nowe%10<=4&&(v.nowe%100<12||v.nowe%100>14)?'nowe zamówienia':'nowych zamówień'))+' '+nazwa, 'bez rozpoczętej produkcji · w realizacji '+v.w_realizacji, v.nowe]); };
+    sk('frontypax','FRONTYPAX'); sk('zbudujmebel','ZBUDUJMEBEL');
+    if(l.wyceny_www > 0) poz.push(['wyceny_www.html', 'Wyceny ze strony: '+l.wyceny_www+' nowe', 'czekają na odpowiedź', l.wyceny_www]);
+    if(l.reklamacje > 0) poz.push(['complaints.html', 'Otwarte reklamacje: '+l.reklamacje, 'do załatwienia', l.reklamacje]);
+    const btn = document.getElementById('tb2DzwBtn'), lista = document.getElementById('tb2DzwLista');
+    if(!btn || !lista) return;
+    if(!Object.keys(l).length) return;
+    btn.hidden = false;
+    const suma = poz.reduce((a,p)=>a+p[3],0);
+    btn.querySelector('.sb-bdg').textContent = suma > 0 ? String(suma > 99 ? '99+' : suma) : '';
+    lista.innerHTML = poz.length ? poz.map(p=>'<a class="pw" href="'+p[0]+'"><b>'+esc(p[1])+'</b><span>'+esc(p[2])+'</span></a>').join('') : '<div class="pw"><span>Nic nowego – wszystko ogarnięte.</span></div>';
+  }
+  function bindTopbar(){
+    const roz = (id) => { document.querySelectorAll('.tb2-rozw').forEach(r=>{ if(r.id!==id) r.classList.remove('on'); }); const el = document.getElementById(id); if(el) el.classList.toggle('on'); };
+    const ja = document.getElementById('tb2JaBtn'); if(ja) ja.addEventListener('click', e=>{ e.stopPropagation(); roz('tb2Ja'); });
+    const dz = document.getElementById('tb2DzwBtn'); if(dz) dz.addEventListener('click', e=>{ e.stopPropagation(); roz('tb2Dzw'); });
+    document.addEventListener('click', e=>{ if(!e.target.closest('.tb2-rozw')) document.querySelectorAll('.tb2-rozw').forEach(r=>r.classList.remove('on')); });
+    document.addEventListener('keydown', e=>{ if(e.key==='Escape') document.querySelectorAll('.tb2-rozw').forEach(r=>r.classList.remove('on')); });
+    // szukanie: w sklepie – pole szukania tej strony, w panelu – lista zamówień aktualnych
+    const q = document.getElementById('tb2Q');
+    if(q){
+      q.addEventListener('keydown', e=>{
+        if(e.key !== 'Enter') return;
+        e.preventDefault(); e.stopPropagation();
+        const v = q.value.trim();
+        if(SKLEP){ const pq = document.getElementById('q'), b = document.getElementById('qBtn'); if(pq){ pq.value = v; if(b) b.click(); } return; }
+        const cur = (location.pathname.split('/').pop()||'').toLowerCase();
+        if(cur === 'orders.html' && document.getElementById('q') && document.getElementById('go')){ document.getElementById('q').value = v; document.getElementById('go').click(); return; }
+        location.href = 'orders.html' + (v ? '?q=' + encodeURIComponent(v) : '');
+      }, true);
+      document.addEventListener('keydown', e=>{ if((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='k'){ const sz = document.getElementById('tb2Szukaj'); if(sz && !sz.hidden){ e.preventDefault(); q.focus(); q.select(); } } });
+    }
+    const sync = document.getElementById('tb2Sync');
+    if(sync){
+      const pb = document.getElementById('syncBtn');
+      if(pb) pb.style.display = 'none';
+      sync.addEventListener('click', ()=>{ const b = document.getElementById('syncBtn'); if(b) b.click(); });
     }
   }
   function initMobileMenu(){
@@ -157,6 +183,7 @@
   document.addEventListener('DOMContentLoaded', async ()=>{
     injectStyle();
     renderTopbar();
+    bindTopbar();
     bindLogout();
     initMobileMenu();
     initSmartEnter();

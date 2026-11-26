@@ -1,0 +1,7 @@
+<svg width="1200" height="320" viewBox="0 0 1200 320" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="320" fill="#111111"/>
+  <rect x="80" y="60" width="110" height="180" fill="none" stroke="#F5F3EF" stroke-width="6"/>
+  <path d="M102 82H168V154H132V218H102V82Z" fill="#E6D2A2"/>
+  <path d="M132 154H168V218H132V154Z" fill="#111111"/>
+  <text x="240" y="184" font-family="Arial, Helvetica, sans-serif" font-size="108" font-weight="500" fill="#F5F3EF">frontypax</text>
+</svg>

@@ -53,6 +53,8 @@ try{
   foreach($rows as $r) $map[$r['module_code']] = (int)$r['allow_access'];
   foreach($modules as $m) $moduleCaps[$m] = (int)($map[$m] ?? $default($m));
 }catch(Throwable $e){ foreach($modules as $m) $moduleCaps[$m] = (int)$default($m); }
+// nazwa roli do paska górnego (nowy wygląd, 2026-11-27)
+try{ $st=$pdoForRole->prepare('SELECT name FROM roles WHERE id=?'); $st->execute([$role]); $u['role_name']=(string)$st->fetchColumn(); }catch(Throwable $e){}
 json_ok(['ok'=>true,'user'=>$u,'caps'=>[
   'can_view_finance'=> ($moduleCaps['payments'] && !$isExternalTechnologist && !$isWorkerRole) ? 1 : 0,
   'is_superadmin'=> $role===999 ? 1 : 0,
