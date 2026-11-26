@@ -6,7 +6,7 @@ header('Content-Type: application/json; charset=utf-8');
 $me = auth_user(); if(!$me) json_err('unauthorized',401);
 $pdo = db(); $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 $role = api_current_role_id($pdo, $me);
-if(!in_array($role, [1,2,999], true)) json_err('forbidden', 403);
+if(!in_array($role, [1,2,999,1001], true)) json_err('forbidden', 403);   // 1001 = Biuro
 
 $body = api_request_data();
 $srcId = (int)($body['order_id'] ?? 0);

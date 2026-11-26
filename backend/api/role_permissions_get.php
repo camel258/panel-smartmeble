@@ -101,7 +101,10 @@ try{
     $it=['role_id'=>$rid,'role_name'=>$role['name'],'modules'=>[],'dashboard_widgets'=>[],'order_fields'=>[]];
     foreach($modules as $code=>$label){ $it['modules'][]=['code'=>$code,'label'=>$label,'allow_access'=>(int)($mods[$rid][$code] ?? default_module_access_local($rid,$code))]; }
     foreach($widgets as $code=>$label){ $it['dashboard_widgets'][]=['code'=>$code,'label'=>$label,'allow_view'=>(int)($dw[$rid][$code] ?? default_dashboard_widget_access_local($rid,$code))]; }
-    foreach($fields as $code=>$label){ $perm=$fw[$rid][$code] ?? default_field_permissions_local($rid,$code); $it['order_fields'][]=['code'=>$code,'label'=>$label,'allow_view'=>(int)$perm['view'],'allow_edit'=>(int)$perm['edit']]; }
+    // finanse na stałe wyłączone dla ról „Pracownik” i „Zewnętrzny technolog” (kod: access.php) – na stronie szare
+    $rn = mb_strtolower((string)$role['name'], 'UTF-8'); $bezFinansow = strpos($rn,'pracownik')!==false || (strpos($rn,'technolog')!==false && strpos($rn,'zewn')!==false);
+    foreach($fields as $code=>$label){ $perm=$fw[$rid][$code] ?? default_field_permissions_local($rid,$code); $lock = $bezFinansow && in_array($code,['finance_summary','finance_components','finance_payments','finance_discount_edit'],true); $it['order_fields'][]=['code'=>$code,'label'=>$label,'allow_view'=>$lock?0:(int)$perm['view'],'allow_edit'=>$lock?0:(int)$perm['edit'],'locked'=>$lock?1:0]; }
+    foreach($it['modules'] as &$m){ if($bezFinansow && $m['code']==='payments'){ $m['allow_access']=0; $m['locked']=1; } } unset($m);
     $items[]=$it;
   }
   json_ok(['items'=>$items]);

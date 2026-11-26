@@ -30,7 +30,7 @@ function sm_is_admin_role(array $me): bool {
 
 $me = auth_user(); if(!$me) json_err('unauthorized',401);
 $pdo = db(); $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-$role=(int)($me['role_id'] ?? ($me['role'] ?? 0)); $uid=sm_uid($me); $isExternalTechnologist=sm_is_external_technologist($pdo,$me); $isWorkerRole=sm_is_worker_role($pdo,$me); $canFinance=in_array($role,[1,999],true) && !$isExternalTechnologist && !$isWorkerRole;
+$role=(int)($me['role_id'] ?? ($me['role'] ?? 0)); $uid=sm_uid($me); $isExternalTechnologist=sm_is_external_technologist($pdo,$me); $isWorkerRole=sm_is_worker_role($pdo,$me); $canFinance=(in_array($role,[1,999],true) || ($uid>0 && ((bool)can_view_field($uid,'finance_summary') || (bool)can_view_field($uid,'finance_components') || (bool)can_view_field($uid,'finance_payments')))) && !$isExternalTechnologist && !$isWorkerRole;   // 2026-11-26: wg Uprawnień (rola Biuro)
 $limit=max(1,min(1000,(int)($_GET['limit']??300))); $offset=max(0,(int)($_GET['offset']??0));
 $q=trim($_GET['q']??''); $status=trim($_GET['status']??''); $year=trim($_GET['year']??''); $month=trim($_GET['month']??''); $from=trim($_GET['from']??''); $to=trim($_GET['to']??'');
 $where=["COALESCE(o.is_deleted,0)=0","COALESCE(o.is_finished,0)=0","NOT EXISTS (SELECT 1 FROM order_statuses sx WHERE sx.id=o.status_id AND LOWER(COALESCE(sx.name,'')) LIKE '%zakończ%')"]; $params=[]; if($isExternalTechnologist){ $where[]="o.scheduler_id=?"; $params[]=$uid; } $dateExpr="COALESCE(STR_TO_DATE(CONCAT(o.finished_bucket_year,'-',LPAD(o.finished_bucket_month,2,'0'),'-01'),'%Y-%m-%d'),o.install_date_new,o.install_date,o.contract_date)";

@@ -8,18 +8,21 @@ $body = api_request_data();
 if(!api_is_permissions_admin($pdo,$me)) json_err('forbidden',403,['details'=>'permissions_admin_required']);
 
 
+// role bez finansów na stałe (Pracownik, Zewnętrzny technolog) – jak w access.php
+function pr_bez_finansow(string $n): bool { return strpos($n,'pracownik')!==false || (strpos($n,'technolog')!==false && strpos($n,'zewn')!==false); }
+
 try{
   $pdo->beginTransaction();
   if (!api_table_exists($pdo, 'role_module_permissions')) $pdo->exec('CREATE TABLE role_module_permissions (role_id INT UNSIGNED NOT NULL, module_code VARCHAR(64) NOT NULL, allow_access TINYINT(1) NOT NULL DEFAULT 1, PRIMARY KEY(role_id,module_code)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
   if (!api_table_exists($pdo, 'role_dashboard_permissions')) $pdo->exec('CREATE TABLE role_dashboard_permissions (role_id INT UNSIGNED NOT NULL, widget_code VARCHAR(64) NOT NULL, allow_view TINYINT(1) NOT NULL DEFAULT 1, PRIMARY KEY(role_id,widget_code)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
   if (!api_table_exists($pdo, 'role_field_permissions')) $pdo->exec('CREATE TABLE role_field_permissions (role_id INT UNSIGNED NOT NULL, field_code VARCHAR(64) NOT NULL, allow_view TINYINT(1) NOT NULL DEFAULT 1, allow_edit TINYINT(1) NOT NULL DEFAULT 1, PRIMARY KEY(role_id,field_code)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4');
 
+  $roleNames = [];
+  foreach($pdo->query('SELECT id, name FROM roles')->fetchAll(PDO::FETCH_ASSOC) as $r) $roleNames[(int)$r['id']] = mb_strtolower(trim((string)$r['name']), 'UTF-8');
   if(!empty($body['modules']) && is_array($body['modules'])){
     // nazwy ról (Super Admin zawsze zachowuje dostęp do Uprawnień); wcześniej wołana tu funkcja role_name_local() istniała tylko w role_permissions_get.php
-    $roleNames = [];
-    foreach($pdo->query('SELECT id, name FROM roles')->fetchAll(PDO::FETCH_ASSOC) as $r) $roleNames[(int)$r['id']] = strtolower(trim((string)$r['name']));
     $st = $pdo->prepare('INSERT INTO role_module_permissions(role_id,module_code,allow_access) VALUES(?,?,?) ON DUPLICATE KEY UPDATE allow_access=VALUES(allow_access)');
-    foreach($body['modules'] as $row){ $rid=(int)($row['role_id']??0); $code=trim((string)($row['module_code']??'')); if($rid<=0||$code==='') continue; $allow=!empty($row['allow_access'])?1:0; if($code==='permissions' && strpos($roleNames[$rid] ?? '','super')!==false) $allow=1; $st->execute([$rid,$code,$allow]); }
+    foreach($body['modules'] as $row){ $rid=(int)($row['role_id']??0); $code=trim((string)($row['module_code']??'')); if($rid<=0||$code==='') continue; $allow=!empty($row['allow_access'])?1:0; if($code==='permissions' && strpos($roleNames[$rid] ?? '','super')!==false) $allow=1; if($code==='payments' && pr_bez_finansow($roleNames[$rid] ?? '')) $allow=0; $st->execute([$rid,$code,$allow]); }
   }
   if(!empty($body['dashboard_widgets']) && is_array($body['dashboard_widgets'])){
     $st = $pdo->prepare('INSERT INTO role_dashboard_permissions(role_id,widget_code,allow_view) VALUES(?,?,?) ON DUPLICATE KEY UPDATE allow_view=VALUES(allow_view)');
@@ -30,6 +33,7 @@ try{
     foreach($body['order_fields'] as $row){
       $rid=(int)($row['role_id']??0); $code=trim((string)($row['field_code']??'')); if($rid<=0||$code==='') continue; $view=!empty($row['allow_view'])?1:0; $edit=!empty($row['allow_edit'])?1:0;
       if(!$view && !in_array($code,['finance_components','finance_payments'],true)) $edit=0;
+      if(in_array($code,['finance_summary','finance_components','finance_payments','finance_discount_edit'],true) && pr_bez_finansow($roleNames[$rid] ?? '')){ $view=0; $edit=0; }
       $st->execute([$rid,$code,$view,$edit]);
     }
   }

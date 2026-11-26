@@ -15,7 +15,7 @@ $state = ($_GET['state'] ?? 'current') === 'finished' ? 'finished' : 'current';
 if($state==='finished' && ($isExt || $isWorker || acc_role_id($me)===3)) json_err('forbidden',403);
 $canFinance = $state==='finished'
   ? (acc_can($pdo,$me,'finance_summary') || acc_can($pdo,$me,'finance_components') || acc_can($pdo,$me,'finance_payments'))
-  : (acc_is_admin($me) && !$isExt && !$isWorker);
+  : ((acc_is_admin($me) || acc_can($pdo,$me,'finance_summary') || acc_can($pdo,$me,'finance_components') || acc_can($pdo,$me,'finance_payments')) && !$isExt && !$isWorker);
 
 $ids = array_values(array_unique(array_filter(array_map('intval', explode(',', (string)($_GET['ids'] ?? ''))), fn($v)=>$v>0)));
 if(!$ids) json_err('no_ids',400);

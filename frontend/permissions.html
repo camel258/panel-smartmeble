@@ -35,8 +35,8 @@ function buildBooleanTable(tableId, sectionKey, valueKey){
     html += `<tr><td><b>${esc(role.role_name)}</b></td>`;
     (role[sectionKey]||[]).forEach(item=>{
       const checked = Number(item[valueKey])===1 ? 'checked' : '';
-      const disabled = (Number(role.role_id)===999 && ((sectionKey==='modules' && item.code==='permissions'))) ? 'disabled' : '';
-      html += `<td><input type="checkbox" data-section="${sectionKey}" data-role="${role.role_id}" data-code="${esc(item.code)}" data-kind="${valueKey}" ${checked} ${disabled}></td>`;
+      const disabled = ((Number(role.role_id)===999 && ((sectionKey==='modules' && item.code==='permissions'))) || Number(item.locked)===1) ? 'disabled title="Ta rola nigdy nie widzi finansów – nie da się zmienić"' : '';
+      html += (Number(item.locked)===1 ? '<td style="background:#e5e7eb;opacity:.55">' : '<td>') + `<input type="checkbox" data-section="${sectionKey}" data-role="${role.role_id}" data-code="${esc(item.code)}" data-kind="${valueKey}" ${checked} ${disabled}></td>`;
     });
     html += '</tr>';
   });
@@ -52,7 +52,9 @@ function buildFieldsTable(){
     (role.order_fields||[]).forEach(item=>{
       const viewChecked = Number(item.allow_view)===1 ? 'checked' : '';
       const editChecked = Number(item.allow_edit)===1 ? 'checked' : '';
-      html += `<td><label style="display:inline-flex;gap:4px;align-items:center"><input type="checkbox" data-section="order_fields" data-role="${role.role_id}" data-code="${esc(item.code)}" data-kind="allow_view" ${viewChecked}>V</label> <label style="display:inline-flex;gap:4px;align-items:center"><input type="checkbox" data-section="order_fields" data-role="${role.role_id}" data-code="${esc(item.code)}" data-kind="allow_edit" ${editChecked}>E</label></td>`;
+      const lk = Number(item.locked)===1 ? ' disabled title="Ta rola nigdy nie widzi finansów – nie da się zmienić"' : '';
+      const td = Number(item.locked)===1 ? '<td style="background:#e5e7eb;opacity:.55">' : '<td>';
+      html += td + `<label style="display:inline-flex;gap:4px;align-items:center"><input type="checkbox" data-section="order_fields" data-role="${role.role_id}" data-code="${esc(item.code)}" data-kind="allow_view" ${viewChecked}${lk}>V</label> <label style="display:inline-flex;gap:4px;align-items:center"><input type="checkbox" data-section="order_fields" data-role="${role.role_id}" data-code="${esc(item.code)}" data-kind="allow_edit" ${editChecked}${lk}>E</label></td>`;
     });
     html += '</tr>';
   });

@@ -10,7 +10,7 @@ $pdo = db();
 $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
 $role = (int)($me['role_id'] ?? ($me['role'] ?? 0));
-if(!in_array($role, [1,999], true)) json_err('forbidden',403);
+if(!in_array($role, [1,999], true) && !acc_can($pdo, $me, 'finance_payments', (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET') ? 'view' : 'edit')) json_err('forbidden',403);   // 2026-11-26: wg Uprawnień (rola Biuro)
 
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 

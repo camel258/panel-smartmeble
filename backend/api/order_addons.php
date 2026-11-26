@@ -10,7 +10,7 @@ $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 $role = (int)($me['role'] ?? ($me['role_id'] ?? 0));
-$canFinance = ($role===1 || $role===999);
+$canFinance = ($role===1 || $role===999) || acc_can($pdo, $me, 'finance_components', 'view');   // 2026-11-26: wg Uprawnień (rola Biuro)
 if(!$canFinance) json_err('forbidden',403);
 
 function body_json(){

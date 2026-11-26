@@ -9,9 +9,9 @@ $roleId = 0;
 if(isset($me['role_id'])) $roleId = (int)$me['role_id'];
 else if(isset($me['role'])) $roleId = (int)$me['role'];
 
-if(!in_array($roleId,[1,999],true)) json_err('forbidden',403);
-
 $pdo = db();
+require_once __DIR__ . '/../lib/access.php';
+if(!in_array($roleId,[1,999],true) && !acc_can($pdo, $me, 'finance_payments', 'view')) json_err('forbidden',403);   // 2026-11-26: wg Uprawnień (rola Biuro)
 $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
 $PROJECT_ROOT = dirname(__DIR__,2);
